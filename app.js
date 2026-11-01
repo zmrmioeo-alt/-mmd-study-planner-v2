@@ -32,9 +32,9 @@ async function boot(){
  show("auth-view",true);
  // Require first-time acceptance before login or automatic session restoration.
  if(localStorage.getItem("mmd-terms-accepted-v1")!=="yes"){show("policy-gate",true);show("login-card",false);return}
- await continueAfterPolicy();
  // Do not run database requests inside onAuthStateChange: it executes under the auth lock.
  db.auth.onAuthStateChange((event)=>{if(event==="SIGNED_OUT"){currentUser=null;profile=null;show("app-view",false);show("auth-view",true)}});
+ await continueAfterPolicy();
 }
 async function syntheticEmail(value){const bytes=new TextEncoder().encode(value.trim().toLowerCase());const digest=await crypto.subtle.digest("SHA-256",bytes);const hex=Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,"0")).join("").slice(0,32);return "mmd-"+hex+"@users.mmdplanner.com"}
 $("login-form").addEventListener("submit",async e=>{
