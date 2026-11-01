@@ -39,27 +39,79 @@ async function boot(){
  await continueAfterPolicy();
 }
 async function syntheticEmail(value){const bytes=new TextEncoder().encode(value.trim().toLowerCase());const digest=await crypto.subtle.digest("SHA-256",bytes);const hex=Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,"0")).join("").slice(0,32);return "mmd-"+hex+"@users.mmdplanner.com"}
+async function passwordLogin(identifier,password){
+ let result;
+ if(identifier.includes("@"))result=await db.auth.signInWithPassword({email:identifier,password});
+ else{result=await db.auth.signInWithPassword({email:await syntheticEmail(identifier),password});if(result.error){const phone=normalizePhone(identifier);if(/^[0-9+]+$/.test(phone)){result=await db.auth.signInWithPassword({phone,password});if(result.error)result=await db.auth.signInWithPassword({email:phone+"@gmail.com",password})}}}
+ if(result.error)throw result.error;
+ return result.data.user;
+}
+$("open-admin-login").addEventListener("click",()=>{show("auth-view",false);show("admin-login-view",true);$("admin-identifier").focus()});
+$("back-user-login").addEventListener("click",()=>{show("admin-login-view",false);show("auth-view",true);show("login-card",true)});
 $("login-form").addEventListener("submit",async e=>{
- e.preventDefault();message("auth-message","در حال ورود...");const rawId=$("phone").value.trim(),password=$("password").value;
- try{
-  let result;
-  if(rawId.includes("@"))result=await db.auth.signInWithPassword({email:rawId,password});
-  else{result=await db.auth.signInWithPassword({email:await syntheticEmail(rawId),password});if(result.error){const phone=normalizePhone(rawId);if(/^[0-9+]+$/.test(phone)){result=await db.auth.signInWithPassword({phone,password});if(result.error)result=await db.auth.signInWithPassword({email:phone+"@gmail.com",password})}}}
-  if(result.error)throw result.error;
-  await enterApp(result.data.user);
- }catch(err){console.error("Login/entry failed:",err);show("app-view",false);show("auth-view",true);message("auth-message","ورود انجام شد اما بارگذاری پنل ناموفق بود: "+(err.message||"خطای نامشخص"),true)}
+ e.preventDefault();message("auth-message","در حال ورود...");
+ try{const user=await passwordLogin($("phone").value.trim(),$("password").value);const {data:p,error}=await db.from("profiles").select("is_admin").eq("id",user.id).maybeSingle();if(error)throw error;if(p?.is_admin){await db.auth.signOut();throw new Error("حساب مدیر باید از مسیر اختصاصی مدیر وارد شود.")}await enterApp(user)}
+ catch(err){console.error(err);message("auth-message",err.message||"ورود ناموفق بود.",true)}
 });
-$("logout-btn").addEventListener("click",async()=>{await db.auth.signOut();});
+$("admin-login-form").addEventListener("submit",async e=>{
+ e.preventDefault();message("admin-login-message","در حال بررسی اطلاعات مدیر...");
+ try{const user=await passwordLogin($("admin-identifier").value.trim(),$("admin-password").value);const {data:p,error}=await db.from("profiles").select("is_admin").eq("id",user.id).maybeSingle();if(error)throw error;if(!p?.is_admin){await db.auth.signOut();throw new Error("این حساب دسترسی مدیر ندارد.")}show("admin-login-view",false);await enterApp(user)}
+ catch(err){console.error(err);message("admin-login-message",err.message||"ورود مدیر ناموفق بود.",true)}
+});
+let adminMfaFactorId=null,adminMfaChallengeId=null;
+async function requireAdminMfa(user){
+ const {data:profileRow,error:profileError}=await db.from("profiles").select("is_admin").eq("id",user.id).maybeSingle();
+ if(profileError)throw profileError;
+ if(!profileRow?.is_admin)return true;
+ const {data:aal,error:aalError}=await db.auth.mfa.getAuthenticatorAssuranceLevel();if(aalError)throw aalError;
+ if(aal.currentLevel==="aal2")return true;
+ const {data:factors,error:factorsError}=await db.auth.mfa.listFactors();if(factorsError)throw factorsError;
+ const verified=(factors.totp||[]).find(x=>x.status==="verified");
+ if(verified){
+  adminMfaFactorId=verified.id;
+  const challenge=await db.auth.mfa.challenge({factorId:verified.id});if(challenge.error)throw challenge.error;
+  adminMfaChallengeId=challenge.data.id;
+  $("admin-mfa-title").textContent="کد تأیید مدیر";
+  $("admin-mfa-description").textContent="کد شش‌رقمی برنامه تأیید هویت را وارد کن.";
+  show("admin-mfa-setup",false);
+ }else{
+  const enrolled=await db.auth.mfa.enroll({factorType:"totp",friendlyName:"MMD Admin Authenticator"});if(enrolled.error)throw enrolled.error;
+  adminMfaFactorId=enrolled.data.id;
+  $("admin-mfa-qr").src=enrolled.data.totp.qr_code;
+  $("admin-mfa-secret").textContent=enrolled.data.totp.secret;
+  $("admin-mfa-title").textContent="راه‌اندازی قفل مدیر";
+  $("admin-mfa-description").textContent="این مرحله فقط یک‌بار برای فعال‌سازی قفل دومرحله‌ای انجام می‌شود.";
+  show("admin-mfa-setup",true);
+  adminMfaChallengeId=null;
+ }
+ $("admin-mfa-code").value="";
+ message("admin-mfa-message","");
+ show("auth-view",false);show("admin-login-view",false);show("admin-mfa-view",true);
+ $("admin-mfa-code").focus();
+ return false;
+}
+$("admin-mfa-form").addEventListener("submit",async e=>{
+ e.preventDefault();const code=$("admin-mfa-code").value.replace(/\D/g,"");if(!adminMfaFactorId||code.length!==6)return;
+ message("admin-mfa-message","در حال بررسی کد...");
+ try{
+  if(!adminMfaChallengeId){const ch=await db.auth.mfa.challenge({factorId:adminMfaFactorId});if(ch.error)throw ch.error;adminMfaChallengeId=ch.data.id}
+  const verified=await db.auth.mfa.verify({factorId:adminMfaFactorId,challengeId:adminMfaChallengeId,code});if(verified.error)throw verified.error;
+  show("admin-mfa-view",false);const {data:{user}}=await db.auth.getUser();await enterApp(user);
+ }catch(err){message("admin-mfa-message","کد معتبر نیست یا منقضی شده است. دوباره تلاش کن. "+(err.message||""),true);adminMfaChallengeId=null}
+});
+$("admin-mfa-cancel").addEventListener("click",async()=>{await db.auth.signOut();show("admin-mfa-view",false);show("auth-view",true);show("login-card",true)});
+$("logout-btn").addEventListener("click",async()=>{await db.auth.signOut();});.addEventListener("click",async()=>{await db.auth.signOut();});
 if($("expired-logout-btn"))$("expired-logout-btn").addEventListener("click",async()=>{await db.auth.signOut()});
 if($("banned-logout-btn"))$("banned-logout-btn").addEventListener("click",async()=>{await db.auth.signOut()});
 async function enterApp(user){
  if(enteringUserId===user.id)return;enteringUserId=user.id;
  try{
-  currentUser=user;show("auth-view",false);show("expired-subscription-view",false);show("app-view",true);$("today-date").textContent=dateLabel();
-  await loadProfile();
-  if(!currentUser)return;
+  const allowed=await requireAdminMfa(user);
+  if(!allowed)return;
+  currentUser=user;show("auth-view",false);show("admin-login-view",false);show("admin-mfa-view",false);show("expired-subscription-view",false);show("app-view",true);$("today-date").textContent=dateLabel();
+  await loadProfile();if(!currentUser)return;
   await Promise.all([loadTasks(),loadRoutines(),loadSettings(),loadAnnouncements()]);renderAll();syncSmartPlanner();
- }catch(err){console.error("App loading failed:",err);show("app-view",false);show("auth-view",true);message("auth-message","خطا در بارگذاری اطلاعات حساب: "+(err.message||"خطای نامشخص"),true);throw err}
+ }catch(err){console.error("App loading failed:",err);show("app-view",false);show("auth-view",true);show("login-card",true);message("auth-message","خطا در ورود یا تأیید امنیتی: "+(err.message||"خطای نامشخص"),true);throw err}
  finally{enteringUserId=null}
 }
 async function loadProfile(){
