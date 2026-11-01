@@ -148,7 +148,7 @@
         <form id="task-form" class="form-panel">
           <label>عنوان وظیفه<input id="task-title" required maxlength="120" placeholder="مثلاً حل تمرین ریاضی"></label>
           <label>توضیحات<input id="task-description" maxlength="250" placeholder="جزئیات اختیاری"></label>
-          <div class="form-row"><label>تاریخ مهلت (شمسی)<input id="task-due-date" type="text" inputmode="numeric" placeholder="۱۴۰۵/۰۸/۱۱"></label><label>ساعت مهلت<input id="task-due-time" type="time"></label><label>اولویت<select id="task-priority"><option value="normal">معمولی</option><option value="high">زیاد</option><option value="low">کم</option></select></label></div>
+          <div class="form-row"><label>تاریخ مهلت<input id="task-due-date" type="date" lang="fa" aria-label="انتخاب تاریخ مهلت"></label><label>ساعت مهلت<input id="task-due-time" type="time"></label><label>اولویت<select id="task-priority"><option value="normal">معمولی</option><option value="high">زیاد</option><option value="low">کم</option></select></label></div>
           <button class="primary" type="submit">ثبت وظیفه</button>
         </form>
         <div class="filter-row"><button class="filter active" data-filter="all">همه</button><button class="filter" data-filter="pending">در انتظار</button><button class="filter" data-filter="done">انجام‌شده</button></div>
