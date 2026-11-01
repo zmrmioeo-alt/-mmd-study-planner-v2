@@ -32,7 +32,8 @@ async function loadProfile(){
  if(error)throw error;profile=data||{display_name:"کاربر",is_admin:false};
  $("user-name").textContent=profile.display_name||"کاربر";$("user-avatar").textContent=(profile.display_name||"M").slice(0,1);
  show("admin-nav",!!profile.is_admin);
- if(profile.is_admin){$("subscription-label").textContent="مدیر سامانه";return;}\n const {data:subs,error:subError}=await db.from("subscriptions").select("starts_at,ends_at").eq("user_id",currentUser.id).order("ends_at",{ascending:false}).limit(1);
+ if(profile.is_admin){$("subscription-label").textContent="مدیر سامانه";return;}
+ const {data:subs,error:subError}=await db.from("subscriptions").select("starts_at,ends_at").eq("user_id",currentUser.id).order("ends_at",{ascending:false}).limit(1);
  if(subError)throw subError;
  const sub=subs?.[0],now=Date.now();
  if(!sub||new Date(sub.starts_at)>now||new Date(sub.ends_at)<now){$("subscription-label").textContent="اشتراک فعال نیست";show("app-view",false);show("auth-view",true);await db.auth.signOut();message("auth-message","اشتراک شما فعال نیست. با مدیر سامانه تماس بگیرید.",true);return}
