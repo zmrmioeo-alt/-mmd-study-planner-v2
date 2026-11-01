@@ -7,10 +7,10 @@
   <meta name="description" content="MMD Study Planner؛ برنامه‌ریزی و پیگیری درس‌ها">
   <title>MMD | برنامه‌ریز درسی</title>
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=20261101-8">
+  <link rel="stylesheet" href="style.css?v=20261101-9">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script defer src="app.js?v=20261101-9"></script>
+  <script defer src="app.js?v=20261101-10"></script>
 </head>
 <body>
   <div id="terms-view" class="auth-wrap hidden">
@@ -81,6 +81,7 @@
         <button class="nav-link" data-page="tasks">▤ <span>وظایف و تکالیف</span></button>
         <button class="nav-link" data-page="routines">▦ <span>برنامه ثابت</span></button>
         <button class="nav-link" data-page="reports">▥ <span>گزارش پیشرفت</span></button>
+        <button class="nav-link" data-page="profile">✿ <span>پروفایل من</span></button>
         <button class="nav-link" data-page="settings">⚙ <span>تنظیمات</span></button>
         <button class="nav-link hidden" id="admin-nav" data-page="admin">♙ <span>مدیریت کاربران</span></button>
       </nav>
@@ -170,6 +171,22 @@
         <div class="stats-grid"><article class="stat-card"><span>کل وظایف</span><b id="report-total">۰</b></article><article class="stat-card"><span>تکمیل‌شده</span><b id="report-done">۰</b></article><article class="stat-card"><span>لغوشده</span><b id="report-cancelled">۰</b></article></div>
       </section>
 
+      <section id="page-profile" class="page hidden">
+        <div class="section-head"><div><p class="eyebrow">YOUR PERSONAL SPACE</p><h2>پروفایل من</h2><p class="muted">فضای شخصی خودت را بساز و هر زمان خواستی تغییرش بده.</p></div></div>
+        <div class="profile-hero" id="profile-preview">
+          <div class="profile-avatar-large" id="profile-preview-avatar">🌙</div>
+          <div><span class="profile-kicker">MMD MEMBER</span><h2 id="profile-preview-name">کاربر MMD</h2><p id="profile-preview-bio">اینجا معرفی کوتاهی از خودت بنویس.</p></div>
+          <span class="profile-sparkle">✦</span>
+        </div>
+        <form id="profile-form" class="form-panel profile-form">
+          <h3>شخصی‌سازی پروفایل</h3>
+          <label>نام نمایشی<input id="profile-name" maxlength="80" placeholder="اسم دلخواهت"></label>
+          <label>درباره من<textarea id="profile-bio" maxlength="180" rows="3" placeholder="چند کلمه درباره خودت..."></textarea></label>
+          <label>آواتار پروفایل<select id="profile-avatar"><option>🌙</option><option>⭐</option><option>🦋</option><option>🌸</option><option>🐈</option><option>🦊</option><option>🐼</option><option>🐉</option><option>🚀</option><option>🎧</option><option>⚡</option><option>🌿</option><option>🪐</option><option>🎮</option><option>🏆</option></select></label>
+          <label>رنگ پروفایل<select id="profile-color"><option value="violet">بنفش رؤیایی</option><option value="pink">صورتی</option><option value="blue">آبی آسمانی</option><option value="mint">سبز نعنایی</option><option value="gold">طلایی</option><option value="rose">رزگلد</option></select></label>
+          <button class="primary" type="submit">ذخیره پروفایل</button><p id="profile-message" class="message" role="status"></p>
+        </form>
+      </section>
       <section id="page-settings" class="page hidden">
         <div class="section-head"><div><p class="eyebrow">PREFERENCES</p><h2>تنظیمات</h2></div></div>
         <form id="settings-form" class="form-panel narrow">
