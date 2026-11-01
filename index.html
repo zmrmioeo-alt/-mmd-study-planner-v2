@@ -7,11 +7,11 @@
   <meta name="description" content="MMD Study Planner؛ برنامه‌ریزی و پیگیری درس‌ها">
   <title>MMD | برنامه‌ریز درسی</title>
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=20261102-04">
+  <link rel="stylesheet" href="style.css?v=20261102-05">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script>window.addEventListener("error",function(e){if(e.target&&e.target.src&&e.target.src.includes("xlsx.full.min.js")&&!window.XLSX){var s=document.createElement("script");s.src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js";document.head.appendChild(s)}},true);</script>
-  <script defer src="app.js?v=20261102-04"></script>
+  <script defer src="app.js?v=20261102-05"></script>
 </head>
 <body>
   <div id="terms-view" class="auth-wrap hidden">
@@ -148,7 +148,7 @@
         <form id="task-form" class="form-panel">
           <label>عنوان وظیفه<input id="task-title" required maxlength="120" placeholder="مثلاً حل تمرین ریاضی"></label>
           <label>توضیحات<input id="task-description" maxlength="250" placeholder="جزئیات اختیاری"></label>
-          <div class="form-row"><label>تاریخ مهلت<input id="task-due-date" class="jalali-date-input" type="text" inputmode="none" autocomplete="off" placeholder="انتخاب تاریخ شمسی" readonly required></label><label>ساعت مهلت<input id="task-due-time" type="time"></label><label>اولویت<select id="task-priority"><option value="normal">معمولی</option><option value="high">زیاد</option><option value="low">کم</option></select></label></div>
+          <div class="form-row"><label>تاریخ مهلت<input id="task-due-date" class="jalali-date-input" type="text" inputmode="none" autocomplete="off" placeholder="مهلت اختیاری؛ انتخاب تاریخ شمسی" readonly></label><label>ساعت مهلت<input id="task-due-time" type="time"></label><label>اولویت<select id="task-priority"><option value="normal">معمولی</option><option value="high">زیاد</option><option value="low">کم</option></select></label></div>
           <button class="primary" type="submit">ثبت وظیفه</button>
         </form>
         <div class="filter-row"><button class="filter active" data-filter="all">همه</button><button class="filter" data-filter="pending">در انتظار</button><button class="filter" data-filter="done">انجام‌شده</button></div>
