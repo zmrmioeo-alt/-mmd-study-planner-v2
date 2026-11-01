@@ -277,3 +277,13 @@ label{font-size:15px}
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
+
+/* Dedicated administrator authentication */
+.admin-entry{margin-top:14px;border-color:color-mix(in srgb,var(--accent) 45%,var(--line))}
+.admin-auth-card{max-width:460px;text-align:center}
+.admin-auth-card form{text-align:right;margin-top:18px}
+.admin-auth-card .secondary{margin-top:12px;width:100%}
+.mfa-qr{display:block;width:min(230px,75vw);height:auto;margin:14px auto;padding:12px;background:#fff;border-radius:16px}
+.mfa-secret-label{font-size:13px;color:var(--muted);margin:12px 0 4px}
+.mfa-secret{display:block;direction:ltr;overflow-wrap:anywhere;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--panel2);font-size:13px;user-select:all}
+#admin-mfa-code{text-align:center;letter-spacing:.35em;font-size:24px;font-weight:800}
