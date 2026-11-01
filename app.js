@@ -35,7 +35,7 @@ $("accept-terms").addEventListener("click",async()=>{
 });
 async function boot(){
  if(localStorage.getItem("mmd_terms_accepted")!=="mmd-terms-2026-11-v1"){show("terms-view",true);show("auth-view",false);show("app-view",false);return}
- db.auth.onAuthStateChange((event)=>{if(event==="SIGNED_OUT"){currentUser=null;profile=null;show("app-view",false);show("auth-view",true)}});
+ db.auth.onAuthStateChange((event)=>{if(event==="SIGNED_OUT"){currentUser=null;profile=null;show("app-view",false);show("expired-subscription-view",false);show("auth-view",true)}});
  await continueAfterPolicy();
 }
 async function syntheticEmail(value){const bytes=new TextEncoder().encode(value.trim().toLowerCase());const digest=await crypto.subtle.digest("SHA-256",bytes);const hex=Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,"0")).join("").slice(0,32);return "mmd-"+hex+"@users.mmdplanner.com"}
@@ -50,10 +50,11 @@ $("login-form").addEventListener("submit",async e=>{
  }catch(err){console.error("Login/entry failed:",err);show("app-view",false);show("auth-view",true);message("auth-message","ورود انجام شد اما بارگذاری پنل ناموفق بود: "+(err.message||"خطای نامشخص"),true)}
 });
 $("logout-btn").addEventListener("click",async()=>{await db.auth.signOut();});
+if($("expired-logout-btn"))$("expired-logout-btn").addEventListener("click",async()=>{await db.auth.signOut()});
 async function enterApp(user){
  if(enteringUserId===user.id)return;enteringUserId=user.id;
  try{
-  currentUser=user;show("auth-view",false);show("app-view",true);$("today-date").textContent=dateLabel();
+  currentUser=user;show("auth-view",false);show("expired-subscription-view",false);show("app-view",true);$("today-date").textContent=dateLabel();
   await loadProfile();
   if(!currentUser)return;
   await Promise.all([loadTasks(),loadRoutines(),loadSettings(),loadAnnouncements()]);renderAll();syncSmartPlanner();
@@ -70,7 +71,7 @@ async function loadProfile(){
  const {data:subs,error:subError}=await db.from("subscriptions").select("starts_at,ends_at").eq("user_id",currentUser.id).order("ends_at",{ascending:false}).limit(1);
  if(subError)throw subError;
  const sub=subs?.[0],now=Date.now();
- if(!sub||new Date(sub.starts_at)>now||new Date(sub.ends_at)<now){$("subscription-label").textContent="اشتراک فعال نیست";show("app-view",false);show("auth-view",true);await db.auth.signOut();message("auth-message","اشتراک شما فعال نیست. با مدیر سامانه تماس بگیرید.",true);return}
+ if(!sub||new Date(sub.starts_at)>now||new Date(sub.ends_at)<now){$("subscription-label").textContent="اشتراک فعال نیست";show("app-view",false);show("auth-view",false);show("expired-subscription-view",true);$("expired-user-name").textContent=profile.display_name||"کاربر";$("expired-subscription-date").textContent=sub?.ends_at?"تاریخ پایان اشتراک: "+new Date(sub.ends_at).toLocaleDateString("fa-IR"):"برای این حساب اشتراک فعالی ثبت نشده است.";return}
  $("subscription-label").textContent="اشتراک فعال تا "+new Date(sub.ends_at).toLocaleDateString("fa-IR");
 }
 async function loadTasks(){const {data,error}=await db.from("study_tasks").select("*").eq("user_id",currentUser.id).order("position").order("created_at",{ascending:false});if(error)throw error;tasks=data||[]}
@@ -204,6 +205,6 @@ document.addEventListener("click",async e=>{
 });
 $("admin-create-form").addEventListener("submit",async e=>{e.preventDefault();message("admin-message","در حال ساخت حساب...");try{const result=await callAdmin("create_user",{identifier:$("new-identifier").value.trim(),password:$("new-password").value,display_name:$("new-name").value.trim(),starts_at:new Date($("new-start").value+"T00:00:00").toISOString(),ends_at:new Date($("new-end").value+"T23:59:59").toISOString()});message("admin-message","حساب ساخته شد: "+result.identifier);e.target.reset();await loadAdminUsers()}catch(err){message("admin-message",err.message,true)}});
 $("refresh-users").addEventListener("click",()=>loadAdminUsers().catch(e=>message("admin-message",e.message,true)));
-async function loadAdminUsers(){if(!profile?.is_admin)return;const result=await callAdmin("list_users");window.__adminUsers=result.users||[];$("admin-users").innerHTML=window.__adminUsers.length?window.__adminUsers.map(u=>'<article class="task-item"><div class="task-main"><h3>'+escapeHtml(u.display_name||"بدون نام")+'</h3><p>شناسه: '+escapeHtml(u.login_id||u.phone||u.email||"—")+' · '+(u.ends_at?"پایان اشتراک: "+new Date(u.ends_at).toLocaleDateString("fa-IR"):"بدون اشتراک")+'</p><p>'+escapeHtml(u.email||"")+'</p></div><span class="priority">'+(u.is_banned?"مسدود":u.is_active?"فعال":"غیرفعال")+'</span>'+(u.is_admin?"":'<div class="task-actions"><button class="secondary" data-edit-user="'+u.id+'">ویرایش حساب</button><button class="secondary" data-ban-user="'+u.id+'">'+(u.is_banned?"رفع بن":"بن کاربر")+'</button><button class="danger" data-delete-user="'+u.id+'">حذف کاربر</button></div>')+'</article>').join(""):'<div class="empty">کاربری ثبت نشده است.</div>'}
+async function loadAdminUsers(){if(!profile?.is_admin)return;const result=await callAdmin("list_users");window.__adminUsers=result.users||[];$("admin-users").innerHTML=window.__adminUsers.length?window.__adminUsers.map(u=>'<article class="task-item"><div class="task-main"><h3>'+escapeHtml(u.display_name||"بدون نام")+'</h3><p>شناسه: '+escapeHtml(u.login_id||u.phone||u.email||"—")+' · '+(u.ends_at?"پایان اشتراک: "+new Date(u.ends_at).toLocaleDateString("fa-IR"):"بدون اشتراک")+'</p><p>'+escapeHtml(u.email||"")+'</p></div><span class="priority">'+(u.is_banned?"مسدود":u.is_active?"فعال":"غیرفعال")+'</span>'+(u.is_admin?"":'<div class="task-actions"><button class="secondary" data-renew-user="'+u.id+'">تمدید اشتراک</button><button class="secondary" data-edit-user="'+u.id+'">ویرایش حساب</button><button class="secondary" data-ban-user="'+u.id+'">'+(u.is_banned?"رفع بن":"بن کاربر")+'</button><button class="danger" data-delete-user="'+u.id+'">حذف کاربر</button></div>')+'</article>').join(""):'<div class="empty">کاربری ثبت نشده است.</div>'}
 $("export-users").addEventListener("click",async()=>{try{if(!window.XLSX)throw new Error("کتابخانه Excel بارگذاری نشده است؛ صفحه را دوباره باز کنید.");message("admin-message","در حال آماده‌سازی خروجی کامل...");const result=await callAdmin("export_data"),wb=XLSX.utils.book_new();const labels={profiles:"کاربران",subscriptions:"اشتراک‌ها",study_tasks:"وظایف و تکالیف",routines:"برنامه‌های ثابت",planner_settings:"تنظیمات برنامه‌ریزی",auth_accounts:"حساب‌های ورود"};for(const [key,rows] of Object.entries(result.data||{})){const sheet=XLSX.utils.json_to_sheet(rows||[]);XLSX.utils.book_append_sheet(wb,sheet,labels[key]||key)}XLSX.writeFile(wb,"MMD-Study-Planner-Export-"+new Date().toISOString().slice(0,10)+".xlsx");message("admin-message","خروجی Excel آماده شد. رمزهای عبور به دلایل امنیتی در فایل قرار نمی‌گیرند.")}catch(err){message("admin-message",err.message,true)}});
 boot().catch(err=>{console.error(err);show("app-view",false);show("auth-view",true);message("auth-message","خطا در راه‌اندازی: "+err.message,true)});
