@@ -278,3 +278,5 @@ label{font-size:15px}
   *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
 
+
+.logout-nav{color:var(--danger);border:1px solid color-mix(in srgb,var(--danger) 30%,transparent);margin-top:8px}.logout-nav:hover{background:color-mix(in srgb,var(--danger) 10%,transparent);color:var(--danger)}
