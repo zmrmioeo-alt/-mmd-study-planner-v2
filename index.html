@@ -56,43 +56,9 @@
         <label>رمز عبور<input id="password" type="password" autocomplete="current-password" placeholder="رمز عبور" required minlength="6"></label>
         <button class="primary full" type="submit">ورود به حساب</button>
       </form>
-      <button id="open-admin-login" class="secondary full admin-entry" type="button">ورود اختصاصی مدیر</button>
       <div class="login-contact"><p>جهت مشکل و خرید اشتراک با ما در ارتباط باشید.</p><a href="tel:09162987309" dir="ltr">☎ 09162987309</a><a href="https://ble.ir/me_god_me" target="_blank" rel="noopener noreferrer" dir="ltr">✈ @me_god_me</a></div>
       <p class="hint">ساخت حساب توسط مدیر انجام می‌شود. برای دریافت حساب با مدیر سامانه تماس بگیرید.</p>
       <p id="auth-message" class="message" role="status"></p>
-    </section>
-  </div>
-
-  <div id="admin-login-view" class="auth-wrap hidden">
-    <section class="auth-card admin-auth-card">
-      <div class="brand-mark">MMD</div><p class="eyebrow">RESTRICTED / ADMIN ACCESS</p>
-      <h1>ورود مدیر سامانه</h1><p class="muted">این بخش فقط برای حساب مدیر است. رمز عبور فعلی تغییری نمی‌کند.</p>
-      <form id="admin-login-form">
-        <label>شناسه مدیر<input id="admin-identifier" type="text" autocomplete="username" required maxlength="100"></label>
-        <label>رمز عبور فعلی<input id="admin-password" type="password" autocomplete="current-password" required></label>
-        <button class="primary full" type="submit">ادامه و تأیید هویت</button>
-      </form>
-      <button id="back-user-login" class="secondary full" type="button">بازگشت به ورود کاربران</button>
-      <p id="admin-login-message" class="message" role="status"></p>
-    </section>
-  </div>
-
-  <div id="admin-mfa-view" class="auth-wrap hidden">
-    <section class="auth-card admin-auth-card">
-      <div class="brand-mark">MMD</div><p class="eyebrow">ADMIN / TWO-STEP VERIFICATION</p>
-      <h1 id="admin-mfa-title">تأیید دومرحله‌ای مدیر</h1>
-      <p id="admin-mfa-description" class="muted">کد شش‌رقمی برنامه تأیید هویت را وارد کنید.</p>
-      <div id="admin-mfa-setup" class="hidden">
-        <p class="hint">این QR را با برنامه‌ای مانند Google Authenticator یا Microsoft Authenticator اسکن کن. کلید پشتیبان را در اختیار دیگران قرار نده.</p>
-        <img id="admin-mfa-qr" class="mfa-qr" alt="کد QR راه‌اندازی تأیید دومرحله‌ای">
-        <p class="mfa-secret-label">کلید ورود دستی</p><code id="admin-mfa-secret" class="mfa-secret"></code>
-      </div>
-      <form id="admin-mfa-form">
-        <label>کد شش‌رقمی<input id="admin-mfa-code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required placeholder="000000" dir="ltr"></label>
-        <button class="primary full" type="submit">تأیید و ورود به مدیریت</button>
-      </form>
-      <button id="admin-mfa-cancel" class="secondary full" type="button">خروج از حساب</button>
-      <p id="admin-mfa-message" class="message" role="status"></p>
     </section>
   </div>
 
