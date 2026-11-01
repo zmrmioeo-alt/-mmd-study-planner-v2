@@ -21,7 +21,7 @@ async function boot(){
  if(session)await enterApp(session.user);else show("auth-view",true);
  db.auth.onAuthStateChange((_event,session)=>{if(session)enterApp(session.user);else{currentUser=null;show("app-view",false);show("auth-view",true)}});
 }
-$("login-form").addEventListener("submit",async e=>{e.preventDefault();message("auth-message","در حال ورود...");const phone=normalizePhone($("phone").value);const {error}=await db.auth.signInWithPassword({phone,password:$("password").value});if(error)message("auth-message",error.message,true);else message("auth-message","ورود موفق بود.")});
+$("login-form").addEventListener("submit",async e=>{e.preventDefault();message("auth-message","در حال ورود...");const rawId=$("phone").value.trim();const identifier=normalizePhone(rawId);const password=$("password").value;let result;if(rawId.includes("@")){result=await db.auth.signInWithPassword({email:rawId,password});}else{result=await db.auth.signInWithPassword({phone:identifier,password});if(result.error&&/^\\+?\\d+$/.test(identifier)){result=await db.auth.signInWithPassword({email:identifier+"@gmail.com",password});}}if(result.error)message("auth-message",result.error.message,true);else message("auth-message","ورود موفق بود.")});
 $("logout-btn").addEventListener("click",async()=>{await db.auth.signOut();});
 async function enterApp(user){
  currentUser=user;show("auth-view",false);show("app-view",true);$("today-date").textContent=dateLabel();
@@ -32,7 +32,7 @@ async function loadProfile(){
  if(error)throw error;profile=data||{display_name:"کاربر",is_admin:false};
  $("user-name").textContent=profile.display_name||"کاربر";$("user-avatar").textContent=(profile.display_name||"M").slice(0,1);
  show("admin-nav",!!profile.is_admin);
- const {data:subs,error:subError}=await db.from("subscriptions").select("starts_at,ends_at").eq("user_id",currentUser.id).order("ends_at",{ascending:false}).limit(1);
+ if(profile.is_admin){$("subscription-label").textContent="مدیر سامانه";return;}\n const {data:subs,error:subError}=await db.from("subscriptions").select("starts_at,ends_at").eq("user_id",currentUser.id).order("ends_at",{ascending:false}).limit(1);
  if(subError)throw subError;
  const sub=subs?.[0],now=Date.now();
  if(!sub||new Date(sub.starts_at)>now||new Date(sub.ends_at)<now){$("subscription-label").textContent="اشتراک فعال نیست";show("app-view",false);show("auth-view",true);await db.auth.signOut();message("auth-message","اشتراک شما فعال نیست. با مدیر سامانه تماس بگیرید.",true);return}
