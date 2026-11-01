@@ -35,7 +35,7 @@ $("accept-terms").addEventListener("click",async()=>{
 });
 async function boot(){
  if(localStorage.getItem("mmd_terms_accepted")!=="mmd-terms-2026-11-v1"){show("terms-view",true);show("auth-view",false);show("app-view",false);return}
- db.auth.onAuthStateChange((event)=>{if(event==="SIGNED_OUT"){currentUser=null;profile=null;show("app-view",false);show("expired-subscription-view",false);show("auth-view",true)}});
+ db.auth.onAuthStateChange((event)=>{if(event==="SIGNED_OUT"){currentUser=null;profile=null;show("app-view",false);show("expired-subscription-view",false);show("banned-account-view",false);show("auth-view",true)}});
  await continueAfterPolicy();
 }
 async function syntheticEmail(value){const bytes=new TextEncoder().encode(value.trim().toLowerCase());const digest=await crypto.subtle.digest("SHA-256",bytes);const hex=Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,"0")).join("").slice(0,32);return "mmd-"+hex+"@users.mmdplanner.com"}
@@ -51,6 +51,7 @@ $("login-form").addEventListener("submit",async e=>{
 });
 $("logout-btn").addEventListener("click",async()=>{await db.auth.signOut();});
 if($("expired-logout-btn"))$("expired-logout-btn").addEventListener("click",async()=>{await db.auth.signOut()});
+if($("banned-logout-btn"))$("banned-logout-btn").addEventListener("click",async()=>{await db.auth.signOut()});
 async function enterApp(user){
  if(enteringUserId===user.id)return;enteringUserId=user.id;
  try{
@@ -64,7 +65,7 @@ async function enterApp(user){
 async function loadProfile(){
  const {data,error}=await db.from("profiles").select("*").eq("id",currentUser.id).maybeSingle();
  if(error)throw error;profile=data||{display_name:"کاربر",is_admin:false,is_banned:false};
- if(profile.is_banned){show("app-view",false);show("auth-view",true);message("auth-message","این حساب توسط مدیر مسدود شده است.",true);await db.auth.signOut();return}
+ if(profile.is_banned){show("app-view",false);show("auth-view",false);show("expired-subscription-view",false);show("banned-account-view",true);$("banned-user-name").textContent=profile.display_name||"کاربر";return}
  $("user-name").textContent=profile.display_name||"کاربر";$("user-avatar").textContent=profile.avatar_emoji|| (profile.display_name||"M").slice(0,1);
  show("admin-nav",!!profile.is_admin);show("announcement-admin-form",!!profile.is_admin);
  if(profile.is_admin){$("subscription-label").textContent="مدیر سامانه";return;}
