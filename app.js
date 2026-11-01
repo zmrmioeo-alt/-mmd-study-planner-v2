@@ -78,11 +78,19 @@ async function loadRoutines(){const {data,error}=await db.from("routines").selec
 async function loadSettings(){const {data,error}=await db.from("planner_settings").select("*").eq("user_id",currentUser.id).maybeSingle();if(error)throw error;settings=data||{}}
 function renderAll(){if(!currentUser)return;renderAnnouncements();renderTasks();renderRoutines();renderReports();$("welcome-title").textContent="سلام "+(profile.display_name||"")+", برنامه امروزت آماده است."; $("display-name").value=profile.display_name||"";$("sleep-hours").value=settings.sleep_hours??"";$("wake-time").value=settings.wake_time?.slice(0,5)||"";$("accent-theme").value=settings.accent_theme||"emerald";$("appearance").value=settings.appearance||settings.theme||"dark";$("humor-enabled").checked=!!settings.humor_enabled;applyTheme(settings.accent_theme||"emerald",settings.appearance||settings.theme||"dark");updateHumor()}
 function taskMarkup(t){const done=t.status==="done";const due=t.due_at?new Date(t.due_at).toLocaleString("fa-IR",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"}):"بدون مهلت";return '<article class="task-item '+(done?'done':'')+'"><input class="task-check" type="checkbox" data-task-check="'+t.id+'" '+(done?'checked':'')+' aria-label="تغییر وضعیت"><div class="task-main"><h3>'+escapeHtml(t.title)+'</h3><p>'+escapeHtml(t.description||"")+' · '+due+'</p></div><span class="priority '+(t.priority==="high"?"high":"")+'">'+(t.priority==="high"?"زیاد":t.priority==="low"?"کم":"معمولی")+'</span><div class="task-actions"><button class="icon-btn" data-task-delete="'+t.id+'">حذف</button></div></article>'}
+function renderTodayWork(){
+ const today=tasks.filter(t=>isToday(t.due_at)||(!t.due_at&&t.status==="pending"));
+ $("today-tasks").innerHTML=today.length?today.map(taskMarkup).join(""):'<div class="empty">برای امروز وظیفه‌ای ثبت نشده است.</div>';
+ $("daily-task-list").innerHTML=today.length?today.map(taskMarkup).join(""):'<div class="empty">برای امروز وظیفه‌ای ثبت نشده است.</div>';
+ const done=today.filter(t=>t.status==="done").length;
+ $("daily-total").textContent=fa(today.length);$("daily-done").textContent=fa(done);$("daily-pending").textContent=fa(today.length-done);
+ const weekday=new Date().getDay(),todayRoutines=routines.filter(r=>Number(r.weekday)===weekday).sort((a,b)=>(a.scheduled_time||"").localeCompare(b.scheduled_time||""));
+ $("daily-routine-list").innerHTML=todayRoutines.length?todayRoutines.map(r=>'<article class="routine-card"><b>'+escapeHtml(r.title)+'</b><small>'+(r.scheduled_time?r.scheduled_time.slice(0,5):"بدون ساعت")+'</small><p class="muted">'+escapeHtml(r.details||"")+'</p></article>').join(""):'<div class="empty">برای امروز برنامه ثابتی ثبت نشده است.</div>';
+}
 function renderTasks(){
  const filtered=tasks.filter(t=>taskFilter==="all"||t.status===taskFilter);
  $("all-tasks").innerHTML=filtered.length?filtered.map(taskMarkup).join(""):'<div class="empty">وظیفه‌ای در این بخش وجود ندارد.</div>';
- const today=tasks.filter(t=>isToday(t.due_at)||(!t.due_at&&t.status==="pending"));
- $("today-tasks").innerHTML=today.length?today.map(taskMarkup).join(""):'<div class="empty">برای امروز وظیفه‌ای ثبت نشده است.</div>';
+ renderTodayWork();
  $("stat-total").textContent=fa(tasks.length);$("stat-done").textContent=fa(tasks.filter(t=>t.status==="done").length);$("stat-pending").textContent=fa(tasks.filter(t=>t.status==="pending").length);
  const pct=tasks.length?Math.round(tasks.filter(t=>t.status==="done").length/tasks.length*100):0;$("today-percent").textContent=fa(pct)+"٪";$("today-ring").style.background="radial-gradient(circle at center,var(--panel) 57%,transparent 59%),conic-gradient(var(--accent) "+pct+"%,#314157 0)";
 }
@@ -146,7 +154,7 @@ $("chat-form").addEventListener("submit",async e=>{
  catch(err){message("chat-message",err.message,true)}finally{btn.disabled=false}
 });
 
-function navigate(page){document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));show("page-"+page,true);document.querySelectorAll(".nav-link").forEach(b=>b.classList.toggle("active",b.dataset.page===page));const titles={today:"امروز",announcements:"اعلانات",contact:"ارتباط با ادمین",chat:"چت با ادمین",smart:"برنامه‌ریز هوشمند",tasks:"وظایف و تکالیف",routines:"برنامه ثابت",reports:"گزارش پیشرفت",settings:"تنظیمات",admin:"مدیریت کاربران"};if(page==="smart"&&!smartEnabled())page="today";$("page-title").textContent=titles[page]||"امروز";if(page==="admin")loadAdminUsers().catch(e=>message("admin-message",e.message,true));if(page==="chat"){chatTargetUserId=profile?.is_admin?chatTargetUserId:currentUser.id;loadSupportChat().then(startChatRealtime).catch(e=>message("chat-message",e.message,true))}else stopChatRealtime()}
+function navigate(page){document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));show("page-"+page,true);document.querySelectorAll(".nav-link").forEach(b=>b.classList.toggle("active",b.dataset.page===page));const titles={today:"امروز","today-work":"کارهای امروز",announcements:"اعلانات",contact:"ارتباط با ادمین",chat:"چت با ادمین",smart:"برنامه‌ریز هوشمند",tasks:"وظایف و تکالیف",routines:"برنامه ثابت",reports:"گزارش پیشرفت",settings:"تنظیمات",admin:"مدیریت کاربران"};if(page==="smart"&&!smartEnabled())page="today";$("page-title").textContent=titles[page]||"امروز";if(page==="admin")loadAdminUsers().catch(e=>message("admin-message",e.message,true));if(page==="chat"){chatTargetUserId=profile?.is_admin?chatTargetUserId:currentUser.id;loadSupportChat().then(startChatRealtime).catch(e=>message("chat-message",e.message,true))}else stopChatRealtime()}
 document.querySelectorAll("[data-filter]").forEach(b=>b.addEventListener("click",()=>{taskFilter=b.dataset.filter;document.querySelectorAll("[data-filter]").forEach(x=>x.classList.toggle("active",x===b));renderTasks()}));
 $("smart-planner-toggle").addEventListener("change",e=>{if(e.target.checked)localStorage.setItem(smartKey(),"on");else localStorage.removeItem(smartKey());syncSmartPlanner();toast(e.target.checked?"برنامه‌ریز هوشمند فعال شد.":"برنامه‌ریز هوشمند غیرفعال شد.");});
 function buildSmartPlan(){
