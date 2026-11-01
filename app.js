@@ -95,9 +95,57 @@ document.addEventListener("click",async e=>{
  const del=e.target.closest("[data-task-delete]");if(del){if(!confirm("این وظیفه حذف شود؟"))return;const {error}=await db.from("study_tasks").delete().eq("id",del.dataset.taskDelete).eq("user_id",currentUser.id);if(error)toast(error.message);else{await refreshTasks();toast("وظیفه حذف شد.")}return}
  const rd=e.target.closest("[data-routine-delete]");if(rd){if(!confirm("این برنامه حذف شود؟"))return;const {error}=await db.from("routines").delete().eq("id",rd.dataset.routineDelete).eq("user_id",currentUser.id);if(error)toast(error.message);else{await loadRoutines();renderRoutines();toast("برنامه حذف شد.")}return}
  const go=e.target.closest("[data-go]");if(go)navigate(go.dataset.go);
+ const thread=e.target.closest("[data-chat-user]");if(thread){chatTargetUserId=thread.dataset.chatUser;loadSupportChat().catch(err=>message("chat-message",err.message,true));return}
  const nav=e.target.closest("[data-page]");if(nav)navigate(nav.dataset.page);
 });
-function navigate(page){document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));show("page-"+page,true);document.querySelectorAll(".nav-link").forEach(b=>b.classList.toggle("active",b.dataset.page===page));const titles={today:"امروز",announcements:"اعلانات",smart:"برنامه‌ریز هوشمند",tasks:"وظایف و تکالیف",routines:"برنامه ثابت",reports:"گزارش پیشرفت",settings:"تنظیمات",admin:"مدیریت کاربران"};if(page==="smart"&&!smartEnabled())page="today";$("page-title").textContent=titles[page]||"امروز";if(page==="admin")loadAdminUsers().catch(e=>message("admin-message",e.message,true))}
+
+let chatChannel=null,chatTargetUserId=null,chatMessages=[];
+function stopChatRealtime(){if(chatChannel){db.removeChannel(chatChannel);chatChannel=null}}
+function startChatRealtime(){
+ stopChatRealtime();
+ chatChannel=db.channel("support-chat-"+currentUser.id)
+  .on("postgres_changes",{event:"*",schema:"public",table:"support_messages"},()=>{if(!$("page-chat").classList.contains("hidden"))loadSupportChat().catch(e=>message("chat-message",e.message,true))})
+  .subscribe();
+}
+async function loadSupportChat(){
+ if(!currentUser)return;
+ const admin=!!profile?.is_admin;show("chat-inbox-panel",admin);
+ if(admin){
+  const {data,error}=await db.from("support_messages").select("*").order("created_at",{ascending:true});if(error)throw error;
+  const all=data||[],ids=[...new Set(all.map(m=>m.user_id))];
+  const peopleResult=ids.length?await db.from("profiles").select("id,display_name").in("id",ids):{data:[],error:null};
+  if(peopleResult.error)throw peopleResult.error;
+  const names=new Map((peopleResult.data||[]).map(p=>[p.id,p.display_name||"کاربر"])),latest=new Map();
+  for(const m of all)latest.set(m.user_id,m);
+  const threads=[...latest.entries()].map(([id,m])=>({id,name:names.get(id)||"کاربر",last:m.body,created_at:m.created_at})).sort((x,y)=>new Date(y.created_at)-new Date(x.created_at));
+  $("chat-inbox-list").innerHTML=threads.length?threads.map(t=>'<button type="button" class="chat-thread '+(chatTargetUserId===t.id?'active':'')+'" data-chat-user="'+t.id+'"><b>'+escapeHtml(t.name)+'</b><small>'+escapeHtml(t.last)+'</small></button>').join(""):'<div class="empty">هنوز پیامی دریافت نشده است.</div>';
+  if(!chatTargetUserId&&threads.length)chatTargetUserId=threads[0].id;
+  if(chatTargetUserId&&!threads.some(t=>t.id===chatTargetUserId))chatTargetUserId=threads[0]?.id||null;
+  const selected=threads.find(t=>t.id===chatTargetUserId);
+  $("chat-heading-title").textContent=selected?selected.name:"گفت‌وگوها";
+  $("chat-heading-subtitle").textContent=selected?"پاسخ شما برای این کاربر ارسال می‌شود.":"با دریافت پیام جدید، گفت‌وگو اینجا نمایش داده می‌شود.";
+  chatMessages=all.filter(m=>m.user_id===chatTargetUserId);
+ }else{
+  chatTargetUserId=currentUser.id;$("chat-heading-title").textContent="پشتیبانی MMD";
+  $("chat-heading-subtitle").textContent="پیام شما فقط برای مدیر سامانه قابل مشاهده است.";
+  const {data,error}=await db.from("support_messages").select("*").eq("user_id",currentUser.id).order("created_at",{ascending:true});
+  if(error)throw error;chatMessages=data||[];
+ }
+ renderSupportMessages();
+}
+function renderSupportMessages(){
+ const box=$("chat-messages");
+ box.innerHTML=chatMessages.length?chatMessages.map(m=>'<div class="chat-bubble '+(m.sender_id===currentUser.id?'mine':'theirs')+'"><p>'+escapeHtml(m.body)+'</p><small>'+(m.sender_id===currentUser.id?'شما':(profile?.is_admin?'کاربر':'ادمین'))+' · '+new Date(m.created_at).toLocaleString("fa-IR",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})+'</small></div>').join(""):'<div class="empty">هنوز پیامی در این گفت‌وگو نیست. اولین پیام را ارسال کنید.</div>';
+ box.scrollTop=box.scrollHeight;
+}
+$("chat-form").addEventListener("submit",async e=>{
+ e.preventDefault();const body=$("chat-input").value.trim();if(!body||!chatTargetUserId)return;
+ const btn=e.submitter;btn.disabled=true;
+ try{const {error}=await db.from("support_messages").insert({user_id:chatTargetUserId,sender_id:currentUser.id,body});if(error)throw error;$("chat-input").value="";await loadSupportChat()}
+ catch(err){message("chat-message",err.message,true)}finally{btn.disabled=false}
+});
+
+function navigate(page){document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));show("page-"+page,true);document.querySelectorAll(".nav-link").forEach(b=>b.classList.toggle("active",b.dataset.page===page));const titles={today:"امروز",announcements:"اعلانات",contact:"ارتباط با ادمین",chat:"چت با ادمین",smart:"برنامه‌ریز هوشمند",tasks:"وظایف و تکالیف",routines:"برنامه ثابت",reports:"گزارش پیشرفت",settings:"تنظیمات",admin:"مدیریت کاربران"};if(page==="smart"&&!smartEnabled())page="today";$("page-title").textContent=titles[page]||"امروز";if(page==="admin")loadAdminUsers().catch(e=>message("admin-message",e.message,true));if(page==="chat"){chatTargetUserId=profile?.is_admin?chatTargetUserId:currentUser.id;loadSupportChat().then(startChatRealtime).catch(e=>message("chat-message",e.message,true))}else stopChatRealtime()}
 document.querySelectorAll("[data-filter]").forEach(b=>b.addEventListener("click",()=>{taskFilter=b.dataset.filter;document.querySelectorAll("[data-filter]").forEach(x=>x.classList.toggle("active",x===b));renderTasks()}));
 $("smart-planner-toggle").addEventListener("change",e=>{if(e.target.checked)localStorage.setItem(smartKey(),"on");else localStorage.removeItem(smartKey());syncSmartPlanner();toast(e.target.checked?"برنامه‌ریز هوشمند فعال شد.":"برنامه‌ریز هوشمند غیرفعال شد.");});
 function buildSmartPlan(){
