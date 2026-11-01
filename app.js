@@ -100,7 +100,7 @@ $("admin-mfa-form").addEventListener("submit",async e=>{
  }catch(err){message("admin-mfa-message","کد معتبر نیست یا منقضی شده است. دوباره تلاش کن. "+(err.message||""),true);adminMfaChallengeId=null}
 });
 $("admin-mfa-cancel").addEventListener("click",async()=>{await db.auth.signOut();show("admin-mfa-view",false);show("auth-view",true);show("login-card",true)});
-$("logout-btn").addEventListener("click",async()=>{await db.auth.signOut();});.addEventListener("click",async()=>{await db.auth.signOut();});
+$("logout-btn").addEventListener("click",async()=>{await db.auth.signOut();});
 if($("expired-logout-btn"))$("expired-logout-btn").addEventListener("click",async()=>{await db.auth.signOut()});
 if($("banned-logout-btn"))$("banned-logout-btn").addEventListener("click",async()=>{await db.auth.signOut()});
 async function enterApp(user){
