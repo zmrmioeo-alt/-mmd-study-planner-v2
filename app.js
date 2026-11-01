@@ -18,21 +18,19 @@ function escapeHtml(s=""){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","
 async function callAdmin(action,payload={}){const {data:{session}}=await db.auth.getSession();if(!session)throw new Error("نشست ورود معتبر نیست.");const res=await fetch(ADMIN_FUNCTION,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+session.access_token,"apikey":SUPABASE_KEY},body:JSON.stringify({action,...payload})});const body=await res.json().catch(()=>({}));if(!res.ok)throw new Error(body.error||"خطا در ارتباط با سرویس مدیریت");return body}
 let enteringUserId=null;
 async function continueAfterPolicy(){
- show("policy-gate",false);show("login-card",true);
+ show("terms-view",false);
+ show("auth-view",true);
  const {data:{session},error}=await db.auth.getSession();if(error)throw error;
- if(session)await enterApp(session.user);else show("auth-view",true);
+ if(session)await enterApp(session.user);
 }
-$("policy-accept-checkbox").addEventListener("change",e=>{$("policy-accept-btn").disabled=!e.target.checked});
-$("policy-accept-btn").addEventListener("click",async()=>{
- if(!$("policy-accept-checkbox").checked)return;
- try{localStorage.setItem("mmd-terms-accepted-v1","yes");await continueAfterPolicy()}
- catch(err){console.error(err);$("policy-gate").querySelector(".hint").textContent="ذخیره تأیید قوانین ممکن نشد. لطفاً تنظیمات مرورگر را بررسی کنید."}
+$("terms-checkbox").addEventListener("change",e=>{$("accept-terms").disabled=!e.target.checked});
+$("accept-terms").addEventListener("click",async()=>{
+ if(!$("terms-checkbox").checked)return;
+ try{localStorage.setItem("mmd_terms_accepted","mmd-terms-2026-11-v1");await continueAfterPolicy()}
+ catch(err){console.error(err);message("terms-message","ذخیره تأیید قوانین ممکن نشد. تنظیمات مرورگر را بررسی کنید.",true)}
 });
 async function boot(){
- show("auth-view",true);
- // Require first-time acceptance before login or automatic session restoration.
- if(localStorage.getItem("mmd-terms-accepted-v1")!=="yes"){show("policy-gate",true);show("login-card",false);return}
- // Do not run database requests inside onAuthStateChange: it executes under the auth lock.
+ if(localStorage.getItem("mmd_terms_accepted")!=="mmd-terms-2026-11-v1"){show("terms-view",true);show("auth-view",false);show("app-view",false);return}
  db.auth.onAuthStateChange((event)=>{if(event==="SIGNED_OUT"){currentUser=null;profile=null;show("app-view",false);show("auth-view",true)}});
  await continueAfterPolicy();
 }
