@@ -7,10 +7,10 @@
   <meta name="description" content="MMD Study Planner؛ برنامه‌ریزی و پیگیری درس‌ها">
   <title>MMD | برنامه‌ریز درسی</title>
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=20261101-5">
+  <link rel="stylesheet" href="style.css?v=20261101-6">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script defer src="app.js?v=20261101-5"></script>
+  <script defer src="app.js?v=20261101-6"></script>
 </head>
 <body>
   <div id="terms-view" class="auth-wrap hidden">
@@ -47,29 +47,6 @@
   </div>
 
   <div id="auth-view" class="auth-wrap">
-    <section id="policy-gate" class="auth-card policy-card hidden">
-      <div class="brand-mark">MMD</div>
-      <p class="eyebrow">TERMS & PRIVACY</p>
-      <h1>قوانین و حریم خصوصی</h1>
-      <p class="muted">برای استفاده از MMD Study Planner، لطفاً موارد زیر را مطالعه کنید و تأیید کنید.</p>
-      <div class="policy-content">
-        <h3>۱. استفاده از سامانه</h3>
-        <p>این سامانه برای برنامه‌ریزی درسی، ثبت تکالیف، برنامه‌های ثابت و مشاهده گزارش پیشرفت طراحی شده است. اطلاعات حساب خود را در اختیار دیگران قرار ندهید.</p>
-        <h3>۲. اطلاعاتی که ذخیره می‌شود</h3>
-        <p>شناسه و اطلاعات حساب، نام نمایشی، وضعیت اشتراک، تکالیف، برنامه‌های ثابت و تنظیمات شخصی شما برای ارائه خدمات در پایگاه داده سامانه ذخیره می‌شود.</p>
-        <h3>۳. دسترسی و حریم خصوصی</h3>
-        <p>اطلاعات ورود و رمز عبور توسط سرویس احراز هویت Supabase مدیریت می‌شود و رمز عبور شما در پنل مدیریت یا خروجی Excel نمایش داده نمی‌شود. مدیر سامانه برای پشتیبانی و مدیریت خدمات می‌تواند به اطلاعات حساب و داده‌های برنامه‌ریزی ثبت‌شده دسترسی داشته باشد و از آن‌ها خروجی مدیریتی تهیه کند.</p>
-        <h3>۴. مسئولیت کاربر</h3>
-        <p>از ثبت اطلاعات حساس و غیرضروری خودداری کنید. مسئولیت حفظ محرمانگی شناسه و رمز عبور بر عهده شماست. در صورت مشاهده مشکل یا دسترسی غیرمجاز، موضوع را به مدیر اطلاع دهید.</p>
-        <h3>۵. اشتراک و محدودیت دسترسی</h3>
-        <p>استفاده از امکانات حساب کاربری به وضعیت اشتراک وابسته است. مدیر می‌تواند حساب‌های ناقض قوانین یا حساب‌های دارای مشکل را طبق نیاز سامانه محدود یا حذف کند.</p>
-        <h3>۶. حذف حساب و تغییرات قوانین</h3>
-        <p>برای درخواست حذف حساب، اصلاح اطلاعات یا پرسش درباره حریم خصوصی با مدیر تماس بگیرید. این قوانین ممکن است متناسب با تغییرات سامانه به‌روزرسانی شوند؛ نسخه جدید هنگام ورود به کاربران نمایش داده خواهد شد.</p>
-      </div>
-      <label class="policy-check"><input id="policy-accept-checkbox" type="checkbox"><span>قوانین و حریم خصوصی را مطالعه کردم و می‌پذیرم.</span></label>
-      <button id="policy-accept-btn" class="primary full" type="button" disabled>تأیید و ادامه به ورود</button>
-      <p class="hint">این تأیید فقط در همین مرورگر و دستگاه، یک‌بار ذخیره می‌شود.</p>
-    </section>
     <section id="login-card" class="auth-card hidden">
       <div class="brand-mark">MMD</div>
       <p class="eyebrow">STUDY PLANNER</p>
@@ -87,11 +64,7 @@
       </div>
       <p class="hint">ساخت حساب توسط مدیر انجام می‌شود. برای دریافت حساب با مدیر سامانه تماس بگیرید.</p>
       <p id="auth-message" class="message" role="status"></p>
-      <div class="login-contact">
-        <p>جهت مشکل و خرید اشتراک با ما در ارتباط باشید.</p>
-        <a href="tel:09162987309" dir="ltr">☎ 09162987309</a>
-        <a href="https://ble.ir/me_god_me" target="_blank" rel="noopener noreferrer" dir="ltr">پیوی ادمین در بله: @me_god_me</a>
-      </div>
+      
     </section>
   </div>
 
@@ -102,6 +75,7 @@
         <button class="nav-link active" data-page="today">◷ <span>امروز</span></button>
         <button class="nav-link" data-page="announcements">▣ <span>اعلانات</span></button>
         <button class="nav-link" data-page="contact">☎ <span>ارتباط با ادمین</span></button>
+        <button class="nav-link hidden" id="smart-planner-nav" data-page="smart">✦ <span>برنامه‌ریز هوشمند</span></button>
         <button class="nav-link" data-page="tasks">▤ <span>وظایف و تکالیف</span></button>
         <button class="nav-link" data-page="routines">▦ <span>برنامه ثابت</span></button>
         <button class="nav-link" data-page="reports">▥ <span>گزارش پیشرفت</span></button>
@@ -139,6 +113,11 @@
         </div>
       </section>
 
+      <section id="page-smart" class="page hidden">
+        <div class="section-head"><div><p class="eyebrow">OPTIONAL SMART PLANNER</p><h2>برنامه‌ریز هوشمند</h2></div></div>
+        <div class="form-panel"><p class="muted">این ابزار اختیاری است و بدون هوش مصنوعی ابری، وظایف باز را بر اساس مهلت و زمان آزاد مرتب می‌کند. برنامه فقط پیشنهاد است و هیچ تکلیفی را خودکار تغییر نمی‌دهد.</p><div class="form-row"><label>مدت هر نوبت مطالعه<select id="smart-session"><option value="25">۲۵ دقیقه</option><option value="45" selected>۴۵ دقیقه</option><option value="60">۶۰ دقیقه</option><option value="90">۹۰ دقیقه</option></select></label><label>فاصله استراحت<select id="smart-break"><option value="5">۵ دقیقه</option><option value="10" selected>۱۰ دقیقه</option><option value="15">۱۵ دقیقه</option></select></label></div><button class="primary" id="smart-generate" type="button">ساخت برنامه پیشنهادی</button><button class="secondary" id="smart-clear" type="button">پاک‌کردن پیشنهاد</button></div>
+        <div id="smart-plan-output" class="task-list"><div class="empty">برای ساخت پیشنهاد، دکمه بالا را بزنید.</div></div>
+      </section>
       <section id="page-tasks" class="page hidden">
         <div class="section-head"><div><p class="eyebrow">TASK MANAGEMENT</p><h2>وظایف و تکالیف</h2></div></div>
         <form id="task-form" class="form-panel">
@@ -174,7 +153,7 @@
           <label>نام نمایشی<input id="display-name" maxlength="80" placeholder="نام شما"></label>
           <label>مدت خواب شبانه (ساعت)<input id="sleep-hours" type="number" min="0" max="24" step=".5"></label>
           <label>ساعت بیداری<input id="wake-time" type="time"></label>
-          <div class="settings-block"><div><h3>رنگ و ظاهر برنامه</h3><p class="muted">فضای برنامه را مطابق سلیقه‌ات انتخاب کن.</p></div><label>رنگ‌بندی<select id="accent-theme"><option value="emerald">سبز نئونی</option><option value="ocean">اقیانوسی</option><option value="violet">بنفش کهکشانی</option><option value="rose">صورتی یخی</option><option value="sunset">غروب آفتاب</option><option value="gold">طلایی لوکس</option><option value="mint">نعنایی</option><option value="graphite">خاکستری مینیمال</option></select></label><label>حالت نمایش<select id="appearance"><option value="dark">تیره</option><option value="light">روشن</option><option value="system">مطابق دستگاه</option></select></label><div class="palette-preview" aria-label="پیش‌نمایش رنگ‌ها"><i></i><i></i><i></i><i></i><i></i></div></div><div class="settings-block humor-setting"><div><h3>لحن طنز و شوخی</h3><p class="muted">در صورت فعال‌سازی، پیام‌های کوتاه و شوخ‌طبعانه در بخش‌های برنامه نمایش داده می‌شوند.</p></div><label class="switch-row"><input id="humor-enabled" type="checkbox"><span>فعال‌سازی لحن طنز</span></label></div>
+          <div class="settings-block"><div><h3>رنگ و ظاهر برنامه</h3><p class="muted">فضای برنامه را مطابق سلیقه‌ات انتخاب کن.</p></div><label>رنگ‌بندی<select id="accent-theme"><option value="emerald">سبز نئونی</option><option value="ocean">اقیانوسی</option><option value="violet">بنفش کهکشانی</option><option value="rose">صورتی یخی</option><option value="sunset">غروب آفتاب</option><option value="gold">طلایی لوکس</option><option value="mint">نعنایی</option><option value="graphite">خاکستری مینیمال</option></select></label><label>حالت نمایش<select id="appearance"><option value="dark">تیره</option><option value="light">روشن</option><option value="system">مطابق دستگاه</option></select></label><div class="palette-preview" aria-label="پیش‌نمایش رنگ‌ها"><i></i><i></i><i></i><i></i><i></i></div></div><div class="settings-block"><div><h3>برنامه‌ریز هوشمند (اختیاری)</h3><p class="muted">اگر فعالش کنید، یک بخش جداگانه برای پیشنهاد زمان‌بندی تکالیف نمایش داده می‌شود. هر زمان بخواهید می‌توانید خاموشش کنید.</p></div><label class="switch-row"><input id="smart-planner-toggle" type="checkbox"><span>فعال‌سازی برنامه‌ریز هوشمند</span></label></div><div class="settings-block humor-setting"><div><h3>لحن طنز و شوخی</h3><p class="muted">در صورت فعال‌سازی، پیام‌های کوتاه و شوخ‌طبعانه در بخش‌های برنامه نمایش داده می‌شوند.</p></div><label class="switch-row"><input id="humor-enabled" type="checkbox"><span>فعال‌سازی لحن طنز</span></label></div>
           <button class="primary" type="submit">ذخیره تنظیمات</button>
         </form>
       </section>
