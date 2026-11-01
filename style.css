@@ -35,3 +35,14 @@ body[data-theme="graphite"] .brand-mark{border-color:#b8c4d688;background:#b8c4d
 .humor-setting{grid-template-columns:1fr auto;align-items:center}
 body.light .settings-block{background:#f7f9fc}
 body.light input,body.light select,body.light textarea{background:#f7f9fb;color:#1d2938}
+
+.contact-panel{max-width:680px;padding:24px;background:var(--panel);border:1px solid var(--line);border-radius:20px}
+.contact-panel>p{line-height:2;margin:0 0 22px}
+.contact-method{display:flex;align-items:center;gap:15px;padding:17px;margin-top:12px;border:1px solid var(--line);border-radius:15px;background:var(--panel2);color:var(--text);text-decoration:none;transition:border-color .2s,transform .2s}
+.contact-method:hover{border-color:var(--accent);transform:translateY(-2px)}
+.contact-method>span:nth-child(2){display:grid;gap:5px;flex:1}
+.contact-method small{font-size:11px;color:var(--muted)}
+.contact-method strong{font-size:16px;letter-spacing:.3px}
+.contact-method>b{font-size:12px;color:var(--accent);white-space:nowrap}
+.contact-icon{width:43px;height:43px;display:grid;place-items:center;border-radius:13px;background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent);font-size:21px}
+@media(max-width:560px){.contact-panel{padding:16px}.contact-method{gap:10px;padding:13px}.contact-method>b{font-size:10px}.contact-method strong{font-size:14px}}
