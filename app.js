@@ -19,7 +19,29 @@ function isToday(value){if(!value)return false;const d=new Date(value),n=new Dat
 function dateLabel(){return new Intl.DateTimeFormat("fa-IR-u-ca-persian",{weekday:"long",year:"numeric",month:"long",day:"numeric"}).format(new Date())}
 function jalaliParts(value){const d=value instanceof Date?value:new Date(value);return new Intl.DateTimeFormat("en-US-u-ca-persian",{year:"numeric",month:"numeric",day:"numeric"}).formatToParts(d).reduce((o,p)=>(o[p.type]=Number(p.value),o),{});}
 function jalaliDate(value,withTime=false){if(!value)return "—";const d=new Date(value);if(Number.isNaN(d.getTime()))return "—";return new Intl.DateTimeFormat("fa-IR-u-ca-persian",{year:"numeric",month:"2-digit",day:"2-digit",...(withTime?{hour:"2-digit",minute:"2-digit"}:{})}).format(d);}
-function jalaliInputToDate(value,end=false){const s=String(value||"").trim().replace(/[۰-۹]/g,d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d)).replace(/[٠-٩]/g,d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/[-.]/g,"/");const m=s.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);if(!m)throw new Error("تاریخ را به شکل ۱۴۰۵/۰۸/۱۱ وارد کنید.");const jy=+m[1],jm=+m[2],jd=+m[3];if(jm<1||jm>12||jd<1||jd>(jm<=6?31:jm<=11?30:30))throw new Error("تاریخ شمسی معتبر نیست.");const start=new Date(jy+621,2,19,12);let found=null;for(let i=0;i<6;i++){const x=new Date(start);x.setDate(start.getDate()+i);const p=jalaliParts(x);if(p.year===jy&&p.month===1&&p.day===1){found=x;break;}}if(!found)throw new Error("تبدیل تاریخ شمسی انجام نشد.");const offset=(jm<=6?(jm-1)*31:186+(jm-7)*30)+(jd-1);found.setDate(found.getDate()+offset);const check=jalaliParts(found);if(check.year!==jy||check.month!==jm||check.day!==jd)throw new Error("این تاریخ در تقویم شمسی وجود ندارد.");found.setHours(end?23:0,end?59:0,end?59:0,0);return found;}
+function jalaliYearStart(jy){
+ const base=new Date(jy+621,2,19,12);
+ for(let i=0;i<8;i++){const d=new Date(base);d.setDate(base.getDate()+i);const p=jalaliParts(d);if(p.year===jy&&p.month===1&&p.day===1)return d;}
+ throw new Error("شروع سال شمسی پیدا نشد.");
+}
+function jalaliInputToDate(value,end=false){
+ const s=String(value||"").trim().replace(/[۰-۹]/g,d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d)).replace(/[٠-٩]/g,d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/[-.]/g,"/");
+ const m=s.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
+ if(!m)throw new Error("تاریخ را به شکل ۱۴۰۵/۰۸/۱۱ وارد کنید.");
+ const jy=+m[1],jm=+m[2],jd=+m[3];
+ if(jm<1||jm>12||jd<1)throw new Error("تاریخ شمسی معتبر نیست.");
+ const yearStart=jalaliYearStart(jy);
+ const nextMonthStart=jm===12?jalaliYearStart(jy+1):(()=>{const offset=jm<=6?jm*31:186+(jm-6)*30;const d=new Date(yearStart);d.setDate(d.getDate()+offset);return d;})();
+ const monthStartOffset=jm<=6?(jm-1)*31:186+(jm-7)*30;
+ const monthStart=new Date(yearStart);monthStart.setDate(monthStart.getDate()+monthStartOffset);
+ const nextStart=jm===12?nextMonthStart:(()=>{const d=new Date(monthStart);d.setDate(d.getDate()+(jm<=6?31:30));return d;})();
+ const monthLength=Math.round((nextStart-monthStart)/86400000);
+ if(jd>monthLength)throw new Error("این تاریخ در تقویم شمسی وجود ندارد.");
+ const result=new Date(monthStart);result.setDate(result.getDate()+jd-1);
+ const check=jalaliParts(result);
+ if(check.year!==jy||check.month!==jm||check.day!==jd)throw new Error("تبدیل تاریخ شمسی انجام نشد.");
+ result.setHours(end?23:0,end?59:0,end?59:0,0);return result;
+}
 
 const jalaliMonthNames=["فروردین","اردیبهشت","خرداد","تیر","مرداد","شهریور","مهر","آبان","آذر","دی","بهمن","اسفند"];
 const jalaliWeekNames=["ش","ی","د","س","چ","پ","ج"];
@@ -31,7 +53,7 @@ function setupJalaliPickers(){
   const panel=document.createElement("div");panel.className="jalali-calendar hidden";panel.setAttribute("role","dialog");panel.setAttribute("aria-label","تقویم شمسی");wrap.appendChild(panel);
   let view= input.value ? input.value.split("/").map(Number) : (()=>{const p=jalaliParts(new Date());return [p.year,p.month,p.day]})();
   const draw=()=>{
-   const [year,month,selected]=view;
+   const [year,month]=view;
    const first=jalaliInputToDate(jalaliString(year,month,1));
    const offset=(first.getDay()+1)%7;
    const next=month===12?jalaliInputToDate(jalaliString(year+1,1,1)):jalaliInputToDate(jalaliString(year,month+1,1));
@@ -44,13 +66,17 @@ function setupJalaliPickers(){
    }).join("");
    panel.innerHTML='<div class="jalali-calendar-head"><button type="button" data-jalali-prev aria-label="ماه قبل">‹</button><strong>'+jalaliMonthNames[month-1]+' '+fa(year)+'</strong><button type="button" data-jalali-next aria-label="ماه بعد">›</button></div><div class="jalali-weekdays">'+jalaliWeekNames.map(x=>'<span>'+x+'</span>').join("")+'</div><div class="jalali-days">'+cells+'</div><div class="jalali-calendar-foot"><button type="button" data-jalali-today>امروز</button><button type="button" data-jalali-clear>پاک کردن</button></div>';
   };
-  input.addEventListener("click",()=>{document.querySelectorAll(".jalali-calendar").forEach(p=>{if(p!==panel)p.classList.add("hidden")});const p=input.value?input.value.split("/").map(Number):jalaliParts(new Date());view=p;draw();panel.classList.toggle("hidden")});
+  const openPicker=()=>{document.querySelectorAll(".jalali-calendar").forEach(p=>{if(p!==panel)p.classList.add("hidden")});const p=input.value?input.value.split("/").map(Number):jalaliParts(new Date());view=p;draw();panel.classList.remove("hidden");input.setAttribute("aria-expanded","true")};
+  const closePicker=()=>{panel.classList.add("hidden");input.setAttribute("aria-expanded","false")};
+  input.setAttribute("aria-haspopup","dialog");input.setAttribute("aria-expanded","false");
+  input.addEventListener("click",()=>panel.classList.contains("hidden")?openPicker():closePicker());
+  input.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();panel.classList.contains("hidden")?openPicker():closePicker()}else if(e.key==="Escape")closePicker()});
   panel.addEventListener("click",e=>{
    if(e.target.closest("[data-jalali-prev]")){view[1]--;if(view[1]<1){view[1]=12;view[0]--}draw();return}
    if(e.target.closest("[data-jalali-next]")){view[1]++;if(view[1]>12){view[1]=1;view[0]++}draw();return}
-   if(e.target.closest("[data-jalali-today]")){const p=jalaliParts(new Date());view=[p.year,p.month,p.day];input.value=jalaliString(...view);panel.classList.add("hidden");input.dispatchEvent(new Event("change",{bubbles:true}));return}
+   if(e.target.closest("[data-jalali-today]")){const p=jalaliParts(new Date());view=[p.year,p.month,p.day];input.value=jalaliString(...view);panel.classList.add("hidden");input.setAttribute("aria-expanded","false");input.dispatchEvent(new Event("change",{bubbles:true}));return}
    if(e.target.closest("[data-jalali-clear]")){input.value="";panel.classList.add("hidden");input.dispatchEvent(new Event("change",{bubbles:true}));return}
-   const day=e.target.closest("[data-jalali-day]");if(day){input.value=jalaliString(view[0],view[1],Number(day.dataset.jalaliDay));panel.classList.add("hidden");input.dispatchEvent(new Event("change",{bubbles:true}))}
+   const day=e.target.closest("[data-jalali-day]");if(day){input.value=jalaliString(view[0],view[1],Number(day.dataset.jalaliDay));panel.classList.add("hidden");input.setAttribute("aria-expanded","false");input.dispatchEvent(new Event("change",{bubbles:true}))}
   });
  });
  document.addEventListener("click",e=>{if(!e.target.closest(".jalali-picker"))document.querySelectorAll(".jalali-calendar").forEach(p=>p.classList.add("hidden"))});
