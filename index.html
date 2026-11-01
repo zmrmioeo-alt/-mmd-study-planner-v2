@@ -13,6 +13,39 @@
   <script defer src="app.js?v=20261101-4"></script>
 </head>
 <body>
+  <div id="terms-view" class="auth-wrap hidden">
+    <section class="auth-card terms-card">
+      <div class="brand-mark">MMD</div>
+      <p class="eyebrow">MMD / TERMS & PRIVACY</p>
+      <h1>قوانین استفاده و حریم خصوصی</h1>
+      <p class="muted">برای استفاده از سامانه، متن زیر را مطالعه کنید و در صورت موافقت، پذیرش خود را ثبت کنید. این تأیید فقط یک‌بار در همین مرورگر انجام می‌شود.</p>
+      <div class="terms-content">
+        <h3>۱. قوانین استفاده</h3>
+        <ul>
+          <li>اطلاعات حساب و رمز عبور خود را در اختیار دیگران قرار ندهید.</li>
+          <li>از سامانه فقط برای برنامه‌ریزی درسی و اهداف مجاز استفاده کنید.</li>
+          <li>از ثبت محتوای غیرقانونی، توهین‌آمیز یا اطلاعات متعلق به دیگران بدون اجازه خودداری کنید.</li>
+          <li>مدیر سامانه می‌تواند در صورت سوءاستفاده یا نقض قوانین، دسترسی حساب را محدود یا مسدود کند.</li>
+          <li>دسترسی به امکانات اشتراکی مطابق وضعیت اشتراک حساب انجام می‌شود.</li>
+        </ul>
+        <h3>۲. حریم خصوصی و داده‌ها</h3>
+        <ul>
+          <li>اطلاعاتی مانند شناسه و نام حساب، وضعیت اشتراک، وظایف، برنامه‌های ثابت و تنظیمات برای ارائه خدمات ذخیره می‌شوند.</li>
+          <li>اطلاعات در زیرساخت پایگاه داده و احراز هویت سامانه نگهداری می‌شوند و مدیر سامانه برای پشتیبانی و مدیریت حساب‌ها به بخشی از اطلاعات دسترسی مدیریتی دارد.</li>
+          <li>رمز عبور به‌صورت متن قابل‌مشاهده در اختیار مدیر قرار نمی‌گیرد.</li>
+          <li>اطلاعات حساب را فقط در دستگاه‌های مورد اعتماد وارد کنید و پس از استفاده از دستگاه مشترک خارج شوید.</li>
+          <li>برای درخواست اصلاح یا حذف اطلاعات و پرسش‌های حریم خصوصی، با مدیر سامانه تماس بگیرید.</li>
+        </ul>
+        <h3>۳. پذیرش و تغییرات</h3>
+        <p>با انتخاب گزینه پذیرش، تأیید می‌کنید این موارد را خوانده‌اید و با استفاده از سامانه بر اساس آن‌ها موافق هستید. در صورت تغییر اساسی قوانین، ممکن است پذیرش دوباره درخواست شود.</p>
+      </div>
+      <label class="terms-accept"><input id="terms-checkbox" type="checkbox"> قوانین استفاده و حریم خصوصی را خواندم و می‌پذیرم.</label>
+      <button id="accept-terms" class="primary full" type="button" disabled>پذیرش و ادامه</button>
+      <p id="terms-message" class="message" role="status"></p>
+      <p class="hint">در صورت عدم موافقت، از ورود به سامانه خودداری کنید.</p>
+    </section>
+  </div>
+
   <div id="auth-view" class="auth-wrap">
     <section id="policy-gate" class="auth-card policy-card hidden">
       <div class="brand-mark">MMD</div>
@@ -47,6 +80,11 @@
         <label>رمز عبور<input id="password" type="password" autocomplete="current-password" placeholder="رمز عبور" required minlength="6"></label>
         <button class="primary full" type="submit">ورود به حساب</button>
       </form>
+      <div class="login-contact">
+        <p>جهت مشکل و خرید اشتراک با ما در ارتباط باشید.</p>
+        <a href="tel:09162987309" dir="ltr">☎ 09162987309</a>
+        <a href="https://ble.ir/me_god_me" target="_blank" rel="noopener noreferrer" dir="ltr">✈ @me_god_me</a>
+      </div>
       <p class="hint">ساخت حساب توسط مدیر انجام می‌شود. برای دریافت حساب با مدیر سامانه تماس بگیرید.</p>
       <p id="auth-message" class="message" role="status"></p>
       <div class="login-contact">
