@@ -75,6 +75,7 @@
         <button class="nav-link active" data-page="today">◷ <span>امروز</span></button>
         <button class="nav-link" data-page="announcements">▣ <span>اعلانات</span></button>
         <button class="nav-link" data-page="contact">☎ <span>ارتباط با ادمین</span></button>
+        <button class="nav-link" data-page="chat">✉ <span>چت با ادمین</span></button>
         <button class="nav-link hidden" id="smart-planner-nav" data-page="smart">✦ <span>برنامه‌ریز هوشمند</span></button>
         <button class="nav-link" data-page="tasks">▤ <span>وظایف و تکالیف</span></button>
         <button class="nav-link" data-page="routines">▦ <span>برنامه ثابت</span></button>
@@ -113,6 +114,18 @@
         </div>
       </section>
 
+      <section id="page-chat" class="page hidden">
+        <div class="section-head"><div><p class="eyebrow">PRIVATE SUPPORT CHAT</p><h2>چت با ادمین</h2></div><span id="chat-status" class="muted">پیام‌رسانی آنلاین</span></div>
+        <div class="chat-layout">
+          <aside id="chat-inbox-panel" class="chat-inbox hidden"><h3>گفت‌وگوها</h3><div id="chat-inbox-list" class="chat-inbox-list"><div class="empty">هنوز پیامی دریافت نشده است.</div></div></aside>
+          <div class="chat-window">
+            <div class="chat-heading"><strong id="chat-heading-title">پشتیبانی MMD</strong><small id="chat-heading-subtitle">پیام شما فقط برای مدیر سامانه قابل مشاهده است.</small></div>
+            <div id="chat-messages" class="chat-messages"><div class="empty">در حال بارگذاری پیام‌ها...</div></div>
+            <form id="chat-form" class="chat-compose"><textarea id="chat-input" rows="2" maxlength="4000" placeholder="پیام خود را بنویسید..." required></textarea><button class="primary" type="submit">ارسال پیام</button></form>
+            <p id="chat-message" class="message" role="status"></p>
+          </div>
+        </div>
+      </section>
       <section id="page-smart" class="page hidden">
         <div class="section-head"><div><p class="eyebrow">OPTIONAL SMART PLANNER</p><h2>برنامه‌ریز هوشمند</h2></div></div>
         <div class="form-panel"><p class="muted">این ابزار اختیاری است و بدون هوش مصنوعی ابری، وظایف باز را بر اساس مهلت و زمان آزاد مرتب می‌کند. برنامه فقط پیشنهاد است و هیچ تکلیفی را خودکار تغییر نمی‌دهد.</p><div class="form-row"><label>مدت هر نوبت مطالعه<select id="smart-session"><option value="25">۲۵ دقیقه</option><option value="45" selected>۴۵ دقیقه</option><option value="60">۶۰ دقیقه</option><option value="90">۹۰ دقیقه</option></select></label><label>فاصله استراحت<select id="smart-break"><option value="5">۵ دقیقه</option><option value="10" selected>۱۰ دقیقه</option><option value="15">۱۵ دقیقه</option></select></label></div><button class="primary" id="smart-generate" type="button">ساخت برنامه پیشنهادی</button><button class="secondary" id="smart-clear" type="button">پاک‌کردن پیشنهاد</button></div>
