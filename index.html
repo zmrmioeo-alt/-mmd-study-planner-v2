@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="style.css?v=20261101-9">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script defer src="app.js?v=20261101-10"></script>
+  <script defer src="app.js?v=20261101-11"></script>
 </head>
 <body>
   <div id="terms-view" class="auth-wrap hidden">
@@ -67,6 +67,8 @@
       
     </section>
   </div>
+
+  <div id="expired-subscription-view" class="auth-wrap hidden"><section class="auth-card expired-card"><div class="brand-mark">MMD</div><p class="eyebrow">MMD MEMBERSHIP</p><h1>اشتراک شما به پایان رسیده است</h1><p class="muted"><strong id="expired-user-name">کاربر</strong>، برای استفاده دوباره از امکانات برنامه، اشتراک خود را تمدید کنید.</p><p id="expired-subscription-date" class="expired-date"></p><div class="expired-actions"><a class="primary full renew-link" href="https://ble.ir/me_god_me" target="_blank" rel="noopener noreferrer">درخواست تمدید اشتراک در بله</a><a class="contact-method" href="tel:09162987309"><span class="contact-icon">☎</span><span><small>تماس برای تمدید</small><strong dir="ltr">09162987309</strong></span><b>تماس</b></a><a class="contact-method" href="https://ble.ir/me_god_me" target="_blank" rel="noopener noreferrer"><span class="contact-icon">✈</span><span><small>آیدی بله</small><strong dir="ltr">@me_god_me</strong></span><b>پیام</b></a><button id="expired-logout-btn" class="secondary full" type="button">خروج از حساب</button></div></section></div>
 
   <div id="app-view" class="app-shell hidden">
     <aside class="sidebar">
