@@ -55,6 +55,10 @@ $("login-form").addEventListener("submit",async e=>{
  try{const user=await passwordLogin($("phone").value.trim(),$("password").value);await enterApp(user)}
  catch(err){console.error(err);message("auth-message",err.message||"ورود ناموفق بود.",true)}
 });
+$("mobile-menu-toggle").addEventListener("click",()=>{const open=$("sidebar").classList.toggle("menu-open");$("mobile-menu-toggle").classList.toggle("is-open",open);$("mobile-menu-toggle").setAttribute("aria-expanded",String(open));$("mobile-menu-toggle").setAttribute("aria-label",open?"بستن فهرست":"باز کردن فهرست")});
+document.addEventListener("click",e=>{if(!e.target.closest(".sidebar")){const side=document.querySelector(".sidebar");if(side){side.classList.remove("menu-open");$("mobile-menu-toggle")?.classList.remove("is-open");$("mobile-menu-toggle")?.setAttribute("aria-expanded","false")}}});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){document.querySelector(".sidebar")?.classList.remove("menu-open");$("mobile-menu-toggle")?.classList.remove("is-open");$("mobile-menu-toggle")?.setAttribute("aria-expanded","false")}});
+$("main-nav").addEventListener("click",e=>{if(e.target.closest("[data-page],#logout-btn")){document.querySelector(".sidebar")?.classList.remove("menu-open");$("mobile-menu-toggle")?.classList.remove("is-open");$("mobile-menu-toggle")?.setAttribute("aria-expanded","false")}});
 $("logout-btn").addEventListener("click",async()=>{if(!confirm("مطمئنی می‌خواهی از حساب خارج شوی؟"))return;const {error}=await db.auth.signOut();if(error)toast("خروج انجام نشد: "+error.message);});
 if($("expired-logout-btn"))$("expired-logout-btn").addEventListener("click",async()=>{if(confirm("مطمئنی می‌خواهی از حساب خارج شوی؟"))await db.auth.signOut()});
 if($("banned-logout-btn"))$("banned-logout-btn").addEventListener("click",async()=>{if(confirm("مطمئنی می‌خواهی از حساب خارج شوی؟"))await db.auth.signOut()});
