@@ -23,8 +23,9 @@ let enteringUserId=null;
 async function continueAfterPolicy(){
  show("terms-view",false);
  show("auth-view",true);
+ show("login-card",true);
  const {data:{session},error}=await db.auth.getSession();if(error)throw error;
- if(session)await enterApp(session.user);
+ if(session){show("login-card",false);await enterApp(session.user)}
 }
 $("terms-checkbox").addEventListener("change",e=>{$("accept-terms").disabled=!e.target.checked});
 $("accept-terms").addEventListener("click",async()=>{
