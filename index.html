@@ -7,10 +7,10 @@
   <meta name="description" content="MMD Study Planner؛ برنامه‌ریزی و پیگیری درس‌ها">
   <title>MMD | برنامه‌ریز درسی</title>
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css?v=20261101-7">
+  <link rel="stylesheet" href="style.css?v=20261101-8">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script defer src="app.js?v=20261101-8"></script>
+  <script defer src="app.js?v=20261101-9"></script>
 </head>
 <body>
   <div id="terms-view" class="auth-wrap hidden">
@@ -73,6 +73,7 @@
       <div class="brand"><span class="brand-mark small">MMD</span><div><b>Study Planner</b><small>پنل برنامه‌ریزی</small></div></div>
       <nav id="main-nav">
         <button class="nav-link active" data-page="today">◷ <span>امروز</span></button>
+        <button class="nav-link" data-page="today-work">☑ <span>کارهای امروز</span></button>
         <button class="nav-link" data-page="announcements">▣ <span>اعلانات</span></button>
         <button class="nav-link" data-page="contact">☎ <span>ارتباط با ادمین</span></button>
         <button class="nav-link" data-page="chat">✉ <span>چت با ادمین</span></button>
@@ -93,6 +94,15 @@
         <div class="stats-grid"><article class="stat-card"><span>کل وظایف</span><b id="stat-total">۰</b></article><article class="stat-card"><span>انجام‌شده</span><b id="stat-done">۰</b></article><article class="stat-card"><span>باقی‌مانده</span><b id="stat-pending">۰</b></article></div>
         <div class="section-head"><div><p class="eyebrow">DAILY TASKS</p><h2>کارهای امروز</h2></div><button class="primary" data-go="tasks">افزودن وظیفه</button></div>
         <div id="today-tasks" class="task-list"></div>
+      </section>
+
+      <section id="page-today-work" class="page hidden">
+        <div class="section-head"><div><p class="eyebrow">YOUR DAILY CHECKLIST</p><h2>کارهای امروز</h2><p class="muted">تکالیف و برنامه‌های ثابتی که برای امروز داری.</p></div><button class="primary" data-go="tasks">افزودن کار</button></div>
+        <div class="stats-grid"><article class="stat-card"><span>کارهای ثبت‌شده</span><b id="daily-total">۰</b></article><article class="stat-card"><span>انجام‌شده</span><b id="daily-done">۰</b></article><article class="stat-card"><span>باقی‌مانده</span><b id="daily-pending">۰</b></article></div>
+        <div class="section-head"><div><p class="eyebrow">TASKS</p><h3>وظایف و تکالیف امروز</h3></div></div>
+        <div id="daily-task-list" class="task-list"></div>
+        <div class="section-head"><div><p class="eyebrow">ROUTINE</p><h3>برنامه ثابت امروز</h3></div><button class="secondary" data-go="routines">مدیریت برنامه ثابت</button></div>
+        <div id="daily-routine-list" class="routine-grid"></div>
       </section>
 
       <section id="page-announcements" class="page hidden">
