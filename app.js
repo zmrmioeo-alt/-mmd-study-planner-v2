@@ -16,21 +16,39 @@ function isToday(value){if(!value)return false;const d=new Date(value);return d.
 function dateLabel(){return new Intl.DateTimeFormat("fa-IR",{weekday:"long",year:"numeric",month:"long",day:"numeric"}).format(new Date())}
 function escapeHtml(s=""){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 async function callAdmin(action,payload={}){const {data:{session}}=await db.auth.getSession();if(!session)throw new Error("نشست ورود معتبر نیست.");const res=await fetch(ADMIN_FUNCTION,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+session.access_token,"apikey":SUPABASE_KEY},body:JSON.stringify({action,...payload})});const body=await res.json().catch(()=>({}));if(!res.ok)throw new Error(body.error||"خطا در ارتباط با سرویس مدیریت");return body}
+let enteringUserId=null;
 async function boot(){
- const {data:{session}}=await db.auth.getSession();
+ const {data:{session},error}=await db.auth.getSession();if(error)throw error;
  if(session)await enterApp(session.user);else show("auth-view",true);
- db.auth.onAuthStateChange((_event,session)=>{if(session)enterApp(session.user);else{currentUser=null;show("app-view",false);show("auth-view",true)}});
+ // Do not run database requests inside onAuthStateChange: it executes under the auth lock.
+ db.auth.onAuthStateChange((event)=>{if(event==="SIGNED_OUT"){currentUser=null;profile=null;show("app-view",false);show("auth-view",true)}});
 }
 async function syntheticEmail(value){const bytes=new TextEncoder().encode(value.trim().toLowerCase());const digest=await crypto.subtle.digest("SHA-256",bytes);const hex=Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,"0")).join("").slice(0,32);return "mmd-"+hex+"@users.mmdplanner.com"}
-$("login-form").addEventListener("submit",async e=>{e.preventDefault();message("auth-message","در حال ورود...");const rawId=$("phone").value.trim(),password=$("password").value;let result;if(rawId.includes("@")){result=await db.auth.signInWithPassword({email:rawId,password})}else{result=await db.auth.signInWithPassword({email:await syntheticEmail(rawId),password});if(result.error){const phone=normalizePhone(rawId);if(/^[0-9+]+$/.test(phone)){result=await db.auth.signInWithPassword({phone,password});if(result.error)result=await db.auth.signInWithPassword({email:phone+"@gmail.com",password})}}}if(result.error)message("auth-message","شناسه یا رمز عبور نادرست است.",true);else message("auth-message","ورود موفق بود.")});
+$("login-form").addEventListener("submit",async e=>{
+ e.preventDefault();message("auth-message","در حال ورود...");const rawId=$("phone").value.trim(),password=$("password").value;
+ try{
+  let result;
+  if(rawId.includes("@"))result=await db.auth.signInWithPassword({email:rawId,password});
+  else{result=await db.auth.signInWithPassword({email:await syntheticEmail(rawId),password});if(result.error){const phone=normalizePhone(rawId);if(/^[0-9+]+$/.test(phone)){result=await db.auth.signInWithPassword({phone,password});if(result.error)result=await db.auth.signInWithPassword({email:phone+"@gmail.com",password})}}}
+  if(result.error)throw result.error;
+  await enterApp(result.data.user);
+ }catch(err){console.error("Login/entry failed:",err);show("app-view",false);show("auth-view",true);message("auth-message","ورود انجام شد اما بارگذاری پنل ناموفق بود: "+(err.message||"خطای نامشخص"),true)}
+});
 $("logout-btn").addEventListener("click",async()=>{await db.auth.signOut();});
 async function enterApp(user){
- currentUser=user;show("auth-view",false);show("app-view",true);$("today-date").textContent=dateLabel();
- await loadProfile();await Promise.all([loadTasks(),loadRoutines(),loadSettings(),loadAnnouncements()]);renderAll();
+ if(enteringUserId===user.id)return;enteringUserId=user.id;
+ try{
+  currentUser=user;show("auth-view",false);show("app-view",true);$("today-date").textContent=dateLabel();
+  await loadProfile();
+  if(!currentUser)return;
+  await Promise.all([loadTasks(),loadRoutines(),loadSettings(),loadAnnouncements()]);renderAll();
+ }catch(err){console.error("App loading failed:",err);show("app-view",false);show("auth-view",true);message("auth-message","خطا در بارگذاری اطلاعات حساب: "+(err.message||"خطای نامشخص"),true);throw err}
+ finally{enteringUserId=null}
 }
 async function loadProfile(){
  const {data,error}=await db.from("profiles").select("*").eq("id",currentUser.id).maybeSingle();
- if(error)throw error;profile=data||{display_name:"کاربر",is_admin:false};
+ if(error)throw error;profile=data||{display_name:"کاربر",is_admin:false,is_banned:false};
+ if(profile.is_banned){show("app-view",false);show("auth-view",true);message("auth-message","این حساب توسط مدیر مسدود شده است.",true);await db.auth.signOut();return}
  $("user-name").textContent=profile.display_name||"کاربر";$("user-avatar").textContent=(profile.display_name||"M").slice(0,1);
  show("admin-nav",!!profile.is_admin);show("announcement-admin-form",!!profile.is_admin);
  if(profile.is_admin){$("subscription-label").textContent="مدیر سامانه";return;}
@@ -77,10 +95,12 @@ function renderAnnouncements(){const rows=window.__announcements||[];$("announce
 $("announcement-admin-form").addEventListener("submit",async e=>{e.preventDefault();const row={title:$("announcement-title").value.trim(),body:$("announcement-body").value.trim(),created_by:currentUser.id,published:true};const {error}=await db.from("announcements").insert(row);if(error){message("announcement-message",error.message,true);return}e.target.reset();await loadAnnouncements();renderAnnouncements();message("announcement-message","اطلاعیه منتشر شد.")});
 document.addEventListener("click",async e=>{
  const notice=e.target.closest("[data-delete-announcement]");if(notice){if(!confirm("این اطلاعیه حذف شود؟"))return;const {error}=await db.from("announcements").delete().eq("id",notice.dataset.deleteAnnouncement);if(error)toast(error.message);else{await loadAnnouncements();renderAnnouncements()}return}
+ const ban=e.target.closest("[data-ban-user]");if(ban){const u=(window.__adminUsers||[]).find(x=>x.id===ban.dataset.banUser);if(!u)return;const action=u.is_banned?"unban_user":"ban_user";if(!confirm(u.is_banned?"مسدودیت این کاربر برداشته شود؟":"این کاربر مسدود شود؟"))return;try{await callAdmin(action,{user_id:u.id});toast(u.is_banned?"مسدودیت برداشته شد.":"کاربر مسدود شد.");await loadAdminUsers()}catch(err){toast(err.message)}return}
+ const remove=e.target.closest("[data-delete-user]");if(remove){const u=(window.__adminUsers||[]).find(x=>x.id===remove.dataset.deleteUser);if(!u)return;if(!confirm("حذف دائمی حساب «"+(u.display_name||u.login_id||"کاربر")+"» و تمام اطلاعات وابسته؟ این کار قابل بازگشت نیست."))return;try{await callAdmin("delete_user",{user_id:u.id});toast("حساب و اطلاعات وابسته حذف شد.");await loadAdminUsers()}catch(err){toast(err.message)}return}
  const edit=e.target.closest("[data-edit-user]");if(edit){const u=(window.__adminUsers||[]).find(x=>x.id===edit.dataset.editUser);if(!u)return;const identifier=prompt("شناسه ورود جدید:",u.login_id||"");if(identifier===null)return;const display_name=prompt("نام نمایشی:",u.display_name||"");if(display_name===null)return;const password=prompt("رمز جدید؛ برای حفظ رمز فعلی خالی بگذارید:","");if(password===null)return;try{await callAdmin("update_user",{user_id:u.id,identifier:identifier.trim(),display_name:display_name.trim(),password});toast("اطلاعات حساب به‌روزرسانی شد.");await loadAdminUsers()}catch(err){toast(err.message)}return}
 });
 $("admin-create-form").addEventListener("submit",async e=>{e.preventDefault();message("admin-message","در حال ساخت حساب...");try{const result=await callAdmin("create_user",{identifier:$("new-identifier").value.trim(),password:$("new-password").value,display_name:$("new-name").value.trim(),starts_at:new Date($("new-start").value+"T00:00:00").toISOString(),ends_at:new Date($("new-end").value+"T23:59:59").toISOString()});message("admin-message","حساب ساخته شد: "+result.identifier);e.target.reset();await loadAdminUsers()}catch(err){message("admin-message",err.message,true)}});
 $("refresh-users").addEventListener("click",()=>loadAdminUsers().catch(e=>message("admin-message",e.message,true)));
-async function loadAdminUsers(){if(!profile?.is_admin)return;const result=await callAdmin("list_users");window.__adminUsers=result.users||[];$("admin-users").innerHTML=window.__adminUsers.length?window.__adminUsers.map(u=>'<article class="task-item"><div class="task-main"><h3>'+escapeHtml(u.display_name||"بدون نام")+'</h3><p>شناسه: '+escapeHtml(u.login_id||u.phone||u.email||"—")+' · '+(u.ends_at?"پایان اشتراک: "+new Date(u.ends_at).toLocaleDateString("fa-IR"):"بدون اشتراک")+'</p><p>'+escapeHtml(u.email||"")+'</p></div><span class="priority">'+(u.is_active?"فعال":"غیرفعال")+'</span>'+(u.is_admin?"":'<button class="secondary" data-edit-user="'+u.id+'">ویرایش حساب</button>')+'</article>').join(""):'<div class="empty">کاربری ثبت نشده است.</div>'}
+async function loadAdminUsers(){if(!profile?.is_admin)return;const result=await callAdmin("list_users");window.__adminUsers=result.users||[];$("admin-users").innerHTML=window.__adminUsers.length?window.__adminUsers.map(u=>'<article class="task-item"><div class="task-main"><h3>'+escapeHtml(u.display_name||"بدون نام")+'</h3><p>شناسه: '+escapeHtml(u.login_id||u.phone||u.email||"—")+' · '+(u.ends_at?"پایان اشتراک: "+new Date(u.ends_at).toLocaleDateString("fa-IR"):"بدون اشتراک")+'</p><p>'+escapeHtml(u.email||"")+'</p></div><span class="priority">'+(u.is_banned?"مسدود":u.is_active?"فعال":"غیرفعال")+'</span>'+(u.is_admin?"":'<div class="task-actions"><button class="secondary" data-edit-user="'+u.id+'">ویرایش حساب</button><button class="secondary" data-ban-user="'+u.id+'">'+(u.is_banned?"رفع بن":"بن کاربر")+'</button><button class="danger" data-delete-user="'+u.id+'">حذف کاربر</button></div>')+'</article>').join(""):'<div class="empty">کاربری ثبت نشده است.</div>'}
 $("export-users").addEventListener("click",async()=>{try{if(!window.XLSX)throw new Error("کتابخانه Excel بارگذاری نشده است؛ صفحه را دوباره باز کنید.");message("admin-message","در حال آماده‌سازی خروجی کامل...");const result=await callAdmin("export_data"),wb=XLSX.utils.book_new();const labels={profiles:"کاربران",subscriptions:"اشتراک‌ها",study_tasks:"وظایف و تکالیف",routines:"برنامه‌های ثابت",planner_settings:"تنظیمات برنامه‌ریزی",auth_accounts:"حساب‌های ورود"};for(const [key,rows] of Object.entries(result.data||{})){const sheet=XLSX.utils.json_to_sheet(rows||[]);XLSX.utils.book_append_sheet(wb,sheet,labels[key]||key)}XLSX.writeFile(wb,"MMD-Study-Planner-Export-"+new Date().toISOString().slice(0,10)+".xlsx");message("admin-message","خروجی Excel آماده شد. رمزهای عبور به دلایل امنیتی در فایل قرار نمی‌گیرند.")}catch(err){message("admin-message",err.message,true)}});
 boot().catch(err=>{console.error(err);show("app-view",false);show("auth-view",true);message("auth-message","خطا در راه‌اندازی: "+err.message,true)});
