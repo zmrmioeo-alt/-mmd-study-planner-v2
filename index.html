@@ -9,6 +9,7 @@
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script defer src="app.js"></script>
 </head>
 <body>
@@ -17,9 +18,9 @@
       <div class="brand-mark">MMD</div>
       <p class="eyebrow">STUDY PLANNER</p>
       <h1>برنامه‌ریزی دقیق، پیشرفت واقعی</h1>
-      <p class="muted">برای ورود، شماره موبایل یا ایمیل مدیر و رمز عبور را وارد کنید.</p>
+      <p class="muted">برای ورود، شناسه کاربری، ایمیل یا شماره ثبت‌شده و رمز عبور را وارد کنید.</p>
       <form id="login-form">
-        <label>شماره موبایل<input id="phone" type="tel" inputmode="tel" autocomplete="username" placeholder="شماره موبایل یا ایمیل" required></label>
+        <label>شناسه ورود<input id="phone" type="text" autocomplete="username" placeholder="نام کاربری، ایمیل یا شماره" required maxlength="100"></label>
         <label>رمز عبور<input id="password" type="password" autocomplete="current-password" placeholder="رمز عبور" required minlength="6"></label>
         <button class="primary full" type="submit">ورود به حساب</button>
       </form>
@@ -33,6 +34,7 @@
       <div class="brand"><span class="brand-mark small">MMD</span><div><b>Study Planner</b><small>پنل برنامه‌ریزی</small></div></div>
       <nav id="main-nav">
         <button class="nav-link active" data-page="today">◷ <span>امروز</span></button>
+        <button class="nav-link" data-page="announcements">▣ <span>اعلانات</span></button>
         <button class="nav-link" data-page="tasks">▤ <span>وظایف و تکالیف</span></button>
         <button class="nav-link" data-page="routines">▦ <span>برنامه ثابت</span></button>
         <button class="nav-link" data-page="reports">▥ <span>گزارش پیشرفت</span></button>
@@ -51,6 +53,16 @@
         <div id="today-tasks" class="task-list"></div>
       </section>
 
+      <section id="page-announcements" class="page hidden">
+        <div class="section-head"><div><p class="eyebrow">MMD NOTICES</p><h2>اعلانات و اطلاعیه‌ها</h2></div></div>
+        <form id="announcement-admin-form" class="form-panel hidden">
+          <h3>انتشار اطلاعیه جدید</h3>
+          <label>عنوان اطلاعیه<input id="announcement-title" required maxlength="160"></label>
+          <label>متن اطلاعیه<textarea id="announcement-body" required rows="5" maxlength="5000"></textarea></label>
+          <button class="primary" type="submit">انتشار اطلاعیه</button><p id="announcement-message" class="message"></p>
+        </form>
+        <div id="announcement-list" class="task-list"></div>
+      </section>
       <section id="page-tasks" class="page hidden">
         <div class="section-head"><div><p class="eyebrow">TASK MANAGEMENT</p><h2>وظایف و تکالیف</h2></div></div>
         <form id="task-form" class="form-panel">
@@ -95,12 +107,13 @@
         <div class="section-head"><div><p class="eyebrow">ADMINISTRATION</p><h2>مدیریت کاربران</h2></div></div>
         <form id="admin-create-form" class="form-panel">
           <h3>ساخت حساب جدید</h3>
-          <div class="form-row"><label>شماره موبایل<input id="new-phone" type="tel" required placeholder="0912..."></label><label>رمز عبور اولیه<input id="new-password" type="password" required minlength="8"></label></div>
+          <div class="form-row"><label>شناسه ورود دلخواه<input id="new-identifier" type="text" required maxlength="40" placeholder="نام کاربری، کد دلخواه یا ایمیل"></label><label>رمز عبور اولیه<input id="new-password" type="password" required minlength="8"></label></div>
           <div class="form-row"><label>نام کاربر<input id="new-name" required></label><label>شروع اشتراک<input id="new-start" type="date" required></label><label>پایان اشتراک<input id="new-end" type="date" required></label></div>
-          <button class="primary" type="submit">ساخت حساب و اشتراک</button>
-          <p id="admin-message" class="message"></p>
+          <p class="hint">شناسه می‌تواند نام، کد دلخواه یا ایمیل باشد؛ لازم نیست شماره موبایل باشد.</p>
+          <button class="primary" type="submit">ساخت حساب و اشتراک</button><p id="admin-message" class="message"></p>
         </form>
-        <div class="section-head"><h3>کاربران ثبت‌شده</h3><button id="refresh-users" class="secondary">به‌روزرسانی</button></div>
+        <div class="section-head"><h3>کاربران ثبت‌شده</h3><div class="form-row"><button id="export-users" class="primary">خروجی کامل Excel</button><button id="refresh-users" class="secondary">به‌روزرسانی</button></div></div>
+        <p class="hint">برای تغییر شناسه یا رمز هر کاربر، گزینه ویرایش حساب را انتخاب کنید. رمز فعلی قابل مشاهده نیست و فقط می‌توان رمز تازه تعیین کرد.</p>
         <div id="admin-users" class="task-list"></div>
       </section>
       <footer> MMD STUDY PLANNER <span>نسخه ۱.۰</span></footer>
