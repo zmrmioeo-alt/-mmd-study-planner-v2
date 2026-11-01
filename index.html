@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101522">
+  <meta name="description" content="MMD Study Planner؛ برنامه‌ریزی و پیگیری درس‌ها">
+  <title>MMD | برنامه‌ریز درسی</title>
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <div id="auth-view" class="auth-wrap">
+    <section class="auth-card">
+      <div class="brand-mark">MMD</div>
+      <p class="eyebrow">STUDY PLANNER</p>
+      <h1>برنامه‌ریزی دقیق، پیشرفت واقعی</h1>
+      <p class="muted">برای ورود، شماره موبایل و رمز عبور حساب خود را وارد کنید.</p>
+      <form id="login-form">
+        <label>شماره موبایل<input id="phone" type="tel" inputmode="tel" autocomplete="username" placeholder="09123456789" required></label>
+        <label>رمز عبور<input id="password" type="password" autocomplete="current-password" placeholder="رمز عبور" required minlength="6"></label>
+        <button class="primary full" type="submit">ورود به حساب</button>
+      </form>
+      <p class="hint">ساخت حساب توسط مدیر انجام می‌شود. برای دریافت حساب با مدیر سامانه تماس بگیرید.</p>
+      <p id="auth-message" class="message" role="status"></p>
+    </section>
+  </div>
+
+  <div id="app-view" class="app-shell hidden">
+    <aside class="sidebar">
+      <div class="brand"><span class="brand-mark small">MMD</span><div><b>Study Planner</b><small>پنل برنامه‌ریزی</small></div></div>
+      <nav id="main-nav">
+        <button class="nav-link active" data-page="today">◷ <span>امروز</span></button>
+        <button class="nav-link" data-page="tasks">▤ <span>وظایف و تکالیف</span></button>
+        <button class="nav-link" data-page="routines">▦ <span>برنامه ثابت</span></button>
+        <button class="nav-link" data-page="reports">▥ <span>گزارش پیشرفت</span></button>
+        <button class="nav-link" data-page="settings">⚙ <span>تنظیمات</span></button>
+        <button class="nav-link hidden" id="admin-nav" data-page="admin">♙ <span>مدیریت کاربران</span></button>
+      </nav>
+      <div class="sidebar-bottom"><div class="user-chip"><span class="avatar" id="user-avatar">M</span><div><b id="user-name">کاربر</b><small id="subscription-label">در حال بررسی اشتراک</small></div></div><button id="logout-btn" class="logout">خروج از حساب</button></div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar"><div><p class="eyebrow">MMD / PERSONAL WORKSPACE</p><h1 id="page-title">امروز</h1></div><div class="date-pill" id="today-date"></div></header>
+      <section id="page-today" class="page">
+        <div class="welcome-panel"><div><p class="eyebrow">YOUR DAY, YOUR PACE</p><h2 id="welcome-title">برنامه امروزت آماده است.</h2><p>کارها را انجام بده و پیشرفتت را ثبت کن.</p></div><div class="progress-ring" id="today-ring"><strong id="today-percent">0٪</strong><small>انجام‌شده</small></div></div>
+        <div class="stats-grid"><article class="stat-card"><span>کل وظایف</span><b id="stat-total">۰</b></article><article class="stat-card"><span>انجام‌شده</span><b id="stat-done">۰</b></article><article class="stat-card"><span>باقی‌مانده</span><b id="stat-pending">۰</b></article></div>
+        <div class="section-head"><div><p class="eyebrow">DAILY TASKS</p><h2>کارهای امروز</h2></div><button class="primary" data-go="tasks">افزودن وظیفه</button></div>
+        <div id="today-tasks" class="task-list"></div>
+      </section>
+
+      <section id="page-tasks" class="page hidden">
+        <div class="section-head"><div><p class="eyebrow">TASK MANAGEMENT</p><h2>وظایف و تکالیف</h2></div></div>
+        <form id="task-form" class="form-panel">
+          <label>عنوان وظیفه<input id="task-title" required maxlength="120" placeholder="مثلاً حل تمرین ریاضی"></label>
+          <label>توضیحات<input id="task-description" maxlength="250" placeholder="جزئیات اختیاری"></label>
+          <div class="form-row"><label>مهلت انجام<input id="task-due" type="datetime-local"></label><label>اولویت<select id="task-priority"><option value="normal">معمولی</option><option value="high">زیاد</option><option value="low">کم</option></select></label></div>
+          <button class="primary" type="submit">ثبت وظیفه</button>
+        </form>
+        <div class="filter-row"><button class="filter active" data-filter="all">همه</button><button class="filter" data-filter="pending">در انتظار</button><button class="filter" data-filter="done">انجام‌شده</button></div>
+        <div id="all-tasks" class="task-list"></div>
+      </section>
+
+      <section id="page-routines" class="page hidden">
+        <div class="section-head"><div><p class="eyebrow">WEEKLY ROUTINE</p><h2>برنامه ثابت هفتگی</h2></div></div>
+        <form id="routine-form" class="form-panel">
+          <label>عنوان برنامه<input id="routine-title" required maxlength="120" placeholder="مثلاً مطالعه زبان"></label>
+          <label>توضیحات<input id="routine-details" maxlength="250" placeholder="جزئیات اختیاری"></label>
+          <div class="form-row"><label>روز هفته<select id="routine-weekday"><option value="6">شنبه</option><option value="0">یکشنبه</option><option value="1">دوشنبه</option><option value="2">سه‌شنبه</option><option value="3">چهارشنبه</option><option value="4">پنجشنبه</option><option value="5">جمعه</option></select></label><label>ساعت<input id="routine-time" type="time"></label></div>
+          <button class="primary" type="submit">افزودن به برنامه</button>
+        </form>
+        <div id="routine-list" class="routine-grid"></div>
+      </section>
+
+      <section id="page-reports" class="page hidden">
+        <div class="section-head"><div><p class="eyebrow">YOUR PERFORMANCE</p><h2>گزارش پیشرفت</h2></div></div>
+        <div class="report-panel"><div class="report-number" id="report-percent">۰٪</div><div><h3>درصد انجام وظایف</h3><p class="muted">بر اساس تمام وظایف ثبت‌شده در حساب شما</p></div></div>
+        <div class="stats-grid"><article class="stat-card"><span>کل وظایف</span><b id="report-total">۰</b></article><article class="stat-card"><span>تکمیل‌شده</span><b id="report-done">۰</b></article><article class="stat-card"><span>لغوشده</span><b id="report-cancelled">۰</b></article></div>
+      </section>
+
+      <section id="page-settings" class="page hidden">
+        <div class="section-head"><div><p class="eyebrow">PREFERENCES</p><h2>تنظیمات</h2></div></div>
+        <form id="settings-form" class="form-panel narrow">
+          <label>نام نمایشی<input id="display-name" maxlength="80" placeholder="نام شما"></label>
+          <label>مدت خواب شبانه (ساعت)<input id="sleep-hours" type="number" min="0" max="24" step=".5"></label>
+          <label>ساعت بیداری<input id="wake-time" type="time"></label>
+          <label>پوسته<select id="theme"><option value="dark">تیره</option><option value="light">روشن</option><option value="system">مطابق دستگاه</option></select></label>
+          <button class="primary" type="submit">ذخیره تنظیمات</button>
+        </form>
+      </section>
+
+      <section id="page-admin" class="page hidden">
+        <div class="section-head"><div><p class="eyebrow">ADMINISTRATION</p><h2>مدیریت کاربران</h2></div></div>
+        <form id="admin-create-form" class="form-panel">
+          <h3>ساخت حساب جدید</h3>
+          <div class="form-row"><label>شماره موبایل<input id="new-phone" type="tel" required placeholder="0912..."></label><label>رمز عبور اولیه<input id="new-password" type="password" required minlength="8"></label></div>
+          <div class="form-row"><label>نام کاربر<input id="new-name" required></label><label>شروع اشتراک<input id="new-start" type="date" required></label><label>پایان اشتراک<input id="new-end" type="date" required></label></div>
+          <button class="primary" type="submit">ساخت حساب و اشتراک</button>
+          <p id="admin-message" class="message"></p>
+        </form>
+        <div class="section-head"><h3>کاربران ثبت‌شده</h3><button id="refresh-users" class="secondary">به‌روزرسانی</button></div>
+        <div id="admin-users" class="task-list"></div>
+      </section>
+      <footer> MMD STUDY PLANNER <span>نسخه ۱.۰</span></footer>
+    </main>
+  </div>
+  <div id="toast" class="toast" role="status"></div>
+</body>
+</html>
