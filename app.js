@@ -7,6 +7,9 @@ const $ = (id) => document.getElementById(id);
 const fa = (n) => new Intl.NumberFormat("fa-IR").format(n);
 const weekdays = ["یکشنبه","دوشنبه","سه‌شنبه","چهارشنبه","پنجشنبه","جمعه","شنبه"];
 let currentUser = null, profile = null, tasks = [], routines = [], settings = {}, taskFilter = "all";
+const smartKey=()=> "mmd_smart_planner_"+(currentUser?.id||"guest");
+function smartEnabled(){return !!currentUser && localStorage.getItem(smartKey())==="on";}
+function syncSmartPlanner(){const enabled=smartEnabled();if($("smart-planner-toggle"))$("smart-planner-toggle").checked=enabled;show("smart-planner-nav",enabled);}
 const show = (id, yes=true) => $(id).classList.toggle("hidden", !yes);
 function toast(message){const el=$("toast");el.textContent=message;el.classList.add("show");clearTimeout(window.__toastTimer);window.__toastTimer=setTimeout(()=>el.classList.remove("show"),3000)}
 function message(id,text,isError=false){$(id).textContent=text;$(id).style.color=isError?"var(--danger)":"var(--accent)"}
@@ -52,7 +55,7 @@ async function enterApp(user){
   currentUser=user;show("auth-view",false);show("app-view",true);$("today-date").textContent=dateLabel();
   await loadProfile();
   if(!currentUser)return;
-  await Promise.all([loadTasks(),loadRoutines(),loadSettings(),loadAnnouncements()]);renderAll();
+  await Promise.all([loadTasks(),loadRoutines(),loadSettings(),loadAnnouncements()]);renderAll();syncSmartPlanner();
  }catch(err){console.error("App loading failed:",err);show("app-view",false);show("auth-view",true);message("auth-message","خطا در بارگذاری اطلاعات حساب: "+(err.message||"خطای نامشخص"),true);throw err}
  finally{enteringUserId=null}
 }
@@ -94,8 +97,18 @@ document.addEventListener("click",async e=>{
  const go=e.target.closest("[data-go]");if(go)navigate(go.dataset.go);
  const nav=e.target.closest("[data-page]");if(nav)navigate(nav.dataset.page);
 });
-function navigate(page){document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));show("page-"+page,true);document.querySelectorAll(".nav-link").forEach(b=>b.classList.toggle("active",b.dataset.page===page));const titles={today:"امروز",announcements:"اعلانات",tasks:"وظایف و تکالیف",routines:"برنامه ثابت",reports:"گزارش پیشرفت",settings:"تنظیمات",admin:"مدیریت کاربران"};$("page-title").textContent=titles[page]||"امروز";if(page==="admin")loadAdminUsers().catch(e=>message("admin-message",e.message,true))}
+function navigate(page){document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));show("page-"+page,true);document.querySelectorAll(".nav-link").forEach(b=>b.classList.toggle("active",b.dataset.page===page));const titles={today:"امروز",announcements:"اعلانات",smart:"برنامه‌ریز هوشمند",tasks:"وظایف و تکالیف",routines:"برنامه ثابت",reports:"گزارش پیشرفت",settings:"تنظیمات",admin:"مدیریت کاربران"};if(page==="smart"&&!smartEnabled())page="today";$("page-title").textContent=titles[page]||"امروز";if(page==="admin")loadAdminUsers().catch(e=>message("admin-message",e.message,true))}
 document.querySelectorAll("[data-filter]").forEach(b=>b.addEventListener("click",()=>{taskFilter=b.dataset.filter;document.querySelectorAll("[data-filter]").forEach(x=>x.classList.toggle("active",x===b));renderTasks()}));
+$("smart-planner-toggle").addEventListener("change",e=>{if(e.target.checked)localStorage.setItem(smartKey(),"on");else localStorage.removeItem(smartKey());syncSmartPlanner();toast(e.target.checked?"برنامه‌ریز هوشمند فعال شد.":"برنامه‌ریز هوشمند غیرفعال شد.");});
+function buildSmartPlan(){
+ const open=tasks.filter(t=>t.status==="pending").sort((a,b)=>{const ad=a.due_at?new Date(a.due_at).getTime():Infinity,bd=b.due_at?new Date(b.due_at).getTime():Infinity;return ad-bd||(a.priority==="high"?-1:0)-(b.priority==="high"?-1:0)});
+ if(!open.length){$("smart-plan-output").innerHTML='<div class="empty">وظیفه باز برای زمان‌بندی وجود ندارد.</div>';return;}
+ const duration=Number($("smart-session").value),rest=Number($("smart-break").value);let cursor=new Date();cursor.setMinutes(Math.ceil(cursor.getMinutes()/15)*15,0,0);const rows=[];
+ for(const t of open){if(t.due_at&&new Date(t.due_at)<cursor){rows.push({task:t,late:true,start:new Date(cursor)});continue;}let start=new Date(cursor);if(t.due_at&&start.getTime()+duration*60000>new Date(t.due_at).getTime()){rows.push({task:t,late:true,start});continue;}rows.push({task:t,start,late:false});cursor=new Date(cursor.getTime()+(duration+rest)*60000);}
+ $("smart-plan-output").innerHTML=rows.map(x=>'<article class="task-item"><div class="task-main"><h3>'+escapeHtml(x.task.title)+'</h3><p>'+(x.late?'مهلت گذشته یا زمان کافی تا مهلت وجود ندارد':'پیشنهاد شروع: '+x.start.toLocaleString("fa-IR",{weekday:"long",month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"}))+'</p></div><span class="priority '+(x.late?'high':'')+'">'+(x.late?'نیازمند بررسی':duration+' دقیقه')+'</span></article>').join("");
+}
+$("smart-generate").addEventListener("click",()=>{if(!smartEnabled()){toast("ابتدا این قابلیت را در تنظیمات فعال کنید.");return;}buildSmartPlan()});
+$("smart-clear").addEventListener("click",()=>{$("smart-plan-output").innerHTML='<div class="empty">پیشنهاد پاک شد.</div>'});
 $("settings-form").addEventListener("submit",async e=>{e.preventDefault();const row={user_id:currentUser.id,sleep_hours:$("sleep-hours").value?Number($("sleep-hours").value):null,wake_time:$("wake-time").value||null,theme:$("appearance").value,accent_theme:$("accent-theme").value,appearance:$("appearance").value,humor_enabled:$("humor-enabled").checked};const {error}=await db.from("planner_settings").upsert(row,{onConflict:"user_id"});if(error){toast(error.message);return}settings=row;profile.display_name=$("display-name").value.trim()||"کاربر";const {error:pe}=await db.from("profiles").update({display_name:profile.display_name}).eq("id",currentUser.id);if(pe){toast(pe.message);return} $("user-name").textContent=profile.display_name;$("user-avatar").textContent=profile.display_name.slice(0,1);applyTheme(row.accent_theme,row.appearance);updateHumor();toast("تنظیمات ذخیره شد.")});
 function applyTheme(accent="emerald",appearance="dark"){document.body.dataset.theme=accent;document.body.classList.toggle("light",appearance==="light"||(appearance==="system"&&matchMedia("(prefers-color-scheme: light)").matches))}
 const humorLines=["اگر تکلیف‌ها خودشان انجام می‌شدند، احتمالاً الان اینجا نبودیم!","یک قدم کوچک هم از صفر کیلومتر جلوتر است.","مغزت را روشن کن؛ حالت پرواز برای بعد از درس!","امروز با خودت رقابت کن، نه با کل دنیا.","استراحت کوتاه مجاز است؛ ناپدید شدن سه‌ساعته نه!","هر تیک، یک پیروزی کوچک است."];
