@@ -140,3 +140,140 @@ body.light .profile-hero{color:#fff}
 .expired-card{max-width:520px;text-align:center}.expired-card h1{font-size:25px;line-height:1.7}.expired-date{padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--panel2);font-size:12px;color:var(--muted)}.expired-actions{display:grid;gap:10px;margin-top:20px}.renew-link{display:block;text-decoration:none;text-align:center;padding:14px;border-radius:12px}.expired-actions .contact-method{margin:0;text-align:right}.expired-card .full{width:100%}
 
 .banned-card h1{color:var(--danger)}
+
+
+/* MMD mobile-first layout, readable typography and subtle motion */
+:root{
+  --ui-motion:cubic-bezier(.2,.75,.25,1);
+  --mobile-nav-height:74px;
+}
+html{font-size:16px;-webkit-text-size-adjust:100%;text-size-adjust:100%;scroll-behavior:smooth}
+body{font-size:16px;line-height:1.75;overflow-x:hidden}
+button,a,input,select,textarea{-webkit-tap-highlight-color:transparent}
+button,.nav-link,.task-item,.stat-card,.routine-card,.form-panel,.contact-method,.chat-thread{
+  transition:transform .22s var(--ui-motion),border-color .22s ease,background .22s ease,box-shadow .22s ease,filter .22s ease
+}
+button:active,.nav-link:active,.contact-method:active{transform:scale(.975)}
+.primary,.secondary,.logout,.filter,.icon-btn{min-height:46px}
+input,select,textarea{font-size:16px;min-height:50px}
+label{font-size:15px}
+.auth-card{animation:mmd-rise .55s var(--ui-motion) both}
+.app-shell{animation:mmd-fade .45s ease both}
+.stat-card:hover,.routine-card:hover,.task-item:hover,.contact-method:hover{
+  transform:translateY(-3px);border-color:color-mix(in srgb,var(--accent) 55%,var(--line));box-shadow:0 15px 32px #05061135
+}
+.primary{position:relative;overflow:hidden}
+.primary:after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 20%,#ffffff45 48%,transparent 72%);transform:translateX(-130%);transition:transform .65s ease}
+.primary:hover:after{transform:translateX(130%)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+@keyframes mmd-rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes mmd-fade{from{opacity:0}to{opacity:1}}
+@media(max-width:850px){
+  .app-shell{display:block;min-height:100dvh;padding-bottom:calc(var(--mobile-nav-height) + env(safe-area-inset-bottom) + 12px)}
+  .sidebar{
+    position:fixed;z-index:20;left:0;right:0;bottom:0;top:auto;height:auto;
+    padding:8px 10px calc(8px + env(safe-area-inset-bottom));
+    border:0;border-top:1px solid #b99bff42;border-radius:20px 20px 0 0;
+    background:color-mix(in srgb,#17182b 92%,transparent);
+    -webkit-backdrop-filter:blur(22px);backdrop-filter:blur(22px);
+    box-shadow:0 -12px 38px #05061155
+  }
+  .brand,.sidebar-bottom{display:none!important}
+  .sidebar nav{
+    display:flex;align-items:stretch;gap:7px;overflow-x:auto;overflow-y:hidden;
+    scrollbar-width:none;overscroll-behavior-x:contain;padding:1px 0
+  }
+  .sidebar nav::-webkit-scrollbar{display:none}
+  .nav-link{
+    flex:0 0 auto;min-width:74px;min-height:54px;justify-content:center;
+    padding:8px 12px;border-radius:14px;font-size:14px;font-weight:700;
+    white-space:nowrap;scroll-snap-align:center
+  }
+  .nav-link.active{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 35%,transparent),0 5px 18px #0002}
+  .main{max-width:760px;padding:24px 20px 34px}
+  .topbar{align-items:center;margin-bottom:22px}
+  .topbar h1{font-size:clamp(25px,4vw,30px);line-height:1.5}
+  .date-pill{font-size:13px;padding:10px 13px}
+  .welcome-panel{padding:24px;border-radius:22px}
+  .welcome-panel h2{font-size:23px}
+  .welcome-panel p:last-child{font-size:15px;line-height:1.9}
+  .stats-grid{gap:12px;margin:16px 0 28px}
+  .stat-card{padding:18px;border-radius:18px}
+  .stat-card span{font-size:14px}
+  .stat-card b{font-size:30px}
+  .section-head h2{font-size:22px}
+  .section-head h3{font-size:19px}
+  .form-panel{padding:20px;border-radius:18px}
+  .task-item{padding:16px;border-radius:16px}
+  .task-item h3{font-size:16px}
+  .task-item p{font-size:14px}
+  .priority{font-size:12px}
+  .empty{font-size:15px}
+  .muted,.hint{font-size:14px}
+}
+@media(max-width:560px){
+  :root{--mobile-nav-height:72px}
+  body{font-size:16px}
+  .main{padding:18px 15px 28px}
+  .topbar{gap:9px;align-items:flex-start;flex-wrap:wrap}
+  .topbar h1{font-size:25px}
+  .date-pill{font-size:12px;max-width:100%}
+  .welcome-panel{padding:19px;gap:12px;align-items:center}
+  .welcome-panel h2{font-size:20px;line-height:1.65}
+  .welcome-panel p:last-child{font-size:14px}
+  .progress-ring{width:76px;height:76px;flex-basis:76px}
+  .progress-ring strong{font-size:19px}
+  .progress-ring small{font-size:11px}
+  .stats-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:14px 0 25px}
+  .stat-card{padding:15px;min-width:0}
+  .stat-card span{font-size:13px;line-height:1.7}
+  .stat-card b{font-size:27px;margin-top:7px}
+  .section-head{margin:24px 0 13px;align-items:flex-start}
+  .section-head h2{font-size:21px}
+  .section-head h3{font-size:18px}
+  .section-head>.form-row{width:100%}
+  .section-head .form-row button{flex:1}
+  .form-panel{padding:17px;margin:14px 0}
+  .form-panel h3{font-size:18px}
+  .form-row,.routine-grid{grid-template-columns:minmax(0,1fr)}
+  label{font-size:14px;gap:7px}
+  input,select,textarea{min-height:52px;padding:13px 14px;font-size:16px}
+  textarea{min-height:100px}
+  .primary,.secondary{font-size:15px;padding:13px 16px;min-height:49px}
+  .task-list{gap:9px}
+  .task-item{align-items:flex-start;gap:10px;padding:14px}
+  .task-item h3{font-size:15px;line-height:1.7}
+  .task-item p{font-size:13px;line-height:1.85}
+  .task-actions{flex-direction:row;flex-wrap:wrap}
+  .task-actions button{min-height:40px;font-size:13px}
+  .filter-row{overflow-x:auto;padding-bottom:5px}
+  .filter{white-space:nowrap;font-size:14px}
+  .routine-card{padding:16px}
+  .routine-card b{font-size:16px}
+  .routine-card small{font-size:13px}
+  .report-panel{padding:19px;gap:15px}
+  .report-number{font-size:36px}
+  .contact-panel{padding:15px}
+  .contact-method{padding:13px}
+  .contact-method strong{font-size:15px}
+  .chat-layout{gap:10px}
+  .chat-window{min-height:420px}
+  .chat-heading{padding:14px}
+  .chat-heading strong{font-size:16px}
+  .chat-bubble p{font-size:14px}
+  .chat-compose{padding:11px}
+  .sidebar nav{gap:5px}
+  .nav-link{min-width:68px;min-height:53px;padding:7px 10px;font-size:13px}
+  footer{font-size:10px;margin-top:35px}
+  .auth-wrap{padding:15px;min-height:100dvh}
+  .auth-card{padding:25px 20px;border-radius:22px}
+  .auth-card h1{font-size:25px}
+  .message,.hint{font-size:13px}
+  .terms-content,.policy-content{font-size:14px;line-height:2}
+  .terms-content h3,.policy-content h3{font-size:16px}
+  .terms-content p,.policy-content p{font-size:14px}
+  .expired-card h1{font-size:25px}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
