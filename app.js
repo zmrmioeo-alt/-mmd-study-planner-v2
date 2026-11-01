@@ -21,7 +21,7 @@ async function boot(){
  if(session)await enterApp(session.user);else show("auth-view",true);
  db.auth.onAuthStateChange((_event,session)=>{if(session)enterApp(session.user);else{currentUser=null;show("app-view",false);show("auth-view",true)}});
 }
-$("login-form").addEventListener("submit",async e=>{e.preventDefault();message("auth-message","در حال ورود...");const rawId=$("phone").value.trim();const identifier=normalizePhone(rawId);const password=$("password").value;let result;if(rawId.includes("@")){result=await db.auth.signInWithPassword({email:rawId,password});}else{result=await db.auth.signInWithPassword({phone:identifier,password});if(result.error&&/^\\+?\\d+$/.test(identifier)){result=await db.auth.signInWithPassword({email:identifier+"@gmail.com",password});}}if(result.error)message("auth-message",result.error.message,true);else message("auth-message","ورود موفق بود.")});
+$("login-form").addEventListener("submit",async e=>{e.preventDefault();message("auth-message","در حال ورود...");const rawId=$("phone").value.trim();const identifier=normalizePhone(rawId);const password=$("password").value;let result;if(rawId.includes("@")){result=await db.auth.signInWithPassword({email:rawId,password});}else{result=await db.auth.signInWithPassword({phone:identifier,password});if(result.error&&/^[0-9+]+$/.test(identifier)){result=await db.auth.signInWithPassword({email:identifier+"@gmail.com",password});}}if(result.error)message("auth-message",result.error.message,true);else message("auth-message","ورود موفق بود.")});
 $("logout-btn").addEventListener("click",async()=>{await db.auth.signOut();});
 async function enterApp(user){
  currentUser=user;show("auth-view",false);show("app-view",true);$("today-date").textContent=dateLabel();
