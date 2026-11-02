@@ -395,28 +395,30 @@ $("export-users").addEventListener("click",async()=>{
   const labels={profiles:"کاربران",subscriptions:"اشتراک‌ها",study_tasks:"وظایف",routines:"برنامه ثابت",planner_settings:"تنظیمات",announcements:"اطلاعیه‌ها",support_messages:"پیام‌ها",auth_accounts:"حساب‌های ورود",humor_posts:"همتانه"};
   const counts=[];
   for(const [key,raw] of Object.entries(result.data)){
-   const rows=Array.isArray(raw)?raw:[],headers=(result.columns&&result.columns[key])||[...new Set(rows.flatMap(row=>Object.keys(row||{})))];
+   const rows=Array.isArray(raw)?raw:[],headers=[...new Set([...(result.columns?.[key]||[]),...rows.flatMap(row=>Object.keys(row||{}))])];
    if(headers.length)counts.push({بخش:labels[key]||key,"تعداد رکورد":rows.length});
   }
   if(!counts.length)throw new Error("هیچ داده‌ای از سرور دریافت نشد.");
+  const totalExportRows=Object.values(result.data).reduce((sum,value)=>sum+(Array.isArray(value)?value.length:0),0);
+  if(!totalExportRows)throw new Error("سرور هیچ ردیفی برای خروجی برنگرداند؛ فایل خالی ساخته نشد.");
   const xlsxReady=await loadExcelLibrary();
   const stamp=jalaliDate(new Date()).replaceAll("/","-");
   if(xlsxReady){
    const wb=XLSX.utils.book_new();
    for(const [key,raw] of Object.entries(result.data)){
-    const rows=Array.isArray(raw)?raw:[],headers=(result.columns&&result.columns[key])||[...new Set(rows.flatMap(row=>Object.keys(row||{})))];
+    const rows=Array.isArray(raw)?raw:[],headers=[...new Set([...(result.columns?.[key]||[]),...rows.flatMap(row=>Object.keys(row||{}))])];
     if(!headers.length)continue;
-    const sheet=XLSX.utils.aoa_to_sheet([headers,...rows.map(row=>headers.map(h=>row?.[h]??""))]);
+    const sheet=XLSX.utils.json_to_sheet(rows,{header:headers,skipHeader:false});
     XLSX.utils.book_append_sheet(wb,sheet,(labels[key]||key).slice(0,31));
    }
    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(counts),"خلاصه خروجی");
    const bytes=XLSX.write(wb,{bookType:"xlsx",type:"array",compression:true});
    downloadExportFile(new File([bytes],"MMD-Study-Planner-"+stamp+".xlsx",{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}));
-   message("admin-message","فایل Excel آماده شد؛ تعداد رکوردها: "+counts.reduce((n,x)=>n+x["تعداد رکورد"],0)+".");
+   message("admin-message","فایل Excel آماده شد؛ "+totalExportRows+" ردیف اطلاعات در "+counts.length+" بخش.");
   }else{
    const sections=[];
    for(const [key,raw] of Object.entries(result.data)){
-    const rows=Array.isArray(raw)?raw:[],headers=(result.columns&&result.columns[key])||[...new Set(rows.flatMap(row=>Object.keys(row||{})))];
+    const rows=Array.isArray(raw)?raw:[],headers=[...new Set([...(result.columns?.[key]||[]),...rows.flatMap(row=>Object.keys(row||{}))])];
     if(!headers.length)continue;
     sections.push((labels[key]||key)+"\\n"+headers.map(csvCell).join(",")+"\\n"+rows.map(row=>headers.map(h=>csvCell(row?.[h])).join(",")).join("\\n"));
    }
