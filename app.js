@@ -137,7 +137,7 @@ async function loadSupportChat(){
  show("chat-content",true);
  const {data:convs,error}=await db.from("private_conversations").select("*").order("created_at",{ascending:false});if(error)throw error;
  const ids=[...new Set((convs||[]).flatMap(c=>[c.user_one,c.user_two]))];
- const {data:profiles,error:pe}=ids.length?await db.from("profiles").select("id,display_name").in("id",ids):{data:[],error:null};if(pe)throw pe;
+ const {data:profiles,error:pe}=await db.from("profiles").select("id,display_name,chat_enabled").eq("is_approved",true);if(pe)throw pe;
  const names=new Map((profiles||[]).map(p=>[p.id,p.display_name||"کاربر"]));
  const list=$("chat-inbox-list");
  if(profile?.is_admin){list.innerHTML=(convs||[]).map(c=>'<button class="chat-thread" data-conv="' + c.id + '"><b>'+escapeHtml(names.get(c.user_one))+" ↔ "+escapeHtml(names.get(c.user_two))+'</b></button>').join("")||'<div class="empty">گفت‌وگویی نیست.</div>'}
@@ -149,7 +149,7 @@ async function loadSupportChat(){
  if(!conv){$("chat-messages").innerHTML="گفت‌وگو پیدا نشد.";return}
  chatTargetUserId=conv.id;const other=conv.user_one===currentUser.id?conv.user_two:conv.user_one;$("chat-heading-title").textContent=names.get(other)||"گفت‌وگو";
  const {data:msgs,error:me}=await db.from("private_messages").select("*").eq("conversation_id",conv.id).order("created_at");if(me)throw me;
- $("chat-messages").innerHTML=(msgs||[]).map(m=>'<article class="chat-bubble"><p>'+(m.deleted_at?"پیام حذف شده":escapeHtml(m.body||""))+'</p>'+(m.sender_id===currentUser.id&&!m.deleted_at?'<button data-delete-msg="'+m.id+'">حذف پیام</button>':"")+"</article>").join("");
+ const rendered=await Promise.all((msgs||[]).map(async m=>{let media="";if(m.media_path&&!m.deleted_at){const z=await db.storage.from("private-chat-media").createSignedUrl(m.media_path,1800);if(z.data?.signedUrl){const u=z.data.signedUrl;if((m.media_type||"").startsWith("image/"))media='<img src="'+u+'" style="max-width:220px;max-height:220px" alt="تصویر">';else if((m.media_type||"").startsWith("video/"))media='<video controls playsinline src="'+u+'" style="max-width:240px"></video>';else media='<a href="'+u+'" target="_blank">مشاهده فایل</a>'}}return '<article class="chat-bubble"><p>'+(m.deleted_at?"پیام حذف شده":escapeHtml(m.body||""))+'</p>'+media+(m.sender_id===currentUser.id&&!m.deleted_at?'<button data-delete-msg="'+m.id+'">حذف پیام</button>':"")+"</article>"}));$("chat-messages").innerHTML=rendered.join("");
 }
 $("chat-inbox-list").addEventListener("click",async e=>{const p=e.target.closest("[data-person]"),c=e.target.closest("[data-conv]");if(p)chatTargetUserId=p.dataset.person;else if(c)chatTargetUserId=c.dataset.conv;else return;try{await loadSupportChat()}catch(x){message("chat-message",x.message,true)}});
 $("chat-form").addEventListener("submit",async e=>{e.preventDefault();const body=$("chat-input").value.trim(),file=$("chat-file").files[0];if(!body&&!file)return;try{let path=null,type=null;if(file){if(file.size>52428800)throw Error("حداکثر حجم ۵۰ مگابایت است.");path=currentUser.id+"/"+crypto.randomUUID()+"-"+file.name.replace(/[^a-zA-Z0-9._-]/g,"_");const up=await db.storage.from("private-chat-media").upload(path,file,{contentType:file.type});if(up.error)throw up.error;type=file.type}const r=await db.from("private_messages").insert({conversation_id:chatTargetUserId,sender_id:currentUser.id,body,media_path:path,media_type:type});if(r.error)throw r.error;$("chat-input").value="";$("chat-file").value="";await loadSupportChat()}catch(x){message("chat-message",x.message,true)}});
