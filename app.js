@@ -3,7 +3,8 @@ const SUPABASE_URL = "https://tbmxbtbayqgfvdlmeuaz.supabase.co";
 const SUPABASE_KEY = "sb_publishable_n89FjocOtomNmAReFaP-vg_PMFbVow3";
 const ADMIN_FUNCTION = SUPABASE_URL + "/functions/v1/admin-manage";
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-const $ = (id) => document.getElementById(id);\nif(window.jalaliDatepicker){window.jalaliDatepicker.startWatch({persianDigits:true,targetValueInput:"attr",targetValueType:"attr",zIndex:9999});}
+const $ = (id) => document.getElementById(id);
+if(window.jalaliDatepicker){window.jalaliDatepicker.startWatch({persianDigits:true,targetValueInput:"attr",targetValueType:"attr",zIndex:9999});}
 const fa = (n) => new Intl.NumberFormat("fa-IR").format(n);
 const weekdays = ["یکشنبه","دوشنبه","سه‌شنبه","چهارشنبه","پنجشنبه","جمعه","شنبه"];
 let currentUser = null, profile = null, tasks = [], routines = [], settings = {}, taskFilter = "all";
