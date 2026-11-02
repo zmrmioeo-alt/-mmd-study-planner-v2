@@ -94,7 +94,7 @@
         <button class="nav-link hidden" id="admin-nav" data-page="admin">♙ <span>مدیریت کاربران</span></button>
         <button id="logout-btn" class="nav-link logout-nav" type="button">↪ <span>خروج از حساب</span></button>
       </nav>
-      <div class="sidebar-bottom"><div class="user-chip"><span class="avatar" id="user-avatar">M</span><div><b id="user-name">کاربر</b><small id="subscription-label">در حال بررسی اشتراک</small></div></div></div>
+      <div class="sidebar-bottom"><div class="user-chip"><span class="avatar" id="user-avatar">M</span><div><b id="user-name">کاربر</b><small id="school-grade-chip">پایه یا کلاس ثبت نشده</small><small id="subscription-label">در حال بررسی اشتراک</small></div></div></div>
     </aside>
 
     <main class="main">
@@ -173,13 +173,14 @@
         <div class="section-head"><div><p class="eyebrow">YOUR PERSONAL SPACE</p><h2>پروفایل من</h2><p class="muted">فضای شخصی خودت را بساز و هر زمان خواستی تغییرش بده.</p></div></div>
         <div class="profile-hero" id="profile-preview">
           <div class="profile-avatar-large" id="profile-preview-avatar">🌙</div>
-          <div><span class="profile-kicker">MMD MEMBER</span><h2 id="profile-preview-name">کاربر MMD</h2><p id="profile-preview-bio">اینجا معرفی کوتاهی از خودت بنویس.</p></div>
+          <div><span class="profile-kicker">MMD MEMBER</span><h2 id="profile-preview-name">کاربر MMD</h2><p id="profile-preview-bio">اینجا معرفی کوتاهی از خودت بنویس.</p><span class="school-profile-badge" id="profile-school-badge">پایه و کلاس را انتخاب کنید</span></div>
           <span class="profile-sparkle">✦</span>
         </div>
         <form id="profile-form" class="form-panel profile-form">
           <h3>شخصی‌سازی پروفایل</h3>
           <label>نام نمایشی<input id="profile-name" maxlength="80" placeholder="اسم دلخواهت"></label>
           <label>درباره من<textarea id="profile-bio" maxlength="180" rows="3" placeholder="چند کلمه درباره خودت..."></textarea></label>
+          <div class="form-row school-profile-fields"><label>پایه تحصیلی یا نقش<select id="profile-grade" required><option value="">انتخاب کنید</option><option value="هفتم">هفتم</option><option value="هشتم">هشتم</option><option value="نهم">نهم</option><option value="معلم">معلم</option></select></label><label id="profile-class-wrap">نام کلاس<select id="profile-class" required disabled><option value="">ابتدا پایه را انتخاب کنید</option></select></label></div>
           <label>تصویر پروفایل<input id="profile-photo" type="file" accept="image/jpeg,image/png,image/webp"></label><label>آواتار پروفایل<select id="profile-avatar"><option>🌙</option><option>⭐</option><option>🦋</option><option>🌸</option><option>🐈</option><option>🦊</option><option>🐼</option><option>🐉</option><option>🚀</option><option>🎧</option><option>⚡</option><option>🌿</option><option>🪐</option><option>🎮</option><option>🏆</option></select></label>
           <label>رنگ پروفایل<select id="profile-color"><option value="violet">بنفش رؤیایی</option><option value="pink">صورتی</option><option value="blue">آبی آسمانی</option><option value="mint">سبز نعنایی</option><option value="gold">طلایی</option><option value="rose">رزگلد</option></select></label>
           <button class="primary" type="submit">ذخیره پروفایل</button><p id="profile-message" class="message" role="status"></p>
