@@ -159,7 +159,7 @@ async function loadProfile(){
  if(error)throw error;profile=data||{display_name:"کاربر",is_admin:false,is_banned:false};
  if(profile.is_approved===false){show("app-view",false);show("auth-view",false);show("pending-approval-view",true);return;}
  if(profile.is_banned){show("app-view",false);show("auth-view",false);show("expired-subscription-view",false);show("banned-account-view",true);$("banned-user-name").textContent=profile.display_name||"کاربر";return}
- $("user-name").textContent=profile.display_name||"کاربر";$("user-avatar").textContent=profile.avatar_emoji|| (profile.display_name||"M").slice(0,1);
+ $("user-name").textContent=profile.display_name||"کاربر";$("user-avatar").textContent=profile.avatar_emoji|| (profile.display_name||"M").slice(0,1);$("school-grade-chip").textContent=schoolProfileLabel(profile)||"پایه یا کلاس ثبت نشده";
  show("admin-nav",!!profile.is_admin);show("announcement-admin-form",!!profile.is_admin);show("chat-nav",profile.chat_enabled!==false||!!profile.is_admin);
  if(profile.is_admin){$("subscription-label").textContent="مدیر سامانه";loadPendingUsers().catch(console.error);loadAdminHumor().catch(console.error);return;}
  const {data:subs,error:subError}=await db.from("subscriptions").select("starts_at,ends_at").eq("user_id",currentUser.id).order("ends_at",{ascending:false}).limit(1);
@@ -292,26 +292,33 @@ function startAnnouncementRealtime(){
   if(!window.__announcements?.some(x=>x.id===item.id)){window.__announcements=[item,...(window.__announcements||[])];renderAnnouncements();toast("اطلاعیه جدید: "+(item.title||"اطلاعیه"));}
  }).subscribe();
 }
+const SCHOOL_CLASSES={"هفتم":["هدف","مسئولیت"],"هشتم":["تلاش","کوشش"],"نهم":["اراده","استقامت"],"معلم":[]};
+function schoolProfileLabel(p){if(!p?.school_grade)return "";return p.school_grade==="معلم"?"معلم":p.school_grade+(p.school_class?" · کلاس "+p.school_class:"");}
+function syncSchoolClassOptions(selected=""){const grade=$("profile-grade").value,classes=SCHOOL_CLASSES[grade]||[],select=$("profile-class"),wrap=$("profile-class-wrap");select.innerHTML="";if(grade==="معلم"){wrap.classList.add("hidden");select.required=false;select.disabled=true;return}wrap.classList.remove("hidden");select.required=!!grade;select.disabled=!grade;const first=document.createElement("option");first.value="";first.textContent=grade?"انتخاب کلاس":"ابتدا پایه را انتخاب کنید";select.append(first);classes.forEach(name=>{const o=document.createElement("option");o.value=name;o.textContent=name;select.append(o)});select.value=selected;}
 function syncProfileForm(){if(profile?.avatar_path){const u=db.storage.from("profile-avatars").getPublicUrl(profile.avatar_path).data.publicUrl;$("profile-preview-avatar").innerHTML='<img src="'+u+'" alt="تصویر پروفایل">'}else $("profile-preview-avatar").textContent=profile?.avatar_emoji||"🌙";
  $("profile-name").value=profile?.display_name||"";
  $("profile-bio").value=profile?.bio||"";
  $("profile-avatar").value=profile?.avatar_emoji||"🌙";
  $("profile-color").value=profile?.profile_color||"violet";
+ $("profile-grade").value=profile?.school_grade||"";syncSchoolClassOptions(profile?.school_class||"");
  updateProfilePreview();
 }
 function updateProfilePreview(){
  const name=$("profile-name").value.trim()||"کاربر MMD",bio=$("profile-bio").value.trim()||"اینجا معرفی کوتاهی از خودت بنویس.",avatar=$("profile-avatar").value,color=$("profile-color").value;
  $("profile-preview-name").textContent=name;$("profile-preview-bio").textContent=bio;$("profile-preview-avatar").textContent=avatar;
  $("profile-preview").dataset.color=color;
+ const badge=schoolProfileLabel({school_grade:$("profile-grade").value,school_class:$("profile-class").value});$("profile-school-badge").textContent=badge||"پایه و کلاس را انتخاب کنید";
 }
 ["profile-name","profile-bio","profile-avatar","profile-color"].forEach(id=>$(id).addEventListener("input",updateProfilePreview));
+$("profile-grade").addEventListener("change",()=>{syncSchoolClassOptions();updateProfilePreview()});$("profile-class").addEventListener("change",updateProfilePreview);
 $("profile-form").addEventListener("submit",async e=>{
  e.preventDefault();const btn=e.submitter;btn.disabled=true;message("profile-message","در حال ذخیره...");
- const display_name=$("profile-name").value.trim()||"کاربر",bio=$("profile-bio").value.trim(),avatar_emoji=$("profile-avatar").value,profile_color=$("profile-color").value;
- const {error}=await db.from("profiles").update({display_name,bio,avatar_emoji,profile_color}).eq("id",currentUser.id);
+ const display_name=$("profile-name").value.trim()||"کاربر",bio=$("profile-bio").value.trim(),avatar_emoji=$("profile-avatar").value,profile_color=$("profile-color").value,school_grade=$("profile-grade").value,school_class=school_grade==="معلم"?null:$("profile-class").value;
+ if(!school_grade||(school_grade!=="معلم"&&!school_class)){message("profile-message","پایه و نام کلاس را انتخاب کنید.",true);btn.disabled=false;return}
+ const {error}=await db.from("profiles").update({display_name,bio,avatar_emoji,profile_color,school_grade,school_class}).eq("id",currentUser.id);
  if(error){message("profile-message",error.message,true);btn.disabled=false;return}
- profile={...profile,display_name,bio,avatar_emoji,profile_color};
- $("user-name").textContent=display_name;$("user-avatar").textContent=avatar_emoji;document.body.dataset.profileColor=profile_color;$("welcome-title").textContent="سلام "+display_name+", برنامه امروزت آماده است.";
+ profile={...profile,display_name,bio,avatar_emoji,profile_color,school_grade,school_class};
+ $("user-name").textContent=display_name;$("user-avatar").textContent=avatar_emoji;$("school-grade-chip").textContent=schoolProfileLabel(profile);updateProfilePreview();document.body.dataset.profileColor=profile_color;$("welcome-title").textContent="سلام "+display_name+", برنامه امروزت آماده است.";
  document.body.dataset.profileColor=profile_color;message("profile-message","پروفایل ذخیره شد.");btn.disabled=false;
 });
 function renderAnnouncements(){const rows=window.__announcements||[];$("announcement-list").innerHTML=rows.length?rows.map(a=>'<article class="form-panel"><div class="section-head"><h3>'+escapeHtml(a.title)+'</h3><small class="muted">'+jalaliDate(a.created_at)+'</small></div><p style="white-space:pre-wrap;line-height:2">'+escapeHtml(a.body)+'</p>'+(profile?.is_admin?'<button class="icon-btn" data-delete-announcement="'+a.id+'">حذف اطلاعیه</button>':"")+'</article>').join(""):'<div class="empty">در حال حاضر اطلاعیه‌ای منتشر نشده است.</div>'}
@@ -370,9 +377,9 @@ async function loadHumorFeed(){
  if(!q.data?.length)feed.textContent="هنوز مطلبی منتشر نشده است.";
 }
 async function openPublicProfile(id){
- const q=await db.from("profiles").select("id,display_name,bio,avatar_emoji,avatar_path").eq("id",id).maybeSingle();if(q.error)throw q.error;if(!q.data)return;
+ const q=await db.from("profiles").select("id,display_name,bio,avatar_emoji,avatar_path,school_grade,school_class").eq("id",id).maybeSingle();if(q.error)throw q.error;if(!q.data)return;
  const p=q.data,posts=await db.from("humor_posts").select("title,body").eq("user_id",id).eq("status","approved").order("created_at",{ascending:false});if(posts.error)throw posts.error;
- const root=$("public-profile-content");root.innerHTML="";const h=document.createElement("h2");h.textContent=p.display_name||"کاربر";root.append(h);const bio=document.createElement("p");bio.textContent=p.bio||"توضیحی ثبت نشده است.";root.append(bio);
+ const root=$("public-profile-content");root.innerHTML="";const h=document.createElement("h2");h.textContent=p.display_name||"کاربر";root.append(h);const bio=document.createElement("p");bio.textContent=p.bio||"توضیحی ثبت نشده است.";root.append(bio);const school=document.createElement("p");school.className="school-profile-badge";school.textContent=schoolProfileLabel(p)||"پایه یا کلاس ثبت نشده";root.append(school);
  if(p.avatar_path){const img=document.createElement("img");img.src=db.storage.from("profile-avatars").getPublicUrl(p.avatar_path).data.publicUrl;img.style.width="110px";img.style.borderRadius="50%";root.prepend(img)}
  const heading=document.createElement("h3");heading.textContent="مطالب منتشرشده";root.append(heading);for(const x of posts.data||[]){const card=document.createElement("article");card.className="form-panel";const t=document.createElement("h3");t.textContent=x.title;const b=document.createElement("p");b.textContent=x.body||"";card.append(t,b);root.append(card)}
  navigate("public-profile");
