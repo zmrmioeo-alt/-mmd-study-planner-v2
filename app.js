@@ -68,7 +68,27 @@ $("show-signup").addEventListener("click",()=>{show("login-card",false);show("si
 $("show-login").addEventListener("click",()=>{show("signup-card",false);show("login-card",true)});
 $("signup-form").addEventListener("submit",async e=>{e.preventDefault();try{const {data,error}=await db.auth.signUp({email:$("signup-email").value.trim(),password:$("signup-password").value,options:{data:{display_name:$("signup-name").value.trim()}}});if(error)throw error;if(data.session){show("signup-card",false);await enterApp(data.user)}else message("signup-message","ثبت‌نام انجام شد. ایمیل را تأیید کنید و منتظر تأیید مدیر بمانید.");}catch(err){message("signup-message",err.message,true)}});
 $("pending-logout").addEventListener("click",()=>db.auth.signOut());
-async function checkAppUpdateNotice(){try{const r=await fetch("./version.json?notice="+Date.now(),{cache:"no-store"});if(!r.ok)return;const v=await r.json(),seen=localStorage.getItem("mmd_seen_version");if(!v.version||seen===String(v.version))return;localStorage.setItem("mmd_seen_version",String(v.version));const wrap=document.createElement("section");wrap.className="form-panel";wrap.style.cssText="margin:0 0 18px;border:1px solid var(--accent);";const h=document.createElement("h3");h.textContent="نسخه جدید برنامه منتشر شد · "+v.version;const p=document.createElement("p");p.textContent=v.release_notes||"برای دریافت امکانات تازه، برنامه را به‌روزرسانی کنید.";const b=document.createElement("button");b.className="primary";b.textContent="دریافت به‌روزرسانی";b.addEventListener("click",async()=>{b.disabled=true;b.textContent="در حال دریافت...";try{const reg=await navigator.serviceWorker?.getRegistration();await reg?.update();if(reg?.waiting){reg.waiting.postMessage({type:"SKIP_WAITING"});setTimeout(()=>location.reload(),1200)}else location.reload()}catch(e){b.disabled=false;b.textContent="تلاش دوباره";toast("به‌روزرسانی انجام نشد؛ از صفحه نصب اقدام کنید.")}});wrap.append(h,p,b);const main=document.querySelector(".main");if(main)main.prepend(wrap)}catch(e){console.warn("Update notice unavailable",e)}}
+async function checkAppUpdateNotice(){
+ try{
+  const r=await fetch("./version.json?notice="+Date.now(),{cache:"no-store"});if(!r.ok)return;
+  const v=await r.json(),seen=localStorage.getItem("mmd_seen_version");
+  if(!v.version||seen===String(v.version))return;
+  localStorage.setItem("mmd_seen_version",String(v.version));
+  const title="نسخه جدید برنامه منتشر شد · "+v.version,body=v.release_notes||"برای دریافت امکانات تازه، برنامه را به‌روزرسانی کنید.";
+  if(localStorage.getItem("mmd_update_notifications")==="on"&&"Notification"in window&&Notification.permission==="granted"){
+   const reg=await navigator.serviceWorker?.getRegistration();
+   if(reg)await reg.showNotification(title,{body,icon:"./assets/icon-192.svg",badge:"./assets/icon-192.svg",tag:"mmd-update",data:{url:"./install.html"}});
+   else new Notification(title,{body});
+  }
+  const wrap=document.createElement("section");wrap.className="form-panel";wrap.style.cssText="margin:0 0 18px;border:1px solid var(--accent);";
+  const h=document.createElement("h3");h.textContent=title;const p=document.createElement("p");p.textContent=body;
+  const b=document.createElement("button");b.className="primary";b.textContent="دریافت به‌روزرسانی";
+  b.addEventListener("click",async()=>{b.disabled=true;b.textContent="در حال دریافت...";try{const reg=await navigator.serviceWorker?.getRegistration();await reg?.update();if(reg?.waiting)reg.waiting.postMessage({type:"SKIP_WAITING"});setTimeout(()=>location.reload(),1200)}catch(e){b.disabled=false;b.textContent="تلاش دوباره";toast("به‌روزرسانی انجام نشد؛ از صفحه نصب اقدام کنید.")}});
+  const n=document.createElement("button");n.className="secondary";n.textContent=localStorage.getItem("mmd_update_notifications")==="on"?"اعلان انتشار نسخه فعال است":"فعال‌سازی اعلان انتشار نسخه";
+  n.addEventListener("click",async()=>{if(!("Notification"in window)){toast("این مرورگر از اعلان پشتیبانی نمی‌کند.");return}const permission=await Notification.requestPermission();if(permission==="granted"){localStorage.setItem("mmd_update_notifications","on");n.textContent="اعلان انتشار نسخه فعال شد";toast("از این پس هنگام بازکردن برنامه، انتشار نسخه جدید با اعلان اطلاع‌رسانی می‌شود.")}else toast("اجازه اعلان داده نشد.")});
+  wrap.append(h,p,b,n);document.querySelector(".main")?.prepend(wrap);
+ }catch(e){console.warn("Update notice unavailable",e)}
+}
 async function enterApp(user){
  if(enteringUserId===user.id)return;enteringUserId=user.id;
  try{
