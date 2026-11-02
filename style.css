@@ -500,7 +500,6 @@ body.light .date-pill{background:#fff}
 
 
 /* MMD visual refresh: Vazirmatn + richer theme identities */
-@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800;900&display=swap');
 :root{font-family:"Vazirmatn",Tahoma,sans-serif}
 html,body,button,input,select,textarea{font-family:"Vazirmatn",Tahoma,sans-serif}
 body{background-image:radial-gradient(ellipse at 12% 8%,color-mix(in srgb,var(--accent) 12%,transparent),transparent 34%),radial-gradient(ellipse at 90% 90%,#29415a33,transparent 38%),linear-gradient(145deg,var(--bg),var(--panel2));background-attachment:fixed}
