@@ -218,4 +218,60 @@ $("refresh-users").addEventListener("click",()=>loadAdminUsers().catch(e=>messag
 async function loadAdminUsers(){if(!profile?.is_admin)return;const result=await callAdmin("list_users");window.__adminUsers=result.users||[];$("admin-users").innerHTML=window.__adminUsers.length?window.__adminUsers.map(u=>'<article class="task-item"><div class="task-main"><h3>'+escapeHtml(u.display_name||"بدون نام")+'</h3><p>شناسه: '+escapeHtml(u.login_id||u.phone||u.email||"—")+' · '+(u.ends_at?"پایان اشتراک: "+jalaliDate(u.ends_at):"بدون اشتراک")+'</p><p>'+escapeHtml(u.email||"")+'</p></div><span class="priority">'+(u.is_banned?"مسدود":u.is_active?"فعال":"غیرفعال")+'</span>'+(u.is_admin?"":'<div class="task-actions"><button class="secondary" data-renew-user="'+u.id+'">تمدید اشتراک</button><button class="secondary" data-edit-user="'+u.id+'">ویرایش حساب</button><button class="secondary" data-ban-user="'+u.id+'">'+(u.is_banned?"رفع بن":"بن کاربر")+'</button><button class="danger" data-delete-user="'+u.id+'">حذف کاربر</button></div>')+'</article>').join(""):'<div class="empty">کاربری ثبت نشده است.</div>'}
 async function loadExcelLibrary(){const sources=["https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js","https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js","https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"];for(const src of sources){if(window.XLSX)return;await new Promise(resolve=>{const script=document.createElement("script");script.src=src;script.onload=resolve;script.onerror=resolve;document.head.appendChild(script)});if(window.XLSX)return}}
 $("export-users").addEventListener("click",async()=>{const btn=$("export-users");btn.disabled=true;try{message("admin-message","در حال دریافت اطلاعات و ساخت فایل Excel...");if(!window.XLSX)await loadExcelLibrary();if(!window.XLSX)throw new Error("کتابخانه Excel بارگذاری نشد؛ اتصال اینترنت را بررسی کنید.");const result=await callAdmin("export_data");if(!result.data||!Object.keys(result.data).length)throw new Error("داده‌ای برای خروجی دریافت نشد.");const wb=XLSX.utils.book_new();const labels={profiles:"کاربران",subscriptions:"اشتراک‌ها",study_tasks:"وظایف و تکالیف",routines:"برنامه‌های ثابت",planner_settings:"تنظیمات برنامه‌ریزی",announcements:"اطلاعیه‌ها",support_messages:"پیام‌های پشتیبانی",auth_accounts:"حساب‌های ورود"};for(const [key,rows] of Object.entries(result.data)){const headers=(result.columns&&result.columns[key])||Object.keys((rows&&rows[0])||{});const safeRows=(rows||[]).map(row=>{const out={};for(const k of headers)out[k]=row[k]??"";return out});const sheet=XLSX.utils.json_to_sheet(safeRows,{header:headers});XLSX.utils.book_append_sheet(wb,sheet,(labels[key]||key).slice(0,31));}const bytes=XLSX.write(wb,{bookType:"xlsx",type:"array",compression:true});const blob=new Blob([bytes],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});const url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download="MMD-Study-Planner-"+jalaliDate(new Date()).replaceAll("/","-")+".xlsx";document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);message("admin-message","فایل Excel ساخته شد. اگر دانلود خودکار شروع نشد، اجازه دانلود مرورگر را فعال کنید.");}catch(err){console.error("Excel export failed",err);message("admin-message","خطا در خروجی Excel: "+(err.message||"خطای نامشخص"),true)}finally{btn.disabled=false}});
+
+let activityReportData=null;
+const weekdayNames=["یکشنبه","دوشنبه","سه‌شنبه","چهارشنبه","پنجشنبه","جمعه","شنبه"];
+const taskStatusLabel={pending:"در انتظار انجام",done:"انجام‌شده",cancelled:"لغوشده"};
+async function loadActivityReport(){
+ if(!profile?.is_admin)throw new Error("این بخش فقط برای مدیر سامانه است.");
+ const msg=$("activity-report-message"),loadBtn=$("load-activity-report"),exportBtn=$("export-activity-report");
+ loadBtn.disabled=true;exportBtn.disabled=true;msg.textContent="در حال دریافت اطلاعات کاربران...";
+ try{
+  const result=await callAdmin("export_data");
+  const d=result.data||{};
+  const users=d.profiles||[],tasks=d.study_tasks||[],routines=d.routines||[];
+  const names=new Map(users.map(u=>[u.id,u.display_name||u.login_id||"کاربر بدون نام"]));
+  activityReportData={
+   tasks:tasks.map(t=>({...t,user_name:names.get(t.user_id)||"کاربر حذف‌شده"})),
+   routines:routines.map(r=>({...r,user_name:names.get(r.user_id)||"کاربر حذف‌شده"}))
+  };
+  const done=tasks.filter(t=>t.status==="done").length;
+  const pending=tasks.filter(t=>t.status==="pending").length;
+  const cancelled=tasks.filter(t=>t.status==="cancelled").length;
+  $("activity-report-summary").innerHTML=[
+   ["تعداد کاربران",users.length],["برنامه‌ها و تکالیف",tasks.length],["انجام‌شده",done],["در انتظار",pending],["برنامه‌های ثابت",routines.length]
+  ].map(([label,value])=>'<article class="stat-card"><span>'+label+'</span><strong>'+fa(value)+'</strong></article>').join("");
+  const grouped=new Map();
+  for(const t of activityReportData.tasks){if(!grouped.has(t.user_id))grouped.set(t.user_id,{name:t.user_name,tasks:[],routines:[]});grouped.get(t.user_id).tasks.push(t)}
+  for(const r of activityReportData.routines){if(!grouped.has(r.user_id))grouped.set(r.user_id,{name:r.user_name,tasks:[],routines:[]});grouped.get(r.user_id).routines.push(r)}
+  const cards=[...grouped.values()].sort((a,b)=>a.name.localeCompare(b.name,"fa"));
+  $("activity-report-list").innerHTML=cards.length?cards.map(u=>{
+   const taskHtml=u.tasks.length?u.tasks.map(t=>'<article class="task-item"><div class="task-main"><h4>'+escapeHtml(t.title)+'</h4><p>'+escapeHtml(t.description||"بدون توضیحات")+' · مهلت: '+(t.due_at?jalaliDate(t.due_at,true):"تعیین نشده")+'</p></div><span class="priority">'+(taskStatusLabel[t.status]||escapeHtml(t.status||"نامشخص"))+'</span></article>').join(""):'<p class="hint">تکلیفی ثبت نکرده است.</p>';
+   const routineHtml=u.routines.length?u.routines.map(r=>'<article class="task-item"><div class="task-main"><h4>'+escapeHtml(r.title)+'</h4><p>'+escapeHtml(r.details||"بدون توضیحات")+' · '+(weekdayNames[Number(r.weekday)]||"روز نامشخص")+' · '+(r.scheduled_time?String(r.scheduled_time).slice(0,5):"بدون ساعت")+'</p></div><span class="priority">'+(r.active===false?"غیرفعال":"فعال")+'</span></article>').join(""):'<p class="hint">برنامه ثابت هفتگی ثبت نکرده است.</p>';
+   return '<section class="form-panel"><div class="section-head"><h3>'+escapeHtml(u.name)+'</h3><span class="muted">'+fa(u.tasks.length)+' تکلیف · '+fa(u.routines.length)+' برنامه ثابت</span></div><h4>برنامه‌ها و تکالیف</h4>'+taskHtml+'<h4 style="margin-top:16px">برنامه ثابت هفتگی</h4>'+routineHtml+'</section>';
+  }).join(""):'<div class="empty">هنوز فعالیتی ثبت نشده است.</div>';
+  exportBtn.disabled=false;
+  msg.textContent="گزارش به‌روزرسانی شد. اطلاعات شامل برنامه‌های ثبت‌شده و وضعیت فعلی آن‌هاست.";
+ }catch(err){msg.textContent="خطا در دریافت گزارش: "+err.message;throw err}
+ finally{loadBtn.disabled=false}
+}
+$("load-activity-report").addEventListener("click",()=>loadActivityReport().catch(e=>console.error(e)));
+$("export-activity-report").addEventListener("click",async()=>{
+ const btn=$("export-activity-report");if(!activityReportData)return;btn.disabled=true;
+ try{
+  if(!window.XLSX)await loadExcelLibrary();
+  if(!window.XLSX)throw new Error("کتابخانه Excel بارگذاری نشد؛ اتصال اینترنت را بررسی کنید.");
+  const wb=XLSX.utils.book_new();
+  const taskRows=activityReportData.tasks.map(t=>({"نام کاربر":t.user_name,"عنوان برنامه":t.title,"توضیحات":t.description||"","وضعیت":taskStatusLabel[t.status]||t.status,"اولویت":t.priority,"مهلت":t.due_at||"","تاریخ ثبت":t.created_at||""}));
+  const routineRows=activityReportData.routines.map(r=>({"نام کاربر":r.user_name,"عنوان برنامه ثابت":r.title,"توضیحات":r.details||"","روز هفته":weekdayNames[Number(r.weekday)]||"","ساعت":r.scheduled_time||"","وضعیت":r.active===false?"غیرفعال":"فعال","تاریخ ثبت":r.created_at||""}));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(taskRows), "تکالیف و برنامه‌ها");
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(routineRows), "برنامه ثابت");
+  const bytes=XLSX.write(wb,{bookType:"xlsx",type:"array",compression:true});
+  const blob=new Blob([bytes],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+  const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="MMD-User-Activity-"+jalaliDate(new Date()).replaceAll("/","-")+".xlsx";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
+  $("activity-report-message").textContent="فایل Excel فعالیت کاربران آماده شد.";
+ }catch(err){$("activity-report-message").textContent="خطا در ساخت فایل: "+err.message}
+ finally{btn.disabled=false}
+});
+
 boot().catch(err=>{console.error(err);show("app-view",false);show("auth-view",true);message("auth-message","خطا در راه‌اندازی: "+err.message,true)});
