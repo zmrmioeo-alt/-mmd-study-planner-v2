@@ -228,8 +228,39 @@ $("admin-humor-list").addEventListener("click",async e=>{const b=e.target.closes
 async function loadHumorFeed(){if(!currentUser)return;const {data,error}=await db.from("humor_posts").select("id,title,body,media_path,media_type").eq("status","approved").order("created_at",{ascending:false});if(error)throw error;const cards=await Promise.all((data||[]).map(async p=>{let media="";if(p.media_path){const {data:d}=await db.storage.from("humor-media").createSignedUrl(p.media_path,3600);const url=d?.signedUrl;if(url)media=p.media_type==="video"?'<video controls playsinline src="'+url+'" style="max-width:100%;border-radius:12px"></video>':'<img src="'+url+'" alt="" style="max-width:100%;border-radius:12px">'}return '<article class="form-panel"><h3>'+escapeHtml(p.title)+'</h3><p>'+escapeHtml(p.body)+'</p>'+media+'</article>'}));$("humor-feed").innerHTML=cards.join("")||"هنوز مطلبی منتشر نشده است."}
 $("humor-submit-form").addEventListener("submit",async e=>{e.preventDefault();const b=e.submitter;b.disabled=true;try{let path=null,type="text";const f=$("humor-file").files[0];if(f){if(f.size>52428800)throw new Error("حداکثر حجم فایل ۵۰ مگابایت است.");type=f.type.startsWith("video/")?"video":"image";path=currentUser.id+"/"+crypto.randomUUID()+"-"+f.name.replace(/[^a-zA-Z0-9._-]/g,"_");const {error}=await db.storage.from("humor-media").upload(path,f,{contentType:f.type});if(error)throw error}const {error}=await db.from("humor_posts").insert({user_id:currentUser.id,title:$("humor-title").value.trim(),body:$("humor-body").value.trim(),media_path:path,media_type:type,status:"pending"});if(error)throw error;e.target.reset();message("humor-submit-message","ارسال شد و منتظر تأیید مدیر است.");}catch(x){message("humor-submit-message",x.message,true)}finally{b.disabled=false}});
 async function loadAdminUsers(){if(!profile?.is_admin)return;const result=await callAdmin("list_users");window.__adminUsers=result.users||[];$("admin-users").innerHTML=window.__adminUsers.length?window.__adminUsers.map(u=>'<article class="task-item"><div class="task-main"><h3>'+escapeHtml(u.display_name||"بدون نام")+'</h3><p>شناسه: '+escapeHtml(u.login_id||u.phone||u.email||"—")+' · '+(u.ends_at?"پایان اشتراک: "+jalaliDate(u.ends_at):"بدون اشتراک")+'</p><p>'+escapeHtml(u.email||"")+'</p></div><span class="priority">'+(u.is_banned?"مسدود":u.is_active?"فعال":"غیرفعال")+'</span>'+(u.is_admin?"":'<div class="task-actions"><button class="secondary" data-renew-user="'+u.id+'">تمدید اشتراک</button><button class="secondary" data-edit-user="'+u.id+'">ویرایش حساب</button><button class="secondary" data-ban-user="'+u.id+'">'+(u.is_banned?"رفع بن":"بن کاربر")+'</button><button class="danger" data-delete-user="'+u.id+'">حذف کاربر</button></div>')+'</article>').join(""):'<div class="empty">کاربری ثبت نشده است.</div>'}
-async function loadExcelLibrary(){const sources=["https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js","https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js","https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"];for(const src of sources){if(window.XLSX)return;await new Promise(resolve=>{const script=document.createElement("script");script.src=src;script.onload=resolve;script.onerror=resolve;document.head.appendChild(script)});if(window.XLSX)return}}
-$("export-users").addEventListener("click",async()=>{const btn=$("export-users");btn.disabled=true;try{message("admin-message","در حال دریافت اطلاعات و ساخت فایل Excel...");if(!window.XLSX)await loadExcelLibrary();if(!window.XLSX)throw new Error("کتابخانه Excel بارگذاری نشد؛ اتصال اینترنت را بررسی کنید.");const result=await callAdmin("export_data");if(!result.data||!Object.keys(result.data).length)throw new Error("داده‌ای برای خروجی دریافت نشد.");const wb=XLSX.utils.book_new();const labels={profiles:"کاربران",subscriptions:"اشتراک‌ها",study_tasks:"وظایف و تکالیف",routines:"برنامه‌های ثابت",planner_settings:"تنظیمات برنامه‌ریزی",announcements:"اطلاعیه‌ها",support_messages:"پیام‌های پشتیبانی",auth_accounts:"حساب‌های ورود"};for(const [key,rows] of Object.entries(result.data)){const headers=(result.columns&&result.columns[key])||Object.keys((rows&&rows[0])||{});const safeRows=(rows||[]).map(row=>{const out={};for(const k of headers)out[k]=row[k]??"";return out});const sheet=XLSX.utils.json_to_sheet(safeRows,{header:headers});XLSX.utils.book_append_sheet(wb,sheet,(labels[key]||key).slice(0,31));}const bytes=XLSX.write(wb,{bookType:"xlsx",type:"array",compression:true});const blob=new Blob([bytes],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});const url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download="MMD-Study-Planner-"+jalaliDate(new Date()).replaceAll("/","-")+".xlsx";document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);message("admin-message","فایل Excel ساخته شد. اگر دانلود خودکار شروع نشد، اجازه دانلود مرورگر را فعال کنید.");}catch(err){console.error("Excel export failed",err);message("admin-message","خطا در خروجی Excel: "+(err.message||"خطای نامشخص"),true)}finally{btn.disabled=false}});
+async function loadExcelLibrary(){
+ const sources=["https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js","https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js","https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"];
+ for(const src of sources){if(window.XLSX)return;await new Promise(resolve=>{const script=document.createElement("script");script.src=src;script.onload=resolve;script.onerror=resolve;document.head.appendChild(script)});if(window.XLSX)return}
+}
+$("export-users").addEventListener("click",async()=>{
+ const btn=$("export-users");btn.disabled=true;
+ try{
+  message("admin-message","در حال دریافت اطلاعات کامل و ساخت فایل Excel...");
+  if(!window.XLSX)await loadExcelLibrary();
+  if(!window.XLSX)throw new Error("کتابخانه Excel بارگذاری نشد. اینترنت گوشی را بررسی کنید.");
+  const result=await callAdmin("export_data");
+  if(!result||!result.data||typeof result.data!=="object")throw new Error("پاسخ سرور فاقد داده است.");
+  const wb=XLSX.utils.book_new(),counts=[];
+  const labels={profiles:"کاربران",subscriptions:"اشتراک‌ها",study_tasks:"وظایف",routines:"برنامه ثابت",planner_settings:"تنظیمات",announcements:"اطلاعیه‌ها",support_messages:"پیام‌ها",auth_accounts:"حساب‌های ورود",humor_posts:"همتانه"};
+  for(const [key,rowsRaw] of Object.entries(result.data)){
+   const rows=Array.isArray(rowsRaw)?rowsRaw:[];
+   const headers=(result.columns&&result.columns[key])||[...new Set(rows.flatMap(row=>Object.keys(row||{})))];
+   const safeRows=rows.map(row=>{const out={};for(const k of headers)out[k]=row?.[k]??"";return out});
+   const sheet=XLSX.utils.aoa_to_sheet([headers,...safeRows.map(row=>headers.map(k=>row[k]))]);
+   sheet["!cols"]=headers.map(h=>({wch:Math.min(32,Math.max(14,String(h).length+3))}));
+   XLSX.utils.book_append_sheet(wb,sheet,(labels[key]||key).slice(0,31));
+   counts.push({بخش:labels[key]||key,"تعداد رکورد":rows.length});
+  }
+  if(!counts.length)throw new Error("هیچ جدولی از سرور دریافت نشد.");
+  const summary=XLSX.utils.json_to_sheet(counts);XLSX.utils.book_append_sheet(wb,summary,"خلاصه خروجی");
+  const bytes=XLSX.write(wb,{bookType:"xlsx",type:"array",compression:true});
+  const file=new File([bytes],"MMD-Study-Planner-"+jalaliDate(new Date()).replaceAll("/","-")+".xlsx",{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+  if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:"خروجی اطلاعات MMD"});}
+  else{const url=URL.createObjectURL(file),link=document.createElement("a");link.href=url;link.download=file.name;link.style.display="none";document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),10000);}
+  message("admin-message","فایل Excel ساخته شد؛ تعداد رکوردها: "+counts.reduce((n,x)=>n+x["تعداد رکورد"],0)+" .");
+ }catch(err){console.error("Excel export failed",err);message("admin-message","خطا در خروجی Excel: "+(err.message||"خطای نامشخص"),true)}
+ finally{btn.disabled=false}
+});
 
 let activityReportData=null;
 const weekdayNames=["یکشنبه","دوشنبه","سه‌شنبه","چهارشنبه","پنجشنبه","جمعه","شنبه"];
