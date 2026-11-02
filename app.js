@@ -68,6 +68,7 @@ $("show-signup").addEventListener("click",()=>{show("login-card",false);show("si
 $("show-login").addEventListener("click",()=>{show("signup-card",false);show("login-card",true)});
 $("signup-form").addEventListener("submit",async e=>{e.preventDefault();try{const {data,error}=await db.auth.signUp({email:$("signup-email").value.trim(),password:$("signup-password").value,options:{data:{display_name:$("signup-name").value.trim()}}});if(error)throw error;if(data.session){show("signup-card",false);await enterApp(data.user)}else message("signup-message","ثبت‌نام انجام شد. ایمیل را تأیید کنید و منتظر تأیید مدیر بمانید.");}catch(err){message("signup-message",err.message,true)}});
 $("pending-logout").addEventListener("click",()=>db.auth.signOut());
+async function checkAppUpdateNotice(){try{const r=await fetch("./version.json?notice="+Date.now(),{cache:"no-store"});if(!r.ok)return;const v=await r.json(),seen=localStorage.getItem("mmd_seen_version");if(!v.version||seen===String(v.version))return;localStorage.setItem("mmd_seen_version",String(v.version));const wrap=document.createElement("section");wrap.className="form-panel";wrap.style.cssText="margin:0 0 18px;border:1px solid var(--accent);";const h=document.createElement("h3");h.textContent="نسخه جدید برنامه منتشر شد · "+v.version;const p=document.createElement("p");p.textContent=v.release_notes||"برای دریافت امکانات تازه، برنامه را به‌روزرسانی کنید.";const b=document.createElement("button");b.className="primary";b.textContent="دریافت به‌روزرسانی";b.addEventListener("click",async()=>{b.disabled=true;b.textContent="در حال دریافت...";try{const reg=await navigator.serviceWorker?.getRegistration();await reg?.update();if(reg?.waiting){reg.waiting.postMessage({type:"SKIP_WAITING"});setTimeout(()=>location.reload(),1200)}else location.reload()}catch(e){b.disabled=false;b.textContent="تلاش دوباره";toast("به‌روزرسانی انجام نشد؛ از صفحه نصب اقدام کنید.")}});wrap.append(h,p,b);const main=document.querySelector(".main");if(main)main.prepend(wrap)}catch(e){console.warn("Update notice unavailable",e)}}
 async function enterApp(user){
  if(enteringUserId===user.id)return;enteringUserId=user.id;
  try{
@@ -75,7 +76,7 @@ async function enterApp(user){
   await loadProfile();if(!currentUser)return;
   await loadFeatureFlags();
   if(profile?.is_approved===false){show("app-view",false);show("auth-view",false);show("pending-approval-view",true);return;}
-  await Promise.all([loadTasks(),loadRoutines(),loadSettings(),loadAnnouncements(),loadHumorFeed()]);renderAll();syncSmartPlanner();
+  await Promise.all([loadTasks(),loadRoutines(),loadSettings(),loadAnnouncements(),loadHumorFeed()]);renderAll();syncSmartPlanner();checkAppUpdateNotice();
  }catch(err){console.error("App loading failed:",err);show("app-view",false);show("auth-view",true);show("login-card",true);message("auth-message","خطا در ورود: "+(err.message||"خطای نامشخص"),true);throw err}
  finally{enteringUserId=null}
 }
@@ -275,6 +276,7 @@ async function loadExcelLibrary(){
  const sources=["https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js","https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js","https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"];
  for(const src of sources){if(window.XLSX)return;await new Promise(resolve=>{const script=document.createElement("script");script.src=src;script.onload=resolve;script.onerror=resolve;document.head.appendChild(script)});if(window.XLSX)return}
 }
+function downloadExportFile(file){const url=URL.createObjectURL(file),link=document.createElement("a");link.href=url;link.download=file.name;link.style.display="block";link.textContent="دریافت فایل خروجی";link.style.cssText="position:fixed;z-index:99999;bottom:18px;left:18px;padding:12px 16px;background:#a4f05b;color:#17220e;border-radius:12px;font-weight:800";document.body.appendChild(link);link.click();setTimeout(()=>{URL.revokeObjectURL(url);link.remove()},60000)}
 $("export-users").addEventListener("click",async()=>{
  const btn=$("export-users");btn.disabled=true;
  try{
@@ -298,9 +300,9 @@ $("export-users").addEventListener("click",async()=>{
   const summary=XLSX.utils.json_to_sheet(counts);XLSX.utils.book_append_sheet(wb,summary,"خلاصه خروجی");
   const bytes=XLSX.write(wb,{bookType:"xlsx",type:"array",compression:true});
   const file=new File([bytes],"MMD-Study-Planner-"+jalaliDate(new Date()).replaceAll("/","-")+".xlsx",{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
-  if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:"خروجی اطلاعات MMD"});}
-  else{const url=URL.createObjectURL(file),link=document.createElement("a");link.href=url;link.download=file.name;link.style.display="none";document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),10000);}
-  message("admin-message","فایل Excel ساخته شد؛ تعداد رکوردها: "+counts.reduce((n,x)=>n+x["تعداد رکورد"],0)+" .");
+  if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],title:"خروجی اطلاعات MMD"});}catch(shareError){if(shareError.name!=="AbortError")downloadExportFile(file);else throw shareError;}}
+  else downloadExportFile(file);
+  message("admin-message","فایل Excel آماده شد؛ تعداد رکوردها: "+counts.reduce((n,x)=>n+x["تعداد رکورد"],0)+" .");
  }catch(err){console.error("Excel export failed",err);message("admin-message","خطا در خروجی Excel: "+(err.message||"خطای نامشخص"),true)}
  finally{btn.disabled=false}
 });
