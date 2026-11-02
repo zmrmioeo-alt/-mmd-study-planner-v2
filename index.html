@@ -37,10 +37,10 @@
           <li>اطلاعاتی مانند شناسه و نام حساب، وضعیت اشتراک، وظایف، برنامه‌های ثابت و تنظیمات برای ارائه خدمات ذخیره می‌شوند.</li>
           <li>اطلاعات در زیرساخت پایگاه داده و احراز هویت سامانه نگهداری می‌شوند و مدیر سامانه برای پشتیبانی و مدیریت حساب‌ها به بخشی از اطلاعات دسترسی مدیریتی دارد.</li>
           <li>رمز عبور به‌صورت متن قابل‌مشاهده در اختیار مدیر قرار نمی‌گیرد.</li>
-          <li>اطلاعات حساب را فقط در دستگاه‌های مورد اعتماد وارد کنید و پس از استفاده از دستگاه مشترک خارج شوید.</li>
+          <li>اطلاعات حساب را فقط در دستگاه‌های مورد اعتماد وارد کنید و پس از استفاده از دستگاه مشترک خارج شوید.</li><li>داده‌های لازم شامل شناسه و نام حساب، وضعیت اشتراک، وظایف، برنامه‌ها، تنظیمات، پست‌ها، پیام‌ها و فایل‌های ارسالی برای ارائه و امنیت خدمات ذخیره می‌شوند.</li><li>گفت‌وگوها خصوصی و فقط برای طرفین قابل مشاهده‌اند؛ مدیر امکان مشاهده و بررسی پیام‌ها و فایل‌ها را برای رسیدگی به گزارش‌ها، امنیت و اجرای قوانین دارد.</li><li>فایل‌های چت در فضای خصوصی ذخیره می‌شوند و ممکن است سوابق حذف یا نسخه‌های پشتیبان تا مدت لازم باقی بمانند.</li>
           <li>برای درخواست اصلاح یا حذف اطلاعات و پرسش‌های حریم خصوصی، با مدیر سامانه تماس بگیرید.</li>
         </ul>
-        <h3>۳. پذیرش و تغییرات</h3>
+        <h3>۳. قوانین چت و دانلود ویدئو</h3><ul><li>تهدید، توهین، آزار، ارسال محتوای غیرقانونی و انتشار اطلاعات خصوصی دیگران بدون رضایت ممنوع است.</li><li>مدیر می‌تواند پیام‌ها را بررسی کند و در صورت تخلف دسترسی چت یا حساب را محدود کند.</li><li>کاربر می‌تواند پیام‌های خودش را حذف کند؛ پیام حذف‌شده از نمایش گفت‌وگو خارج می‌شود، اما ممکن است سوابق فنی و نسخه پشتیبان باقی بماند.</li><li>دانلود مستقیم ویدئوهای همتانه برای کاربران فعال نیست. برای دریافت نسخه قابل دانلود باید درخواست خرید اشتراک یا مجوز دانلود را از راه ارتباطی سامانه به مدیر ارسال کنید؛ شرایط و هزینه را مدیر اعلام می‌کند.</li></ul><h3>۴. پذیرش و تغییرات</h3>
         <p>با انتخاب گزینه پذیرش، تأیید می‌کنید این موارد را خوانده‌اید و با استفاده از سامانه بر اساس آن‌ها موافق هستید. در صورت تغییر اساسی قوانین، ممکن است پذیرش دوباره درخواست شود.</p>
       </div>
       <label class="terms-accept"><input id="terms-checkbox" type="checkbox"> قوانین استفاده و حریم خصوصی را خواندم و می‌پذیرم.</label>
@@ -88,7 +88,7 @@
         <button class="nav-link" data-page="reports">▥ <span>گزارش پیشرفت</span></button>
         <button class="nav-link" data-page="profile">✿ <span>پروفایل من</span></button>
         <button class="nav-link" data-page="settings">⚙ <span>تنظیمات</span></button>
-        <button class="nav-link hidden" id="admin-nav" data-page="admin">♙ <span>مدیریت کاربران</span></button>
+        <button class="nav-link" id="chat-nav" data-page="chat">✉ <span>چت خصوصی</span></button><button class="nav-link hidden" id="admin-nav" data-page="admin">♙ <span>مدیریت کاربران</span></button>
         <button id="logout-btn" class="nav-link logout-nav" type="button">↪ <span>خروج از حساب</span></button>
       </nav>
       <div class="sidebar-bottom"><div class="user-chip"><span class="avatar" id="user-avatar">M</span><div><b id="user-name">کاربر</b><small id="subscription-label">در حال بررسی اشتراک</small></div></div></div>
@@ -131,18 +131,7 @@
         </div>
       </section>
 
-      <section id="page-chat" class="page hidden">
-        <div class="section-head"><div><p class="eyebrow">PRIVATE SUPPORT CHAT</p><h2>چت با ادمین</h2></div><span id="chat-status" class="muted">پیام‌رسانی آنلاین</span></div>
-        <div class="chat-layout">
-          <aside id="chat-inbox-panel" class="chat-inbox hidden"><h3>گفت‌وگوها</h3><div id="chat-inbox-list" class="chat-inbox-list"><div class="empty">هنوز پیامی دریافت نشده است.</div></div></aside>
-          <div class="chat-window">
-            <div class="chat-heading"><strong id="chat-heading-title">پشتیبانی MMD</strong><small id="chat-heading-subtitle">پیام شما فقط برای مدیر سامانه قابل مشاهده است.</small></div>
-            <div id="chat-messages" class="chat-messages"><div class="empty">در حال بارگذاری پیام‌ها...</div></div>
-            <form id="chat-form" class="chat-compose"><textarea id="chat-input" rows="2" maxlength="4000" placeholder="پیام خود را بنویسید..." required></textarea><button class="primary" type="submit">ارسال پیام</button></form>
-            <p id="chat-message" class="message" role="status"></p>
-          </div>
-        </div>
-      </section>
+      <section id="page-chat" class="page hidden"><div class="section-head"><div><p class="eyebrow">PRIVATE MESSENGER</p><h2>چت خصوصی کاربران</h2></div><span id="chat-status" class="muted">گفت‌وگوهای خصوصی</span></div><div id="chat-content" class="chat-layout"><aside class="chat-inbox"><h3>کاربران و گفت‌وگوها</h3><div id="chat-inbox-list" class="chat-inbox-list"><div class="empty">در حال دریافت...</div></div></aside><div class="chat-window"><div class="chat-heading"><strong id="chat-heading-title">یک کاربر را انتخاب کنید</strong><small id="chat-heading-subtitle">مدیر امکان بررسی پیام‌ها را دارد.</small></div><div id="chat-messages" class="chat-messages"></div><form id="chat-form" class="chat-compose"><textarea id="chat-input" rows="2" maxlength="4000" placeholder="پیام خود را بنویسید..."></textarea><label class="chat-attach">＋ فایل<input id="chat-file" type="file" accept="image/*,video/mp4,video/webm,application/pdf"></label><button class="primary" type="submit">ارسال</button></form><p class="hint">حداکثر حجم فایل ۵۰ مگابایت.</p><p id="chat-message" class="message"></p></div></div></section>
       <section id="page-smart" class="page hidden">
         <div class="section-head"><div><p class="eyebrow">OPTIONAL SMART PLANNER</p><h2>برنامه‌ریز هوشمند</h2></div></div>
         <div class="form-panel"><p class="muted">این ابزار اختیاری است و بدون هوش مصنوعی ابری، وظایف باز را بر اساس مهلت و زمان آزاد مرتب می‌کند. برنامه فقط پیشنهاد است و هیچ تکلیفی را خودکار تغییر نمی‌دهد.</p><div class="form-row"><label>مدت هر نوبت مطالعه<select id="smart-session"><option value="25">۲۵ دقیقه</option><option value="45" selected>۴۵ دقیقه</option><option value="60">۶۰ دقیقه</option><option value="90">۹۰ دقیقه</option></select></label><label>فاصله استراحت<select id="smart-break"><option value="5">۵ دقیقه</option><option value="10" selected>۱۰ دقیقه</option><option value="15">۱۵ دقیقه</option></select></label></div><button class="primary" id="smart-generate" type="button">ساخت برنامه پیشنهادی</button><button class="secondary" id="smart-clear" type="button">پاک‌کردن پیشنهاد</button></div>
