@@ -19,68 +19,8 @@ function isToday(value){if(!value)return false;const d=new Date(value),n=new Dat
 function dateLabel(){return new Intl.DateTimeFormat("fa-IR-u-ca-persian",{weekday:"long",year:"numeric",month:"long",day:"numeric"}).format(new Date())}
 function jalaliParts(value){const d=value instanceof Date?value:new Date(value);return new Intl.DateTimeFormat("en-US-u-ca-persian",{year:"numeric",month:"numeric",day:"numeric"}).formatToParts(d).reduce((o,p)=>(o[p.type]=Number(p.value),o),{});}
 function jalaliDate(value,withTime=false){if(!value)return "—";const d=new Date(value);if(Number.isNaN(d.getTime()))return "—";return new Intl.DateTimeFormat("fa-IR-u-ca-persian",{year:"numeric",month:"2-digit",day:"2-digit",...(withTime?{hour:"2-digit",minute:"2-digit"}:{})}).format(d);}
-function jalaliYearStart(jy){
- const base=new Date(jy+621,2,19,12);
- for(let i=0;i<8;i++){const d=new Date(base);d.setDate(base.getDate()+i);const p=jalaliParts(d);if(p.year===jy&&p.month===1&&p.day===1)return d;}
- throw new Error("شروع سال شمسی پیدا نشد.");
-}
-function jalaliInputToDate(value,end=false){
- const s=String(value||"").trim().replace(/[۰-۹]/g,d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d)).replace(/[٠-٩]/g,d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/[-.]/g,"/");
- const m=s.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
- if(!m)throw new Error("تاریخ را به شکل ۱۴۰۵/۰۸/۱۱ وارد کنید.");
- const jy=+m[1],jm=+m[2],jd=+m[3];
- if(jm<1||jm>12||jd<1)throw new Error("تاریخ شمسی معتبر نیست.");
- const yearStart=jalaliYearStart(jy);
- const nextMonthStart=jm===12?jalaliYearStart(jy+1):(()=>{const offset=jm<=6?jm*31:186+(jm-6)*30;const d=new Date(yearStart);d.setDate(d.getDate()+offset);return d;})();
- const monthStartOffset=jm<=6?(jm-1)*31:186+(jm-7)*30;
- const monthStart=new Date(yearStart);monthStart.setDate(monthStart.getDate()+monthStartOffset);
- const nextStart=jm===12?nextMonthStart:(()=>{const d=new Date(monthStart);d.setDate(d.getDate()+(jm<=6?31:30));return d;})();
- const monthLength=Math.round((nextStart-monthStart)/86400000);
- if(jd>monthLength)throw new Error("این تاریخ در تقویم شمسی وجود ندارد.");
- const result=new Date(monthStart);result.setDate(result.getDate()+jd-1);
- const check=jalaliParts(result);
- if(check.year!==jy||check.month!==jm||check.day!==jd)throw new Error("تبدیل تاریخ شمسی انجام نشد.");
- result.setHours(end?23:0,end?59:0,end?59:0,0);return result;
-}
+function jalaliInputToDate(value,end=false){const s=String(value||"").trim().replace(/[۰-۹]/g,d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d)).replace(/[٠-٩]/g,d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/[-.]/g,"/");const m=s.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);if(!m)throw new Error("تاریخ را به شکل ۱۴۰۵/۰۸/۱۱ وارد کنید.");const jy=+m[1],jm=+m[2],jd=+m[3];if(jm<1||jm>12||jd<1||jd>(jm<=6?31:jm<=11?30:30))throw new Error("تاریخ شمسی معتبر نیست.");const start=new Date(jy+621,2,19,12);let found=null;for(let i=0;i<6;i++){const x=new Date(start);x.setDate(start.getDate()+i);const p=jalaliParts(x);if(p.year===jy&&p.month===1&&p.day===1){found=x;break;}}if(!found)throw new Error("تبدیل تاریخ شمسی انجام نشد.");const offset=(jm<=6?(jm-1)*31:186+(jm-7)*30)+(jd-1);found.setDate(found.getDate()+offset);const check=jalaliParts(found);if(check.year!==jy||check.month!==jm||check.day!==jd)throw new Error("این تاریخ در تقویم شمسی وجود ندارد.");found.setHours(end?23:0,end?59:0,end?59:0,0);return found;}
 
-const jalaliMonthNames=["فروردین","اردیبهشت","خرداد","تیر","مرداد","شهریور","مهر","آبان","آذر","دی","بهمن","اسفند"];
-const jalaliWeekNames=["ش","ی","د","س","چ","پ","ج"];
-function jalaliString(y,m,d){return [y,String(m).padStart(2,"0"),String(d).padStart(2,"0")].join("/")}
-function gregorianToJalaliValue(date){const p=jalaliParts(date);return jalaliString(p.year,p.month,p.day)}
-function setupJalaliPickers(){
- document.querySelectorAll(".jalali-date-input").forEach(input=>{
-  const wrap=document.createElement("div");wrap.className="jalali-picker";input.parentNode.insertBefore(wrap,input);wrap.appendChild(input);
-  const panel=document.createElement("div");panel.className="jalali-calendar hidden";panel.setAttribute("role","dialog");panel.setAttribute("aria-label","تقویم شمسی");wrap.appendChild(panel);
-  let view= input.value ? input.value.split("/").map(Number) : (()=>{const p=jalaliParts(new Date());return [p.year,p.month,p.day]})();
-  const draw=()=>{
-   const [year,month]=view;
-   const first=jalaliInputToDate(jalaliString(year,month,1));
-   const offset=(first.getDay()+1)%7;
-   const next=month===12?jalaliInputToDate(jalaliString(year+1,1,1)):jalaliInputToDate(jalaliString(year,month+1,1));
-   const count=Math.round((next-first)/86400000);
-   const cells=Array.from({length:42},(_,i)=>{
-    const day=i-offset+1;
-    if(day<1||day>count)return '<span class="jalali-day empty-day"></span>';
-    const val=jalaliString(year,month,day),active=input.value===val;
-    return '<button type="button" class="jalali-day'+(active?' selected':'')+'" data-jalali-day="'+day+'">'+fa(day)+'</button>';
-   }).join("");
-   panel.innerHTML='<div class="jalali-calendar-head"><button type="button" data-jalali-prev aria-label="ماه قبل">‹</button><strong>'+jalaliMonthNames[month-1]+' '+fa(year)+'</strong><button type="button" data-jalali-next aria-label="ماه بعد">›</button></div><div class="jalali-weekdays">'+jalaliWeekNames.map(x=>'<span>'+x+'</span>').join("")+'</div><div class="jalali-days">'+cells+'</div><div class="jalali-calendar-foot"><button type="button" data-jalali-today>امروز</button><button type="button" data-jalali-clear>پاک کردن</button></div>';
-  };
-  const openPicker=()=>{document.querySelectorAll(".jalali-calendar").forEach(p=>{if(p!==panel)p.classList.add("hidden")});const p=input.value?input.value.split("/").map(Number):jalaliParts(new Date());view=p;draw();panel.classList.remove("hidden");input.setAttribute("aria-expanded","true")};
-  const closePicker=()=>{panel.classList.add("hidden");input.setAttribute("aria-expanded","false")};
-  input.setAttribute("aria-haspopup","dialog");input.setAttribute("aria-expanded","false");
-  input.addEventListener("click",()=>panel.classList.contains("hidden")?openPicker():closePicker());
-  input.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();panel.classList.contains("hidden")?openPicker():closePicker()}else if(e.key==="Escape")closePicker()});
-  panel.addEventListener("click",e=>{
-   if(e.target.closest("[data-jalali-prev]")){view[1]--;if(view[1]<1){view[1]=12;view[0]--}draw();return}
-   if(e.target.closest("[data-jalali-next]")){view[1]++;if(view[1]>12){view[1]=1;view[0]++}draw();return}
-   if(e.target.closest("[data-jalali-today]")){const p=jalaliParts(new Date());view=[p.year,p.month,p.day];input.value=jalaliString(...view);panel.classList.add("hidden");input.setAttribute("aria-expanded","false");input.dispatchEvent(new Event("change",{bubbles:true}));return}
-   if(e.target.closest("[data-jalali-clear]")){input.value="";panel.classList.add("hidden");input.dispatchEvent(new Event("change",{bubbles:true}));return}
-   const day=e.target.closest("[data-jalali-day]");if(day){input.value=jalaliString(view[0],view[1],Number(day.dataset.jalaliDay));panel.classList.add("hidden");input.setAttribute("aria-expanded","false");input.dispatchEvent(new Event("change",{bubbles:true}))}
-  });
- });
- document.addEventListener("click",e=>{if(!e.target.closest(".jalali-picker"))document.querySelectorAll(".jalali-calendar").forEach(p=>p.classList.add("hidden"))});
-}
 function escapeHtml(s=""){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 async function callAdmin(action,payload={}){const {data:{session}}=await db.auth.getSession();if(!session)throw new Error("نشست ورود معتبر نیست.");const res=await fetch(ADMIN_FUNCTION,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+session.access_token,"apikey":SUPABASE_KEY},body:JSON.stringify({action,...payload})});const body=await res.json().catch(()=>({}));if(!res.ok)throw new Error(body.error||"خطا در ارتباط با سرویس مدیریت");return body}
 let enteringUserId=null;
@@ -98,7 +38,6 @@ $("accept-terms").addEventListener("click",async()=>{
  catch(err){console.error(err);message("terms-message","ذخیره تأیید قوانین ممکن نشد. تنظیمات مرورگر را بررسی کنید.",true)}
 });
 async function boot(){
- setupJalaliPickers();
  if(localStorage.getItem("mmd_terms_accepted")!=="mmd-terms-2026-11-v1"){show("terms-view",true);show("auth-view",false);show("app-view",false);return}
  db.auth.onAuthStateChange((event)=>{if(event==="SIGNED_OUT"){currentUser=null;profile=null;show("app-view",false);show("expired-subscription-view",false);show("banned-account-view",false);show("auth-view",true)}});
  await continueAfterPolicy();
@@ -169,7 +108,7 @@ function renderTasks(){
 function renderRoutines(){$("routine-list").innerHTML=routines.length?routines.map(r=>'<article class="routine-card"><b>'+escapeHtml(r.title)+'</b><small>'+weekdays[r.weekday]+' · '+(r.scheduled_time?r.scheduled_time.slice(0,5):"بدون ساعت")+'</small><p class="muted">'+escapeHtml(r.details||"")+'</p><button class="icon-btn" data-routine-delete="'+r.id+'">حذف</button></article>').join(""):'<div class="empty">هنوز برنامه ثابتی ثبت نشده است.</div>'}
 function renderReports(){const total=tasks.length,done=tasks.filter(t=>t.status==="done").length,cancelled=tasks.filter(t=>t.status==="cancelled").length,pct=total?Math.round(done/total*100):0;$("report-percent").textContent=fa(pct)+"٪";$("report-total").textContent=fa(total);$("report-done").textContent=fa(done);$("report-cancelled").textContent=fa(cancelled)}
 async function refreshTasks(){await loadTasks();renderTasks();renderReports()}
-$("task-form").addEventListener("submit",async e=>{e.preventDefault();const title=$("task-title").value.trim();const due=$("task-due-date").value.trim(),time=$("task-due-time").value||"23:59";let dueAt=null;if(due){const d=jalaliInputToDate(due);const [hh,mm]=time.split(":").map(Number);d.setHours(hh,mm,0,0);dueAt=d.toISOString()}const row={user_id:currentUser.id,title,description:$("task-description").value.trim(),priority:$("task-priority").value,status:"pending",position:tasks.length,...(dueAt?{due_at:dueAt}:{})};const {error}=await db.from("study_tasks").insert(row);if(error){toast(error.message);return}e.target.reset();await refreshTasks();toast("وظیفه ثبت شد.")});
+$("task-form").addEventListener("submit",async e=>{e.preventDefault();const title=$("task-title").value.trim();const due=$("task-due-date").value,time=$("task-due-time").value||"23:59";let dueAt=null;if(due){const d=new Date(due+"T00:00:00");if(Number.isNaN(d.getTime())){toast("تاریخ انتخاب‌شده معتبر نیست.");return}const [hh,mm]=time.split(":").map(Number);d.setHours(hh,mm,0,0);dueAt=d.toISOString()}const row={user_id:currentUser.id,title,description:$("task-description").value.trim(),priority:$("task-priority").value,status:"pending",position:tasks.length,...(dueAt?{due_at:dueAt}:{})};const {error}=await db.from("study_tasks").insert(row);if(error){toast(error.message);return}e.target.reset();await refreshTasks();toast("وظیفه ثبت شد.")});
 $("routine-form").addEventListener("submit",async e=>{e.preventDefault();const row={user_id:currentUser.id,title:$("routine-title").value.trim(),details:$("routine-details").value.trim(),weekday:Number($("routine-weekday").value),scheduled_time:$("routine-time").value||null};const {error}=await db.from("routines").insert(row);if(error){toast(error.message);return}e.target.reset();await loadRoutines();renderRoutines();toast("برنامه ثابت اضافه شد.")});
 document.addEventListener("click",async e=>{
  const check=e.target.closest("[data-task-check]");if(check){const id=check.dataset.taskCheck;const {error}=await db.from("study_tasks").update({status:check.checked?"done":"pending"}).eq("id",id).eq("user_id",currentUser.id);if(error)toast(error.message);else await refreshTasks();return}
@@ -274,7 +213,7 @@ document.addEventListener("click",async e=>{
  const remove=e.target.closest("[data-delete-user]");if(remove){const u=(window.__adminUsers||[]).find(x=>x.id===remove.dataset.deleteUser);if(!u)return;if(!confirm("حذف دائمی حساب «"+(u.display_name||u.login_id||"کاربر")+"» و تمام اطلاعات وابسته؟ این کار قابل بازگشت نیست."))return;try{await callAdmin("delete_user",{user_id:u.id});toast("حساب و اطلاعات وابسته حذف شد.");await loadAdminUsers()}catch(err){toast(err.message)}return}
  const edit=e.target.closest("[data-edit-user]");if(edit){const u=(window.__adminUsers||[]).find(x=>x.id===edit.dataset.editUser);if(!u)return;const identifier=prompt("شناسه ورود جدید:",u.login_id||"");if(identifier===null)return;const display_name=prompt("نام نمایشی:",u.display_name||"");if(display_name===null)return;const password=prompt("رمز جدید؛ برای حفظ رمز فعلی خالی بگذارید:","");if(password===null)return;try{await callAdmin("update_user",{user_id:u.id,identifier:identifier.trim(),display_name:display_name.trim(),password});toast("اطلاعات حساب به‌روزرسانی شد.");await loadAdminUsers()}catch(err){toast(err.message)}return}
 });
-$("admin-create-form").addEventListener("submit",async e=>{e.preventDefault();message("admin-message","در حال ساخت حساب...");try{const result=await callAdmin("create_user",{identifier:$("new-identifier").value.trim(),password:$("new-password").value,display_name:$("new-name").value.trim(),starts_at:jalaliInputToDate($("new-start").value).toISOString(),ends_at:jalaliInputToDate($("new-end").value,true).toISOString()});message("admin-message","حساب ساخته شد: "+result.identifier);e.target.reset();await loadAdminUsers()}catch(err){message("admin-message",err.message,true)}});
+$("admin-create-form").addEventListener("submit",async e=>{e.preventDefault();message("admin-message","در حال ساخت حساب...");try{const result=await callAdmin("create_user",{identifier:$("new-identifier").value.trim(),password:$("new-password").value,display_name:$("new-name").value.trim(),starts_at:(()=>{const d=new Date($("new-start").value+"T00:00:00");if(!Number.isFinite(d.getTime()))throw new Error("تاریخ شروع اشتراک را انتخاب کنید.");return d.toISOString()})(),ends_at:(()=>{const d=new Date($("new-end").value+"T23:59:59");if(!Number.isFinite(d.getTime()))throw new Error("تاریخ پایان اشتراک را انتخاب کنید.");return d.toISOString()})()});message("admin-message","حساب ساخته شد: "+result.identifier);e.target.reset();await loadAdminUsers()}catch(err){message("admin-message",err.message,true)}});
 $("refresh-users").addEventListener("click",()=>loadAdminUsers().catch(e=>message("admin-message",e.message,true)));
 async function loadAdminUsers(){if(!profile?.is_admin)return;const result=await callAdmin("list_users");window.__adminUsers=result.users||[];$("admin-users").innerHTML=window.__adminUsers.length?window.__adminUsers.map(u=>'<article class="task-item"><div class="task-main"><h3>'+escapeHtml(u.display_name||"بدون نام")+'</h3><p>شناسه: '+escapeHtml(u.login_id||u.phone||u.email||"—")+' · '+(u.ends_at?"پایان اشتراک: "+jalaliDate(u.ends_at):"بدون اشتراک")+'</p><p>'+escapeHtml(u.email||"")+'</p></div><span class="priority">'+(u.is_banned?"مسدود":u.is_active?"فعال":"غیرفعال")+'</span>'+(u.is_admin?"":'<div class="task-actions"><button class="secondary" data-renew-user="'+u.id+'">تمدید اشتراک</button><button class="secondary" data-edit-user="'+u.id+'">ویرایش حساب</button><button class="secondary" data-ban-user="'+u.id+'">'+(u.is_banned?"رفع بن":"بن کاربر")+'</button><button class="danger" data-delete-user="'+u.id+'">حذف کاربر</button></div>')+'</article>').join(""):'<div class="empty">کاربری ثبت نشده است.</div>'}
 async function loadExcelLibrary(){const sources=["https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js","https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js","https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"];for(const src of sources){if(window.XLSX)return;await new Promise(resolve=>{const script=document.createElement("script");script.src=src;script.onload=resolve;script.onerror=resolve;document.head.appendChild(script)});if(window.XLSX)return}}
