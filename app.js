@@ -50,9 +50,8 @@ function gregorianToJalaliValue(date){const p=jalaliParts(date);return jalaliStr
 function setupJalaliPickers(){
  document.querySelectorAll(".jalali-date-input").forEach(input=>{
   const wrap=document.createElement("div");wrap.className="jalali-picker";input.parentNode.insertBefore(wrap,input);wrap.appendChild(input);
-  const trigger=document.createElement("button");trigger.type="button";trigger.className="jalali-open-button";trigger.textContent="تقویم";trigger.setAttribute("aria-label","باز کردن تقویم شمسی");wrap.appendChild(trigger);
   const panel=document.createElement("div");panel.className="jalali-calendar hidden";panel.setAttribute("role","dialog");panel.setAttribute("aria-label","تقویم شمسی");wrap.appendChild(panel);
-  let view=(()=>{try{const m=String(input.value||"").match(/^(\\d{4})\\/(\\d{1,2})\\/(\\d{1,2})$/);if(m)return [+m[1],+m[2],+m[3]];const p=jalaliParts(new Date());return [p.year,p.month,p.day]}catch(err){console.error("Jalali picker initialization:",err);return [1405,1,1]}})();
+  let view= input.value ? input.value.split("/").map(Number) : (()=>{const p=jalaliParts(new Date());return [p.year,p.month,p.day]})();
   const draw=()=>{
    const [year,month]=view;
    const first=jalaliInputToDate(jalaliString(year,month,1));
@@ -67,22 +66,20 @@ function setupJalaliPickers(){
    }).join("");
    panel.innerHTML='<div class="jalali-calendar-head"><button type="button" data-jalali-prev aria-label="ماه قبل">‹</button><strong>'+jalaliMonthNames[month-1]+' '+fa(year)+'</strong><button type="button" data-jalali-next aria-label="ماه بعد">›</button></div><div class="jalali-weekdays">'+jalaliWeekNames.map(x=>'<span>'+x+'</span>').join("")+'</div><div class="jalali-days">'+cells+'</div><div class="jalali-calendar-foot"><button type="button" data-jalali-today>امروز</button><button type="button" data-jalali-clear>پاک کردن</button></div>';
   };
-  const openPicker=()=>{document.querySelectorAll(".jalali-calendar").forEach(p=>{if(p!==panel)p.classList.add("hidden")});try{const m=String(input.value||"").match(/^(\\d{4})\\/(\\d{1,2})\\/(\\d{1,2})$/);if(m)view=[+m[1],+m[2],+m[3]];else{const p=jalaliParts(new Date());view=[p.year,p.month,p.day]}draw()}catch(err){console.error("Jalali calendar render failed:",err);panel.innerHTML='<p class="jalali-calendar-error">تقویم بارگذاری نشد. تاریخ را به شکل ۱۴۰۵/۰۸/۱۱ وارد کنید.</p>'}panel.classList.remove("hidden");input.setAttribute("aria-expanded","true")};
+  const openPicker=()=>{document.querySelectorAll(".jalali-calendar").forEach(p=>{if(p!==panel)p.classList.add("hidden")});const p=input.value?input.value.split("/").map(Number):jalaliParts(new Date());view=p;draw();panel.classList.remove("hidden");input.setAttribute("aria-expanded","true")};
   const closePicker=()=>{panel.classList.add("hidden");input.setAttribute("aria-expanded","false")};
-  input.removeAttribute("readonly");input.setAttribute("inputmode","numeric");input.setAttribute("autocomplete","off");input.setAttribute("aria-haspopup","dialog");input.setAttribute("aria-expanded","false");
-  input.addEventListener("click",e=>{e.preventDefault();openPicker()});
-  input.addEventListener("input",()=>{const v=input.value.trim();if(v&&!/^\\d{4}\\/\\d{1,2}\\/\\d{1,2}$/.test(v))input.setCustomValidity("تاریخ را به شکل ۱۴۰۵/۰۸/۱۱ وارد کنید.");else input.setCustomValidity("")});
-  trigger.addEventListener("click",e=>{e.preventDefault();e.stopPropagation();panel.classList.contains("hidden")?openPicker():closePicker()});
+  input.setAttribute("aria-haspopup","dialog");input.setAttribute("aria-expanded","false");
+  input.addEventListener("click",()=>panel.classList.contains("hidden")?openPicker():closePicker());
   input.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();panel.classList.contains("hidden")?openPicker():closePicker()}else if(e.key==="Escape")closePicker()});
   panel.addEventListener("click",e=>{
    if(e.target.closest("[data-jalali-prev]")){view[1]--;if(view[1]<1){view[1]=12;view[0]--}draw();return}
    if(e.target.closest("[data-jalali-next]")){view[1]++;if(view[1]>12){view[1]=1;view[0]++}draw();return}
    if(e.target.closest("[data-jalali-today]")){const p=jalaliParts(new Date());view=[p.year,p.month,p.day];input.value=jalaliString(...view);panel.classList.add("hidden");input.setAttribute("aria-expanded","false");input.dispatchEvent(new Event("change",{bubbles:true}));return}
-   if(e.target.closest("[data-jalali-clear]")){input.value="";panel.classList.add("hidden");input.setAttribute("aria-expanded","false");input.dispatchEvent(new Event("change",{bubbles:true}));return}
+   if(e.target.closest("[data-jalali-clear]")){input.value="";panel.classList.add("hidden");input.dispatchEvent(new Event("change",{bubbles:true}));return}
    const day=e.target.closest("[data-jalali-day]");if(day){input.value=jalaliString(view[0],view[1],Number(day.dataset.jalaliDay));panel.classList.add("hidden");input.setAttribute("aria-expanded","false");input.dispatchEvent(new Event("change",{bubbles:true}))}
   });
  });
- document.addEventListener("click",e=>{if(!e.target.closest(".jalali-picker"))document.querySelectorAll(".jalali-calendar").forEach(p=>{p.classList.add("hidden");const field=p.parentElement?.querySelector(".jalali-date-input");if(field)field.setAttribute("aria-expanded","false")})});
+ document.addEventListener("click",e=>{if(!e.target.closest(".jalali-picker"))document.querySelectorAll(".jalali-calendar").forEach(p=>p.classList.add("hidden"))});
 }
 function escapeHtml(s=""){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 async function callAdmin(action,payload={}){const {data:{session}}=await db.auth.getSession();if(!session)throw new Error("نشست ورود معتبر نیست.");const res=await fetch(ADMIN_FUNCTION,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+session.access_token,"apikey":SUPABASE_KEY},body:JSON.stringify({action,...payload})});const body=await res.json().catch(()=>({}));if(!res.ok)throw new Error(body.error||"خطا در ارتباط با سرویس مدیریت");return body}
