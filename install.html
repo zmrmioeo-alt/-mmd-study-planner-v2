@@ -1,27 +1,165 @@
 <!doctype html>
 <html lang="fa" dir="rtl">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#101522"><meta name="description" content="نصب و به‌روزرسانی برنامه‌ریز درسی MMD">
-<link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="assets/icon.svg" type="image/svg+xml">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101522">
+<meta name="description" content="نصب و به‌روزرسانی برنامه‌ریز درسی MMD">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./assets/icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <title>نصب و به‌روزرسانی MMD</title>
 <style>
 :root{color-scheme:dark;font-family:Vazirmatn,Tahoma,sans-serif;--bg:#0c111b;--panel:#151e2d;--line:#28364b;--text:#eef3fb;--muted:#91a0b6;--accent:#a4f05b}
-*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:22px;background:radial-gradient(ellipse at 85% 0%,#1c2c3e,transparent 42%),var(--bg);color:var(--text)}main{width:min(100%,480px);padding:30px;background:var(--panel);border:1px solid var(--line);border-radius:25px;box-shadow:0 20px 60px #0005;text-align:center}.logo{width:100px;height:100px;object-fit:contain;margin:0 auto 20px}h1{font-size:25px;margin:0 0 10px}p{line-height:2;color:var(--muted);font-size:13px}button,a.btn{display:block;width:100%;padding:14px;margin-top:13px;border:0;border-radius:13px;background:var(--accent);color:#17220e;text-decoration:none;font:800 15px Vazirmatn,Tahoma,sans-serif;cursor:pointer}button:disabled{opacity:.55}a.secondary{background:#202d40;color:var(--text);border:1px solid var(--line)}.steps{text-align:right;margin:20px 0;padding:15px;border:1px solid var(--line);border-radius:14px;color:var(--muted);font-size:12px;line-height:2}.version{display:inline-flex;gap:7px;padding:7px 13px;border:1px solid #a4f05b55;border-radius:30px;color:var(--accent);font-size:12px;font-weight:800;margin:8px auto}#status{min-height:24px;color:var(--accent);font-size:12px}
-</style></head>
-<body><main><img class="logo" src="assets/icon.svg" alt="MMD"><h1>نصب و به‌روزرسانی MMD</h1><p>برای نصب برنامه روی صفحه اصلی گوشی اقدام کن. هر بار نسخه تازه منتشر شود، از همین صفحه می‌توانی آن را بررسی و دریافت کنی.</p><div class="version">نسخه فعلی: <strong id="version-number">در حال بررسی…</strong></div><p id="update-note">برای بررسی نسخه تازه، دکمه زیر را بزن.</p><button id="check-update">بررسی و دریافت آخرین نسخه</button><button id="enable-notifications" class="secondary" type="button">فعال‌سازی اعلان به‌روزرسانی</button><button id="install" hidden>نصب اپلیکیشن روی گوشی</button><a class="btn secondary" href="./">ورود به برنامه</a><div class="steps">اگر دکمه نصب نمایش داده نشد:<br>۱. این صفحه را در Chrome باز کن.<br>۲. منوی سه‌نقطه را بزن.<br>۳. گزینه «Install app» یا «افزودن به صفحه اصلی» را انتخاب کن.</div><p id="status" role="status"></p></main>
+*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:22px;background:radial-gradient(ellipse at 85% 0%,#1c2c3e,transparent 42%),var(--bg);color:var(--text)}
+main{width:min(100%,480px);padding:30px;background:var(--panel);border:1px solid var(--line);border-radius:25px;box-shadow:0 20px 60px #0005;text-align:center}
+.logo{width:100px;height:100px;object-fit:contain;margin:0 auto 20px}h1{font-size:25px;margin:0 0 10px}p{line-height:2;color:var(--muted);font-size:13px}
+button,a.btn{display:block;width:100%;padding:14px;margin-top:13px;border:0;border-radius:13px;background:var(--accent);color:#17220e;text-decoration:none;font:800 15px Vazirmatn,Tahoma,sans-serif;cursor:pointer}
+button:disabled{opacity:.55;cursor:wait}a.secondary,button.secondary{background:#202d40;color:var(--text);border:1px solid var(--line)}
+.steps{text-align:right;margin:20px 0;padding:15px;border:1px solid var(--line);border-radius:14px;color:var(--muted);font-size:12px;line-height:2}
+.version{display:inline-flex;gap:7px;padding:7px 13px;border:1px solid #a4f05b55;border-radius:30px;color:var(--accent);font-size:12px;font-weight:800;margin:8px auto}
+#status{min-height:28px;color:var(--accent);font-size:12px}.hidden{display:none!important}
+</style>
+</head>
+<body>
+<main>
+<img class="logo" src="./assets/icon.svg" alt="MMD">
+<h1>نصب و به‌روزرسانی MMD</h1>
+<p>برنامه را روی صفحه اصلی گوشی نصب کن و هر زمان نسخه تازه‌ای منتشر شد، از همین صفحه آن را دریافت کن.</p>
+<div class="version">نسخه فعلی: <strong id="version-number">در حال بررسی…</strong></div>
+<p id="update-note">برای بررسی نسخه تازه، دکمه زیر را بزن.</p>
+<button id="check-update" type="button">بررسی و دریافت آخرین نسخه</button>
+<button id="install" type="button">نصب اپلیکیشن روی گوشی</button>
+<button id="enable-notifications" class="secondary" type="button">فعال‌سازی اعلان به‌روزرسانی</button>
+<a class="btn secondary" href="./">ورود به برنامه</a>
+<div class="steps" id="install-help">اگر پنجره نصب باز نشد:<br>۱. این صفحه را در Chrome باز کن.<br>۲. منوی سه‌نقطه را بزن.<br>۳. گزینه «Install app» یا «افزودن به صفحه اصلی» را انتخاب کن.</div>
+<p id="status" role="status" aria-live="polite"></p>
+</main>
 <script>
-let deferredPrompt=null,swRegistration=null,latestVersion="نامشخص";
-const $=id=>document.getElementById(id),status=$("status"),installButton=$("install");
-$("enable-notifications").addEventListener("click",async()=>{if(!("Notification" in window)){status.textContent="این مرورگر از اعلان‌ها پشتیبانی نمی‌کند.";return}const p=await Notification.requestPermission();status.textContent=p==="granted"?"اعلان نسخه‌های جدید فعال شد.":"اجازه اعلان داده نشد.";if(p==="granted")new Notification("MMD",{body:"اعلان به‌روزرسانی فعال شد."})});\n$("enable-notifications").addEventListener("click",async()=>{if(!("Notification" in window)){status.textContent="این مرورگر از اعلان‌ها پشتیبانی نمی‌کند.";return}const p=await Notification.requestPermission();status.textContent=p==="granted"?"اعلان نسخه‌های جدید فعال شد.":"اجازه اعلان داده نشد.";if(p==="granted")new Notification("MMD",{body:"اعلان به‌روزرسانی فعال شد."})});
-async function readVersion(){const r=await fetch("./version.json?check="+Date.now(),{cache:"no-store"});if(!r.ok)throw new Error("version");const v=await r.json();latestVersion=String(v.version||"نامشخص");$("version-number").textContent=latestVersion;$("update-note").textContent=v.release_notes||"نسخه برنامه بررسی شد.";return v}
-async function registerWorker(){if(!("serviceWorker"in navigator))return null;swRegistration=await navigator.serviceWorker.register("./service-worker.js",{updateViaCache:"none"});await swRegistration.update().catch(()=>{});return swRegistration}
-if("serviceWorker"in navigator){registerWorker().catch(()=>{status.textContent="به‌روزرسانی آفلاین در این مرورگر فعال نشد."});navigator.serviceWorker.addEventListener("controllerchange",()=>{if(sessionStorage.getItem("mmd_sw_reloading")!=="1"){sessionStorage.setItem("mmd_sw_reloading","1");location.reload()}})}
-readVersion().catch(()=>{$("version-number").textContent="نامشخص";status.textContent="دریافت شماره نسخه ممکن نشد."});
-window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPrompt=e;installButton.hidden=false});
-installButton.addEventListener("click",async()=>{if(!deferredPrompt){status.textContent="از منوی سه‌نقطه مرورگر گزینه افزودن به صفحه اصلی را انتخاب کن.";return}deferredPrompt.prompt();const choice=await deferredPrompt.userChoice;status.textContent=choice.outcome==="accepted"?"درخواست نصب پذیرفته شد.":"نصب لغو شد.";deferredPrompt=null;installButton.hidden=true});
-$("check-update").addEventListener("click",async()=>{const b=$("check-update");b.disabled=true;status.textContent="در حال بررسی و دریافت نسخه جدید...";try{await readVersion();const reg=await registerWorker();if(reg?.waiting){reg.waiting.postMessage({type:"SKIP_WAITING"});status.textContent="نسخه تازه آماده است؛ صفحه پس از فعال‌شدن نسخه جدید تازه‌سازی می‌شود.";navigator.serviceWorker.addEventListener("controllerchange",()=>location.reload(),{once:true})}else if(reg?.installing){reg.installing.addEventListener("statechange",()=>{if(reg.installing?.state==="installed"&&navigator.serviceWorker.controller)status.textContent="نسخه جدید نصب شد؛ صفحه را تازه‌سازی کن."})}else{status.textContent="بررسی انجام شد؛ آخرین نسخه فعال است. اگر تغییری نمی‌بینی، صفحه را تازه‌سازی کن."}}catch(e){status.textContent="بررسی به‌روزرسانی ناموفق بود؛ اتصال اینترنت را بررسی کن."}finally{b.disabled=false}});
-window.addEventListener("appinstalled",()=>{status.textContent="اپلیکیشن با موفقیت به گوشی اضافه شد.";installButton.hidden=true});
-if(window.matchMedia("(display-mode: standalone)").matches)status.textContent="اپلیکیشن از قبل نصب شده است.";
-</script></body></html>
+"use strict";
+let deferredPrompt=null;
+let swRegistration=null;
+const $=id=>document.getElementById(id);
+const status=$("status");
+const installButton=$("install");
+const isStandalone=()=>window.matchMedia("(display-mode: standalone)").matches||window.navigator.standalone===true;
+
+async function readVersion(){
+ const response=await fetch("./version.json?check="+Date.now(),{cache:"no-store"});
+ if(!response.ok)throw new Error("version");
+ const data=await response.json();
+ $("version-number").textContent=String(data.version||"نامشخص");
+ $("update-note").textContent=data.release_notes||"نسخه برنامه بررسی شد.";
+ return data;
+}
+async function registerWorker(){
+ if(!("serviceWorker" in navigator))return null;
+ swRegistration=await navigator.serviceWorker.register("./service-worker.js",{scope:"./",updateViaCache:"none"});
+ await navigator.serviceWorker.ready;
+ await swRegistration.update().catch(()=>{});
+ return swRegistration;
+}
+
+window.addEventListener("beforeinstallprompt",event=>{
+ event.preventDefault();
+ deferredPrompt=event;
+ installButton.disabled=false;
+ installButton.textContent="نصب اپلیکیشن روی گوشی";
+ $("install-help").classList.add("hidden");
+});
+window.addEventListener("appinstalled",()=>{
+ deferredPrompt=null;
+ installButton.disabled=true;
+ installButton.textContent="اپلیکیشن نصب شده است";
+ status.textContent="اپلیکیشن با موفقیت به گوشی اضافه شد.";
+ $("install-help").classList.add("hidden");
+});
+
+installButton.addEventListener("click",async()=>{
+ if(isStandalone()){
+  status.textContent="اپلیکیشن هم‌اکنون در حالت نصب‌شده اجرا شده است.";
+  installButton.disabled=true;
+  installButton.textContent="اپلیکیشن نصب شده است";
+  return;
+ }
+ if(!deferredPrompt){
+  status.textContent="نصب خودکار در این مرورگر در دسترس نیست. از منوی سه‌نقطه Chrome گزینه «Install app» یا «افزودن به صفحه اصلی» را انتخاب کن.";
+  $("install-help").classList.remove("hidden");
+  return;
+ }
+ installButton.disabled=true;
+ try{
+  await deferredPrompt.prompt();
+  const choice=await deferredPrompt.userChoice;
+  status.textContent=choice.outcome==="accepted"?"درخواست نصب پذیرفته شد.":"درخواست نصب لغو شد.";
+ }catch(error){
+  status.textContent="پنجره نصب باز نشد. از منوی سه‌نقطه Chrome اقدام کن.";
+  $("install-help").classList.remove("hidden");
+ }finally{
+  deferredPrompt=null;
+  installButton.disabled=false;
+ }
+});
+
+$("enable-notifications").addEventListener("click",async()=>{
+ if(!("Notification" in window)){
+  status.textContent="این مرورگر از اعلان‌ها پشتیبانی نمی‌کند.";
+  return;
+ }
+ try{
+  const permission=await Notification.requestPermission();
+  if(permission!=="granted"){
+   status.textContent="اجازه اعلان داده نشد.";
+   return;
+  }
+  const registration=swRegistration||await navigator.serviceWorker?.getRegistration();
+  if(registration)await registration.showNotification("MMD",{body:"اعلان به‌روزرسانی فعال شد.",icon:"./assets/icon.svg"});
+  else status.textContent="اعلان فعال شد؛ برای نمایش اعلان‌ها برنامه را در Chrome باز کن.";
+ }catch(error){status.textContent="فعال‌سازی اعلان ممکن نشد.";}
+});
+
+$("check-update").addEventListener("click",async()=>{
+ const button=$("check-update");
+ button.disabled=true;
+ status.textContent="در حال بررسی نسخه جدید…";
+ try{
+  await readVersion();
+  const registration=await registerWorker();
+  if(registration?.waiting){
+   registration.waiting.postMessage({type:"SKIP_WAITING"});
+   status.textContent="نسخه تازه آماده شد؛ صفحه پس از فعال‌شدن تازه‌سازی می‌شود.";
+  }else if(registration?.installing){
+   const worker=registration.installing;
+   worker.addEventListener("statechange",()=>{
+    if(worker.state==="installed")status.textContent="بررسی نسخه جدید انجام شد.";
+   });
+  }else status.textContent="بررسی انجام شد؛ آخرین نسخه فعال است.";
+ }catch(error){
+  status.textContent="بررسی به‌روزرسانی ناموفق بود؛ اتصال اینترنت را بررسی کن.";
+ }finally{button.disabled=false;}
+});
+
+if(isStandalone()){
+ status.textContent="اپلیکیشن از قبل نصب شده است.";
+ installButton.disabled=true;
+ installButton.textContent="اپلیکیشن نصب شده است";
+ $("install-help").classList.add("hidden");
+}
+readVersion().catch(()=>{
+ $("version-number").textContent="نامشخص";
+ status.textContent="دریافت شماره نسخه ممکن نشد.";
+});
+registerWorker().catch(error=>console.warn("MMD service worker:",error));
+if("serviceWorker" in navigator){
+ navigator.serviceWorker.addEventListener("controllerchange",()=>{
+  if(!sessionStorage.getItem("mmd_sw_reloaded")){
+   sessionStorage.setItem("mmd_sw_reloaded","1");
+   location.reload();
+  }
+ });
+}
+</script>
+</body>
+</html>
