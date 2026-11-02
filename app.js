@@ -72,13 +72,14 @@ $("signup-form").addEventListener("submit",async e=>{
  const username=$("signup-username").value.trim().toLowerCase();
  const displayName=$("signup-name").value.trim();
  const password=$("signup-password").value;
+ const accountType=$("signup-account-type").value==="teacher"?"teacher":"student";
  if(!/^[\p{L}\p{N}_.-]{3,30}$/u.test(username)){message("signup-message","نام کاربری باید ۳ تا ۳۰ نویسه و شامل حروف، عدد، نقطه، خط تیره یا زیرخط باشد.",true);return;}
  if(password.length<8){message("signup-message","رمز عبور باید حداقل ۸ نویسه باشد.",true);return;}
  const submit=e.submitter; if(submit)submit.disabled=true;
  message("signup-message","در حال ساخت حساب...");
  try{
   const email=await syntheticEmail(username);
-  const {data,error}=await db.auth.signUp({email,password,options:{data:{display_name:displayName,login_id:username}}});
+  const {data,error}=await db.auth.signUp({email,password,options:{data:{display_name:displayName,login_id:username,account_type:accountType}}});
   if(error)throw error;
   if(data.session){show("signup-card",false);await enterApp(data.user);}
   else message("signup-message","حساب ساخته شد؛ برای ورود بدون ایمیل، مدیر باید گزینه «Confirm email» را در تنظیمات Supabase خاموش کند. سپس می‌توانی با نام کاربری و رمز وارد شوی.");
@@ -300,7 +301,7 @@ function syncProfileForm(){if(profile?.avatar_path){const u=db.storage.from("pro
  $("profile-bio").value=profile?.bio||"";
  $("profile-avatar").value=profile?.avatar_emoji||"🌙";
  $("profile-color").value=profile?.profile_color||"violet";
- $("profile-grade").value=profile?.school_grade||"";syncSchoolClassOptions(profile?.school_class||"");
+ $("profile-grade").value=profile?.account_type==="teacher"?"معلم":(profile?.school_grade||"");$("profile-grade").disabled=profile?.account_type==="teacher";syncSchoolClassOptions(profile?.school_class||"");
  updateProfilePreview();
 }
 function updateProfilePreview(){
@@ -313,11 +314,11 @@ function updateProfilePreview(){
 $("profile-grade").addEventListener("change",()=>{syncSchoolClassOptions();updateProfilePreview()});$("profile-class").addEventListener("change",updateProfilePreview);
 $("profile-form").addEventListener("submit",async e=>{
  e.preventDefault();const btn=e.submitter;btn.disabled=true;message("profile-message","در حال ذخیره...");
- const display_name=$("profile-name").value.trim()||"کاربر",bio=$("profile-bio").value.trim(),avatar_emoji=$("profile-avatar").value,profile_color=$("profile-color").value,school_grade=$("profile-grade").value,school_class=school_grade==="معلم"?null:$("profile-class").value;
+ const display_name=$("profile-name").value.trim()||"کاربر",bio=$("profile-bio").value.trim(),avatar_emoji=$("profile-avatar").value,profile_color=$("profile-color").value,school_grade=profile.account_type==="teacher"?"معلم":$("profile-grade").value,school_class=school_grade==="معلم"?null:$("profile-class").value;
  if(!school_grade||(school_grade!=="معلم"&&!school_class)){message("profile-message","پایه و نام کلاس را انتخاب کنید.",true);btn.disabled=false;return}
  const {error}=await db.from("profiles").update({display_name,bio,avatar_emoji,profile_color,school_grade,school_class}).eq("id",currentUser.id);
  if(error){message("profile-message",error.message,true);btn.disabled=false;return}
- profile={...profile,display_name,bio,avatar_emoji,profile_color,school_grade,school_class};
+ profile={...profile,display_name,bio,avatar_emoji,profile_color,school_grade,school_class};$("profile-grade").disabled=profile.account_type==="teacher";
  $("user-name").textContent=display_name;$("user-avatar").textContent=avatar_emoji;$("school-grade-chip").textContent=schoolProfileLabel(profile);updateProfilePreview();document.body.dataset.profileColor=profile_color;$("welcome-title").textContent="سلام "+display_name+", برنامه امروزت آماده است.";
  document.body.dataset.profileColor=profile_color;message("profile-message","پروفایل ذخیره شد.");btn.disabled=false;
 });
@@ -377,7 +378,7 @@ async function loadHumorFeed(){
  if(!q.data?.length)feed.textContent="هنوز مطلبی منتشر نشده است.";
 }
 async function openPublicProfile(id){
- const q=await db.from("profiles").select("id,display_name,bio,avatar_emoji,avatar_path,school_grade,school_class").eq("id",id).maybeSingle();if(q.error)throw q.error;if(!q.data)return;
+ const q=await db.from("profiles").select("id,display_name,bio,avatar_emoji,avatar_path,school_grade,school_class,account_type").eq("id",id).maybeSingle();if(q.error)throw q.error;if(!q.data)return;
  const p=q.data,posts=await db.from("humor_posts").select("title,body").eq("user_id",id).eq("status","approved").order("created_at",{ascending:false});if(posts.error)throw posts.error;
  const root=$("public-profile-content");root.innerHTML="";const h=document.createElement("h2");h.textContent=p.display_name||"کاربر";root.append(h);const bio=document.createElement("p");bio.textContent=p.bio||"توضیحی ثبت نشده است.";root.append(bio);const school=document.createElement("p");school.className="school-profile-badge";school.textContent=schoolProfileLabel(p)||"پایه یا کلاس ثبت نشده";root.append(school);
  if(p.avatar_path){const img=document.createElement("img");img.src=db.storage.from("profile-avatars").getPublicUrl(p.avatar_path).data.publicUrl;img.style.width="110px";img.style.borderRadius="50%";root.prepend(img)}
