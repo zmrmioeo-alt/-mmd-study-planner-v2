@@ -296,16 +296,7 @@ async function loadExcelLibrary(){
  const sources=["https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js","https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js","https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"];
  for(const src of sources){if(window.XLSX)return;await new Promise(resolve=>{const script=document.createElement("script");script.src=src;script.onload=resolve;script.onerror=resolve;document.head.appendChild(script)});if(window.XLSX)return}
 }
-function downloadExportFile(file){const url=URL.createObjectURL(file),link=document.createElement("a");link.href=url;link.download=file.name;link.style.display="block";link.textContent="دریافت فایل خروجی";link.style.cssText="position:fixed;z-index:99999;bottom:18px;left:18px;padding:12px 16px;background:#a4f05b;color:#17220e;border-radius:12px;font-weight:800";document.body.appendChild(link);link.click();setTimeout(()=>{URL.revokeObjectURL(url);link.remove()},60000)}
-function csvCell(value){let s=String(value??"");if(/^[=+@\\-]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"'}
-function downloadExportFile(file){
- const blob=file instanceof Blob?file:new Blob([file.content],{type:file.type||"text/csv;charset=utf-8"});
- const url=URL.createObjectURL(blob),link=document.createElement("a");
- link.href=url;link.download=file.name||"MMD-Export.csv";link.textContent="دانلود فایل آماده‌شده";link.className="primary";
- link.style.cssText="display:inline-block;margin:12px 0;padding:12px 18px;border-radius:12px;text-decoration:none";
- const host=$("admin-message");host.appendChild(document.createElement("br"));host.appendChild(link);
- link.click();setTimeout(()=>URL.revokeObjectURL(url),180000);
-}
+function downloadExportFile(file){const url=URL.createObjectURL(file),link=document.createElement("a");link.href=url;link.download=file.name;link.textContent="اگر دانلود خودکار شروع نشد، اینجا بزنید";link.setAttribute("role","button");link.style.cssText="position:fixed;z-index:99999;bottom:18px;left:18px;padding:12px 16px;background:#a4f05b;color:#17220e;border-radius:12px;font-weight:800;text-decoration:none;box-shadow:0 8px 25px #0005";document.body.appendChild(link);link.click();setTimeout(()=>URL.revokeObjectURL(url),180000)}
 $("export-users").addEventListener("click",async()=>{
  const btn=$("export-users");btn.disabled=true;
  try{
@@ -394,4 +385,21 @@ $("export-activity-report").addEventListener("click",async()=>{
  finally{btn.disabled=false}
 });
 
+
+async function checkMmdRelease(showNotice=true){
+ try{
+  const response=await fetch("./version.json?ts="+Date.now(),{cache:"no-store"});if(!response.ok)return;
+  const info=await response.json(),version=String(info.version||"");if(!version)return;
+  const seen=localStorage.getItem("mmd_seen_release");
+  if(seen&&seen!==version&&showNotice){
+   const text="نسخه "+version+" منتشر شد. "+(info.release_notes||"برای دریافت نسخه تازه، برنامه را به‌روزرسانی کنید.");
+   if(typeof toast==="function")toast(text);
+   if("Notification" in window&&Notification.permission==="granted")new Notification("به‌روزرسانی MMD",{body:text,icon:"./assets/icon.svg"});
+  }
+  localStorage.setItem("mmd_seen_release",version);
+  if("serviceWorker" in navigator){const reg=await navigator.serviceWorker.getRegistration();if(reg)await reg.update().catch(()=>{});}
+ }catch(error){console.warn("MMD release check failed",error)}
+}
+
+checkMmdRelease().catch(()=>{});setInterval(()=>checkMmdRelease(),180000);
 boot().catch(err=>{console.error(err);show("app-view",false);show("auth-view",true);message("auth-message","خطا در راه‌اندازی: "+err.message,true)});
