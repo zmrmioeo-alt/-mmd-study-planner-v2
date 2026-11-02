@@ -89,6 +89,18 @@ async function checkAppUpdateNotice(){
   wrap.append(h,p,b,n);document.querySelector(".main")?.prepend(wrap);
  }catch(e){console.warn("Update notice unavailable",e)}
 }
+let updateMonitorStarted=false;
+function startUpdateMonitor(){
+ if(updateMonitorStarted)return;updateMonitorStarted=true;
+ setInterval(async()=>{
+  try{
+   const r=await fetch("./version.json?poll="+Date.now(),{cache:"no-store"});if(!r.ok)return;
+   const v=await r.json(),seen=localStorage.getItem("mmd_seen_version");
+   if(v.version&&seen&&seen!==String(v.version))checkAppUpdateNotice();
+   const reg=await navigator.serviceWorker?.getRegistration();await reg?.update();
+  }catch(e){console.debug("Update check skipped",e)}
+ },10*60*1000);
+}
 async function enterApp(user){
  if(enteringUserId===user.id)return;enteringUserId=user.id;
  try{
@@ -96,7 +108,7 @@ async function enterApp(user){
   await loadProfile();if(!currentUser)return;
   await loadFeatureFlags();
   if(profile?.is_approved===false){show("app-view",false);show("auth-view",false);show("pending-approval-view",true);return;}
-  await Promise.all([loadTasks(),loadRoutines(),loadSettings(),loadAnnouncements(),loadHumorFeed()]);renderAll();syncSmartPlanner();checkAppUpdateNotice();
+  await Promise.all([loadTasks(),loadRoutines(),loadSettings(),loadAnnouncements(),loadHumorFeed()]);renderAll();syncSmartPlanner();startAnnouncementRealtime();checkAppUpdateNotice();startUpdateMonitor();
  }catch(err){console.error("App loading failed:",err);show("app-view",false);show("auth-view",true);show("login-card",true);message("auth-message","خطا در ورود: "+(err.message||"خطای نامشخص"),true);throw err}
  finally{enteringUserId=null}
 }
@@ -200,7 +212,7 @@ $("chat-form").addEventListener("submit",async e=>{e.preventDefault();if(!chatTa
 $("chat-messages").addEventListener("click",async e=>{const b=e.target.closest("[data-delete-msg]");if(!b||!confirm("پیام حذف شود؟"))return;const r=await db.from("private_messages").update({deleted_at:new Date().toISOString(),body:"",media_path:null,media_type:null}).eq("id",b.dataset.deleteMsg).eq("sender_id",currentUser.id);if(r.error)message("chat-message",r.error.message,true);else loadSupportChat()});
 
 function navigate(page){if(page==="chat"&&!featureFlags.chat_enabled&&!profile?.is_admin){toast("بخش چت غیرفعال است.");page="today"}if(page==="humor"&&!featureFlags.humor_enabled&&!profile?.is_admin){toast("بخش همتانه غیرفعال است.");page="today"}document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));show("page-"+page,true);document.querySelectorAll(".nav-link").forEach(b=>b.classList.toggle("active",b.dataset.page===page));const titles={"public-profile":"پروفایل کاربر",today:"امروز","today-work":"کارهای امروز",profile:"پروفایل من",announcements:"اعلانات",contact:"ارتباط با ادمین",chat:"چت با ادمین",smart:"برنامه‌ریز هوشمند",tasks:"وظایف و تکالیف",routines:"برنامه ثابت",reports:"گزارش پیشرفت",settings:"تنظیمات",admin:"مدیریت کاربران"};if(page==="smart"&&!smartEnabled())page="today";$("page-title").textContent=titles[page]||"امروز";if(page==="admin")loadAdminUsers().catch(e=>message("admin-message",e.message,true));if(page==="chat"){chatTargetUserId=null;loadSupportChat().then(startChatRealtime).catch(e=>message("chat-message",e.message,true))}else stopChatRealtime()}
-document.querySelectorAll("[data-filter]").forEach(b=>b.addEventListener("click",()=>{taskFilter=b.dataset.filter;document.querySelectorAll("[data-filter]").forEach(x=>x.classList.toggle("active",x===b));renderTasks()}));
+document.querySelector("#page-public-profile [data-page=\\\"humor\\\"]")?.addEventListener("click",()=>navigate("humor"));\ndocument.querySelectorAll("[data-filter]").forEach(b=>b.addEventListener("click",()=>{taskFilter=b.dataset.filter;document.querySelectorAll("[data-filter]").forEach(x=>x.classList.toggle("active",x===b));renderTasks()}));
 $("smart-planner-toggle").addEventListener("change",e=>{if(e.target.checked)localStorage.setItem(smartKey(),"on");else localStorage.removeItem(smartKey());syncSmartPlanner();toast(e.target.checked?"برنامه‌ریز هوشمند فعال شد.":"برنامه‌ریز هوشمند غیرفعال شد.");});
 function buildSmartPlan(){
  const open=tasks.filter(t=>t.status==="pending").sort((a,b)=>{const ad=a.due_at?new Date(a.due_at).getTime():Infinity,bd=b.due_at?new Date(b.due_at).getTime():Infinity;return ad-bd||(a.priority==="high"?-1:0)-(b.priority==="high"?-1:0)});
@@ -217,6 +229,15 @@ const humorLines=["اگر تکلیف‌ها خودشان انجام می‌شد�
 function updateHumor(){const enabled=!!settings.humor_enabled;$("welcome-mood").textContent=enabled?humorLines[Math.floor(Math.random()*humorLines.length)]:"کارها را انجام بده و پیشرفتت را ثبت کن."}
 
 async function loadAnnouncements(){const {data,error}=await db.from("announcements").select("id,title,body,created_at,created_by").eq("published",true).order("created_at",{ascending:false});if(error)throw error;window.__announcements=data||[]}
+let announcementChannel=null;
+function stopAnnouncementRealtime(){if(announcementChannel){db.removeChannel(announcementChannel);announcementChannel=null}}
+function startAnnouncementRealtime(){
+ stopAnnouncementRealtime();
+ announcementChannel=db.channel("mmd-announcements").on("postgres_changes",{event:"INSERT",schema:"public",table:"announcements"},payload=>{
+  const item=payload.new;if(!item?.published||item.created_by===currentUser?.id)return;
+  if(!window.__announcements?.some(x=>x.id===item.id)){window.__announcements=[item,...(window.__announcements||[])];renderAnnouncements();toast("اطلاعیه جدید: "+(item.title||"اطلاعیه"));}
+ }).subscribe();
+}
 function syncProfileForm(){if(profile?.avatar_path){const u=db.storage.from("profile-avatars").getPublicUrl(profile.avatar_path).data.publicUrl;$("profile-preview-avatar").innerHTML='<img src="'+u+'" alt="تصویر پروفایل">'}else $("profile-preview-avatar").textContent=profile?.avatar_emoji||"🌙";
  $("profile-name").value=profile?.display_name||"";
  $("profile-bio").value=profile?.bio||"";
@@ -293,10 +314,31 @@ $("humor-submit-form").addEventListener("submit",async e=>{e.preventDefault();co
 async function loadAdminUsers(){if(!profile?.is_admin)return;const result=await callAdmin("list_users");window.__adminUsers=result.users||[];$("admin-users").innerHTML=window.__adminUsers.length?window.__adminUsers.map(u=>'<article class="task-item"><div class="task-main"><h3>'+escapeHtml(u.display_name||"بدون نام")+'</h3><p>شناسه: '+escapeHtml(u.login_id||u.phone||u.email||"—")+' · '+(u.ends_at?"پایان اشتراک: "+jalaliDate(u.ends_at):"بدون اشتراک")+'</p><p>'+escapeHtml(u.email||"")+'</p></div><span class="priority">'+(u.is_banned?"مسدود":u.is_active?"فعال":"غیرفعال")+'</span>'+(u.is_admin?"":'<label class="switch-row"><input type="checkbox" data-chat-toggle="'+u.id+'" '+(u.chat_enabled!==false?"checked":"")+'> اجازه چت</label><div class="task-actions"><button class="secondary" data-renew-user="'+u.id+'">تمدید اشتراک</button><button class="secondary" data-edit-user="'+u.id+'">ویرایش حساب</button><button class="secondary" data-ban-user="'+u.id+'">'+(u.is_banned?"رفع بن":"بن کاربر")+'</button><button class="danger" data-delete-user="'+u.id+'">حذف کاربر</button></div>')+'</article>').join(""):'<div class="empty">کاربری ثبت نشده است.</div>'}
 document.addEventListener("change",async e=>{const t=e.target.closest("[data-chat-toggle]");if(!t)return;try{await callAdmin("set_chat_enabled",{user_id:t.dataset.chatToggle,enabled:t.checked});toast("دسترسی چت به‌روزرسانی شد.")}catch(x){t.checked=!t.checked;toast(x.message)}});
 async function loadExcelLibrary(){
+ if(window.XLSX)return true;
  const sources=["https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js","https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js","https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"];
- for(const src of sources){if(window.XLSX)return;await new Promise(resolve=>{const script=document.createElement("script");script.src=src;script.onload=resolve;script.onerror=resolve;document.head.appendChild(script)});if(window.XLSX)return}
+ for(const src of sources){
+  const loaded=await new Promise(resolve=>{
+   const script=document.createElement("script");script.src=src;script.async=true;
+   script.onload=()=>resolve(!!window.XLSX);script.onerror=()=>resolve(false);
+   document.head.appendChild(script);
+  });
+  if(loaded)return true;
+ }
+ return false;
 }
-function downloadExportFile(file){const url=URL.createObjectURL(file),link=document.createElement("a");link.href=url;link.download=file.name;link.textContent="اگر دانلود خودکار شروع نشد، اینجا بزنید";link.setAttribute("role","button");link.style.cssText="position:fixed;z-index:99999;bottom:18px;left:18px;padding:12px 16px;background:#a4f05b;color:#17220e;border-radius:12px;font-weight:800;text-decoration:none;box-shadow:0 8px 25px #0005";document.body.appendChild(link);link.click();setTimeout(()=>URL.revokeObjectURL(url),180000)}
+function csvCell(value){
+ let s=String(value??"");
+ if(/^[=+@\\-]/.test(s))s="'"+s;
+ return '"'+s.replace(/"/g,'""')+'"';
+}
+function downloadExportFile(file){
+ const blob=file instanceof Blob?file:new Blob([file.content??""],{type:file.type||"text/csv;charset=utf-8"});
+ const url=URL.createObjectURL(blob),link=document.createElement("a");
+ link.href=url;link.download=file.name||"MMD-Export.csv";link.textContent="اگر دانلود خودکار شروع نشد، دریافت فایل";
+ link.className="primary";link.style.cssText="display:inline-block;margin:12px 0;padding:12px 18px;border-radius:12px;text-decoration:none";
+ const host=$("admin-message");host.appendChild(document.createElement("br"));host.appendChild(link);
+ link.click();setTimeout(()=>URL.revokeObjectURL(url),180000);
+}
 $("export-users").addEventListener("click",async()=>{
  const btn=$("export-users");btn.disabled=true;
  try{
@@ -304,27 +346,36 @@ $("export-users").addEventListener("click",async()=>{
   const result=await callAdmin("export_data");
   if(!result||!result.data||typeof result.data!=="object")throw new Error("پاسخ سرور فاقد داده است.");
   const labels={profiles:"کاربران",subscriptions:"اشتراک‌ها",study_tasks:"وظایف",routines:"برنامه ثابت",planner_settings:"تنظیمات",announcements:"اطلاعیه‌ها",support_messages:"پیام‌ها",auth_accounts:"حساب‌های ورود",humor_posts:"همتانه"};
-  const counts=[],sections=[];
+  const counts=[];
   for(const [key,raw] of Object.entries(result.data)){
    const rows=Array.isArray(raw)?raw:[],headers=(result.columns&&result.columns[key])||[...new Set(rows.flatMap(row=>Object.keys(row||{})))];
-   if(!headers.length)continue;
-   counts.push({بخش:labels[key]||key,"تعداد رکورد":rows.length});
-   const title=labels[key]||key;sections.push("\n"+title+"\n"+headers.map(csvCell).join(",")+"\n"+rows.map(row=>headers.map(h=>csvCell(row?.[h])).join(",")).join("\n"));
+   if(headers.length)counts.push({بخش:labels[key]||key,"تعداد رکورد":rows.length});
   }
   if(!counts.length)throw new Error("هیچ داده‌ای از سرور دریافت نشد.");
-  sections.push("\nخلاصه خروجی\nبخش,تعداد رکورد\n"+counts.map(x=>csvCell(x.بخش)+","+x["تعداد رکورد"]).join("\n"));
-  const csv="\\uFEFF"+sections.join("\n");
-  const name="MMD-Study-Planner-"+jalaliDate(new Date()).replaceAll("/","-")+".csv";
-  if(window.XLSX){
+  const xlsxReady=await loadExcelLibrary();
+  const stamp=jalaliDate(new Date()).replaceAll("/","-");
+  if(xlsxReady){
    const wb=XLSX.utils.book_new();
-   for(const [key,raw] of Object.entries(result.data)){const rows=Array.isArray(raw)?raw:[],headers=(result.columns&&result.columns[key])||[...new Set(rows.flatMap(row=>Object.keys(row||{})))];if(!headers.length)continue;const sh=XLSX.utils.aoa_to_sheet([headers,...rows.map(row=>headers.map(h=>row?.[h]??""))]);XLSX.utils.book_append_sheet(wb,sh,(labels[key]||key).slice(0,31))}
+   for(const [key,raw] of Object.entries(result.data)){
+    const rows=Array.isArray(raw)?raw:[],headers=(result.columns&&result.columns[key])||[...new Set(rows.flatMap(row=>Object.keys(row||{})))];
+    if(!headers.length)continue;
+    const sheet=XLSX.utils.aoa_to_sheet([headers,...rows.map(row=>headers.map(h=>row?.[h]??""))]);
+    XLSX.utils.book_append_sheet(wb,sheet,(labels[key]||key).slice(0,31));
+   }
    XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(counts),"خلاصه خروجی");
    const bytes=XLSX.write(wb,{bookType:"xlsx",type:"array",compression:true});
-   downloadExportFile(new File([bytes],"MMD-Study-Planner-"+jalaliDate(new Date()).replaceAll("/","-")+".xlsx",{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}));
-   message("admin-message","فایل Excel آماده شد؛ تعداد رکوردها: "+counts.reduce((n,x)=>n+x["تعداد رکورد"],0)+". ");
+   downloadExportFile(new File([bytes],"MMD-Study-Planner-"+stamp+".xlsx",{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}));
+   message("admin-message","فایل Excel آماده شد؛ تعداد رکوردها: "+counts.reduce((n,x)=>n+x["تعداد رکورد"],0)+".");
   }else{
-   downloadExportFile({content:csv,name,type:"text/csv;charset=utf-8"});
-   message("admin-message","کتابخانه Excel در دسترس نبود؛ فایل CSV سازگار با Excel آماده شد. آن را با Excel باز کن.");
+   const sections=[];
+   for(const [key,raw] of Object.entries(result.data)){
+    const rows=Array.isArray(raw)?raw:[],headers=(result.columns&&result.columns[key])||[...new Set(rows.flatMap(row=>Object.keys(row||{})))];
+    if(!headers.length)continue;
+    sections.push((labels[key]||key)+"\\n"+headers.map(csvCell).join(",")+"\\n"+rows.map(row=>headers.map(h=>csvCell(row?.[h])).join(",")).join("\\n"));
+   }
+   sections.push("خلاصه خروجی\\nبخش,تعداد رکورد\\n"+counts.map(x=>csvCell(x.بخش)+","+x["تعداد رکورد"]).join("\\n"));
+   downloadExportFile({content:"\\uFEFF"+sections.join("\\n\\n"),name:"MMD-Study-Planner-"+stamp+".csv",type:"text/csv;charset=utf-8"});
+   message("admin-message","کتابخانه Excel بارگذاری نشد؛ فایل CSV استاندارد و قابل بازشدن در Excel آماده شد.");
   }
  }catch(err){console.error("Excel export failed",err);message("admin-message","خطا در خروجی: "+(err.message||"خطای نامشخص"),true)}
  finally{btn.disabled=false}
