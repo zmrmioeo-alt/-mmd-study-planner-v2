@@ -7,6 +7,9 @@
   <meta name="description" content="MMD Study Planner؛ برنامه‌ریزی و پیگیری درس‌ها">
   <title>MMD | برنامه‌ریز درسی</title>
   <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="stylesheet" href="style.css?v=20261102-05">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -59,6 +62,7 @@
       </form>
       <div class="login-contact"><p>جهت مشکل و خرید اشتراک با ما در ارتباط باشید.</p><a href="tel:09162987309" dir="ltr">☎ 09162987309</a><a href="https://ble.ir/me_god_me" target="_blank" rel="noopener noreferrer" dir="ltr">✈ @me_god_me</a></div>
       <p class="hint">حساب جدید؟ <button id="show-signup" type="button" class="secondary">ثبت‌نام</button></p>
+      <p class="hint"><a href="install.html" style="color:var(--accent)">نصب اپلیکیشن MMD روی گوشی</a></p>
       <p id="auth-message" class="message" role="status"></p>
     </section>
     <section id="signup-card" class="auth-card hidden"><div class="brand-mark">MMD</div><h1>ساخت حساب</h1><p class="muted">حساب پس از ثبت‌نام باید توسط مدیر تأیید شود.</p><form id="signup-form"><label>نام<input id="signup-name" required maxlength="80"></label><label>ایمیل<input id="signup-email" type="email" required></label><label>رمز عبور<input id="signup-password" type="password" minlength="8" required></label><button class="primary full" type="submit">ثبت‌نام</button></form><button id="show-login" class="secondary" type="button">بازگشت به ورود</button><p id="signup-message" class="message"></p></section>
@@ -225,7 +229,7 @@
           <div id="activity-report-list" class="task-list"><div class="empty">برای دریافت گزارش، دکمه نمایش فعالیت کاربران را بزنید.</div></div>
         </div>
       </section>
-      <footer> MMD STUDY PLANNER <span>نسخه ۱.۰</span></footer>
+      <footer> MMD STUDY PLANNER <span>نسخه ۱.۱</span> <a href="install.html" style="color:var(--accent)">نصب اپلیکیشن</a></footer>
     </main>
   </div>
   <div id="toast" class="toast" role="status"></div>
