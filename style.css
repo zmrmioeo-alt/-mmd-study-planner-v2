@@ -493,3 +493,5 @@ body.light .date-pill{background:#fff}
 }
 
 .chat-attach{display:inline-flex;align-items:center;padding:10px 14px;border:1px solid var(--line);border-radius:10px;cursor:pointer}.chat-attach input{display:none}.chat-delete{display:block;margin-top:7px;border:0;background:transparent;color:var(--danger);font-size:11px;cursor:pointer}.chat-bubble img,.chat-bubble video{display:block;margin-top:8px;max-width:100%;border-radius:12px}.switch-row{display:flex;align-items:center;gap:8px;font-size:12px;margin:8px 0}
+
+.feature-flags-panel{margin:16px 0}.feature-flags-panel .switch-row{padding:10px 0;border-bottom:1px solid var(--line)}
