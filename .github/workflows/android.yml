@@ -12,6 +12,9 @@ on:
       - 'package.json'
       - 'package-lock.json'
       - 'capacitor.config.json'
+      - 'manifest.webmanifest'
+      - 'service-worker.js'
+      - 'install.html'
       - '.github/workflows/android.yml'
 
 permissions:
