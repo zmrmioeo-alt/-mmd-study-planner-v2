@@ -1,4 +1,4 @@
-const CACHE_NAME="mmd-shell-v7";
+const CACHE_NAME="mmd-shell-v8";
 const CORE=["./","./index.html","./app.js","./style.css","./assets/icon.svg","./manifest.webmanifest","./version.json"];
 self.addEventListener("message",event=>{if(event.data?.type==="SKIP_WAITING")self.skipWaiting()});
 self.addEventListener("install",event=>{event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting()))});
