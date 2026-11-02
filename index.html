@@ -10,11 +10,11 @@
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="stylesheet" href="style.css?v=20261102-chat1">
+  <link rel="stylesheet" href="style.css?v=20261102-flags">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script>window.addEventListener("error",function(e){if(e.target&&e.target.src&&e.target.src.includes("xlsx.full.min.js")&&!window.XLSX){var s=document.createElement("script");s.src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js";document.head.appendChild(s)}},true);</script>
-  <script defer src="app.js?v=20261102-chat1"></script>
+  <script defer src="app.js?v=20261102-flags"></script>
 </head>
 <body>
   <div id="terms-view" class="auth-wrap hidden">
@@ -81,7 +81,7 @@
         <button class="nav-link" data-page="today-work">☑ <span>کارهای امروز</span></button>
         <button class="nav-link" data-page="announcements">▣ <span>اعلانات</span></button><button class="nav-link" data-page="humor">☻ <span>همتانه</span></button>
         <button class="nav-link" data-page="contact">☎ <span>ارتباط با ادمین</span></button>
-        <button class="nav-link" data-page="chat">✉ <span>چت با ادمین</span></button>
+        <button class="nav-link" id="chat-nav" data-page="chat">✉ <span>چت با ادمین</span></button>
         <button class="nav-link hidden" id="smart-planner-nav" data-page="smart">✦ <span>برنامه‌ریز هوشمند</span></button>
         <button class="nav-link" data-page="tasks">▤ <span>وظایف و تکالیف</span></button>
         <button class="nav-link" data-page="routines">▦ <span>برنامه ثابت</span></button>
