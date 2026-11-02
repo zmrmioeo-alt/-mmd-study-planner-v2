@@ -211,6 +211,17 @@
         <div class="section-head"><h3>کاربران ثبت‌شده</h3><div class="form-row"><button id="export-users" class="primary">خروجی کامل Excel</button><button id="refresh-users" class="secondary">به‌روزرسانی</button></div></div>
         <p class="hint">برای تغییر شناسه یا رمز هر کاربر، گزینه ویرایش حساب را انتخاب کنید. رمز فعلی قابل مشاهده نیست و فقط می‌توان رمز تازه تعیین کرد.</p>
         <div id="admin-users" class="task-list"></div>
+        <div class="form-panel" style="margin-top:22px">
+          <div class="section-head"><div><p class="eyebrow">USER ACTIVITY</p><h3>گزارش فعالیت کاربران</h3></div></div>
+          <p class="hint">فهرست برنامه‌ها و تکالیفی که کاربران ثبت کرده‌اند، وضعیت انجام آن‌ها و برنامه‌های ثابت هفتگی.</p>
+          <div class="form-row">
+            <button id="load-activity-report" class="primary" type="button">نمایش فعالیت کاربران</button>
+            <button id="export-activity-report" class="secondary" type="button" disabled>خروجی فعالیت‌ها Excel</button>
+          </div>
+          <p id="activity-report-message" class="message"></p>
+          <div id="activity-report-summary" class="stats-grid"></div>
+          <div id="activity-report-list" class="task-list"><div class="empty">برای دریافت گزارش، دکمه نمایش فعالیت کاربران را بزنید.</div></div>
+        </div>
       </section>
       <footer> MMD STUDY PLANNER <span>نسخه ۱.۰</span></footer>
     </main>
