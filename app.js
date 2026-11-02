@@ -77,7 +77,7 @@ async function checkAppUpdateNotice(){
   const title="نسخه جدید برنامه منتشر شد · "+v.version,body=v.release_notes||"برای دریافت امکانات تازه، برنامه را به‌روزرسانی کنید.";
   if(localStorage.getItem("mmd_update_notifications")==="on"&&"Notification"in window&&Notification.permission==="granted"){
    const reg=await navigator.serviceWorker?.getRegistration();
-   if(reg)await reg.showNotification(title,{body,icon:"./assets/icon-192.svg",badge:"./assets/icon-192.svg",tag:"mmd-update",data:{url:"./install.html"}});
+   if(reg)await reg.showNotification(title,{body,icon:"./assets/icon.svg",badge:"./assets/icon.svg",tag:"mmd-update",data:{url:"./install.html"}});
    else new Notification(title,{body});
   }
   const wrap=document.createElement("section");wrap.className="form-panel";wrap.style.cssText="margin:0 0 18px;border:1px solid var(--accent);";
