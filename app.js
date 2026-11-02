@@ -128,51 +128,33 @@ document.addEventListener("click",async e=>{
 
 let chatChannel=null,chatTargetUserId=null,chatMessages=[];
 function stopChatRealtime(){if(chatChannel){db.removeChannel(chatChannel);chatChannel=null}}
-function startChatRealtime(){
- stopChatRealtime();
- chatChannel=db.channel("support-chat-"+currentUser.id)
-  .on("postgres_changes",{event:"*",schema:"public",table:"support_messages"},()=>{if(!$("page-chat").classList.contains("hidden"))loadSupportChat().catch(e=>message("chat-message",e.message,true))})
-  .subscribe();
-}
+let chatChannel=null,chatTargetUserId=null;
+function stopChatRealtime(){if(chatChannel){db.removeChannel(chatChannel);chatChannel=null}}
+function startChatRealtime(){stopChatRealtime();chatChannel=db.channel("private-chat").on("postgres_changes",{event:"*",schema:"public",table:"private_messages"},()=>{if(!$("page-chat").classList.contains("hidden"))loadSupportChat().catch(e=>message("chat-message",e.message,true))}).subscribe()}
 async function loadSupportChat(){
  if(!currentUser)return;
- const admin=!!profile?.is_admin;show("chat-inbox-panel",admin);
- if(admin){
-  const {data,error}=await db.from("support_messages").select("*").order("created_at",{ascending:true});if(error)throw error;
-  const all=data||[],ids=[...new Set(all.map(m=>m.user_id))];
-  const peopleResult=ids.length?await db.from("profiles").select("id,display_name").in("id",ids):{data:[],error:null};
-  if(peopleResult.error)throw peopleResult.error;
-  const names=new Map((peopleResult.data||[]).map(p=>[p.id,p.display_name||"کاربر"])),latest=new Map();
-  for(const m of all)latest.set(m.user_id,m);
-  const threads=[...latest.entries()].map(([id,m])=>({id,name:names.get(id)||"کاربر",last:m.body,created_at:m.created_at})).sort((x,y)=>new Date(y.created_at)-new Date(x.created_at));
-  $("chat-inbox-list").innerHTML=threads.length?threads.map(t=>'<button type="button" class="chat-thread '+(chatTargetUserId===t.id?'active':'')+'" data-chat-user="'+t.id+'"><b>'+escapeHtml(t.name)+'</b><small>'+escapeHtml(t.last)+'</small></button>').join(""):'<div class="empty">هنوز پیامی دریافت نشده است.</div>';
-  if(!chatTargetUserId&&threads.length)chatTargetUserId=threads[0].id;
-  if(chatTargetUserId&&!threads.some(t=>t.id===chatTargetUserId))chatTargetUserId=threads[0]?.id||null;
-  const selected=threads.find(t=>t.id===chatTargetUserId);
-  $("chat-heading-title").textContent=selected?selected.name:"گفت‌وگوها";
-  $("chat-heading-subtitle").textContent=selected?"پاسخ شما برای این کاربر ارسال می‌شود.":"با دریافت پیام جدید، گفت‌وگو اینجا نمایش داده می‌شود.";
-  chatMessages=all.filter(m=>m.user_id===chatTargetUserId);
- }else{
-  chatTargetUserId=currentUser.id;$("chat-heading-title").textContent="پشتیبانی MMD";
-  $("chat-heading-subtitle").textContent="پیام شما فقط برای مدیر سامانه قابل مشاهده است.";
-  const {data,error}=await db.from("support_messages").select("*").eq("user_id",currentUser.id).order("created_at",{ascending:true});
-  if(error)throw error;chatMessages=data||[];
- }
- renderSupportMessages();
+ if(profile?.chat_enabled===false&&!profile?.is_admin){show("chat-content",false);$("chat-status").textContent="دسترسی چت غیرفعال است.";return}
+ show("chat-content",true);
+ const {data:convs,error}=await db.from("private_conversations").select("*").order("created_at",{ascending:false});if(error)throw error;
+ const ids=[...new Set((convs||[]).flatMap(c=>[c.user_one,c.user_two]))];
+ const {data:profiles,error:pe}=ids.length?await db.from("profiles").select("id,display_name").in("id",ids):{data:[],error:null};if(pe)throw pe;
+ const names=new Map((profiles||[]).map(p=>[p.id,p.display_name||"کاربر"]));
+ const list=$("chat-inbox-list");
+ if(profile?.is_admin){list.innerHTML=(convs||[]).map(c=>'<button class="chat-thread" data-conv="' + c.id + '"><b>'+escapeHtml(names.get(c.user_one))+" ↔ "+escapeHtml(names.get(c.user_two))+'</b></button>').join("")||'<div class="empty">گفت‌وگویی نیست.</div>'}
+ else {const users=(profiles||[]).filter(p=>p.id!==currentUser.id);list.innerHTML=users.map(p=>'<button class="chat-thread" data-person="' + p.id + '">'+escapeHtml(p.display_name)+'</button>').join("")||'<div class="empty">کاربری نیست.</div>'}
+ if(!chatTargetUserId&&profile?.is_admin&&convs?.length)chatTargetUserId=convs[0].id;
+ if(!chatTargetUserId){$("chat-messages").innerHTML="یک کاربر را انتخاب کنید.";return}
+ let conv=(convs||[]).find(c=>c.id===chatTargetUserId);
+ if(!conv&&!profile?.is_admin){const pair=currentUser.id<chatTargetUserId?[currentUser.id,chatTargetUserId]:[chatTargetUserId,currentUser.id];const q=await db.from("private_conversations").select("*").eq("user_one",pair[0]).eq("user_two",pair[1]).maybeSingle();if(q.error)throw q.error;conv=q.data;if(!conv){const r=await db.from("private_conversations").insert({user_one:pair[0],user_two:pair[1]}).select().single();if(r.error)throw r.error;conv=r.data}}
+ if(!conv){$("chat-messages").innerHTML="گفت‌وگو پیدا نشد.";return}
+ chatTargetUserId=conv.id;const other=conv.user_one===currentUser.id?conv.user_two:conv.user_one;$("chat-heading-title").textContent=names.get(other)||"گفت‌وگو";
+ const {data:msgs,error:me}=await db.from("private_messages").select("*").eq("conversation_id",conv.id).order("created_at");if(me)throw me;
+ $("chat-messages").innerHTML=(msgs||[]).map(m=>'<article class="chat-bubble"><p>'+(m.deleted_at?"پیام حذف شده":escapeHtml(m.body||""))+'</p>'+(m.sender_id===currentUser.id&&!m.deleted_at?'<button data-delete-msg="'+m.id+'">حذف پیام</button>':"")+"</article>").join("");
 }
-function renderSupportMessages(){
- const box=$("chat-messages");
- box.innerHTML=chatMessages.length?chatMessages.map(m=>'<div class="chat-bubble '+(m.sender_id===currentUser.id?'mine':'theirs')+'"><p>'+escapeHtml(m.body)+'</p><small>'+(m.sender_id===currentUser.id?'شما':(profile?.is_admin?'کاربر':'ادمین'))+' · '+jalaliDate(m.created_at,true)+'</small></div>').join(""):'<div class="empty">هنوز پیامی در این گفت‌وگو نیست. اولین پیام را ارسال کنید.</div>';
- box.scrollTop=box.scrollHeight;
-}
-$("chat-form").addEventListener("submit",async e=>{
- e.preventDefault();const body=$("chat-input").value.trim();if(!body||!chatTargetUserId)return;
- const btn=e.submitter;btn.disabled=true;
- try{const {error}=await db.from("support_messages").insert({user_id:chatTargetUserId,sender_id:currentUser.id,body});if(error)throw error;$("chat-input").value="";await loadSupportChat()}
- catch(err){message("chat-message",err.message,true)}finally{btn.disabled=false}
-});
-
-function navigate(page){document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));show("page-"+page,true);document.querySelectorAll(".nav-link").forEach(b=>b.classList.toggle("active",b.dataset.page===page));const titles={today:"امروز","today-work":"کارهای امروز",profile:"پروفایل من",announcements:"اعلانات",contact:"ارتباط با ادمین",chat:"چت با ادمین",smart:"برنامه‌ریز هوشمند",tasks:"وظایف و تکالیف",routines:"برنامه ثابت",reports:"گزارش پیشرفت",settings:"تنظیمات",admin:"مدیریت کاربران"};if(page==="smart"&&!smartEnabled())page="today";$("page-title").textContent=titles[page]||"امروز";if(page==="admin")loadAdminUsers().catch(e=>message("admin-message",e.message,true));if(page==="chat"){chatTargetUserId=profile?.is_admin?chatTargetUserId:currentUser.id;loadSupportChat().then(startChatRealtime).catch(e=>message("chat-message",e.message,true))}else stopChatRealtime()}
+$("chat-inbox-list").addEventListener("click",async e=>{const p=e.target.closest("[data-person]"),c=e.target.closest("[data-conv]");if(p)chatTargetUserId=p.dataset.person;else if(c)chatTargetUserId=c.dataset.conv;else return;try{await loadSupportChat()}catch(x){message("chat-message",x.message,true)}});
+$("chat-form").addEventListener("submit",async e=>{e.preventDefault();const body=$("chat-input").value.trim(),file=$("chat-file").files[0];if(!body&&!file)return;try{let path=null,type=null;if(file){if(file.size>52428800)throw Error("حداکثر حجم ۵۰ مگابایت است.");path=currentUser.id+"/"+crypto.randomUUID()+"-"+file.name.replace(/[^a-zA-Z0-9._-]/g,"_");const up=await db.storage.from("private-chat-media").upload(path,file,{contentType:file.type});if(up.error)throw up.error;type=file.type}const r=await db.from("private_messages").insert({conversation_id:chatTargetUserId,sender_id:currentUser.id,body,media_path:path,media_type:type});if(r.error)throw r.error;$("chat-input").value="";$("chat-file").value="";await loadSupportChat()}catch(x){message("chat-message",x.message,true)}});
+$("chat-messages").addEventListener("click",async e=>{const b=e.target.closest("[data-delete-msg]");if(!b||!confirm("پیام حذف شود؟"))return;const r=await db.from("private_messages").update({deleted_at:new Date().toISOString(),body:"",media_path:null,media_type:null}).eq("id",b.dataset.deleteMsg).eq("sender_id",currentUser.id);if(r.error)message("chat-message",r.error.message,true);else loadSupportChat()});
+function navigate(page){document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));show("page-"+page,true);document.querySelectorAll(".nav-link").forEach(b=>b.classList.toggle("active",b.dataset.page===page));const titles={today:"امروز","today-work":"کارهای امروز",profile:"پروفایل من",announcements:"اعلانات",contact:"ارتباط با ادمین",chat:"چت با ادمین",smart:"برنامه‌ریز هوشمند",tasks:"وظایف و تکالیف",routines:"برنامه ثابت",reports:"گزارش پیشرفت",settings:"تنظیمات",admin:"مدیریت کاربران"};if(page==="smart"&&!smartEnabled())page="today";$("page-title").textContent=titles[page]||"امروز";if(page==="admin")loadAdminUsers().catch(e=>message("admin-message",e.message,true));if(page==="chat"){chatTargetUserId=null;loadSupportChat().then(startChatRealtime).catch(e=>message("chat-message",e.message,true))}else stopChatRealtime()}
 document.querySelectorAll("[data-filter]").forEach(b=>b.addEventListener("click",()=>{taskFilter=b.dataset.filter;document.querySelectorAll("[data-filter]").forEach(x=>x.classList.toggle("active",x===b));renderTasks()}));
 $("smart-planner-toggle").addEventListener("change",e=>{if(e.target.checked)localStorage.setItem(smartKey(),"on");else localStorage.removeItem(smartKey());syncSmartPlanner();toast(e.target.checked?"برنامه‌ریز هوشمند فعال شد.":"برنامه‌ریز هوشمند غیرفعال شد.");});
 function buildSmartPlan(){
