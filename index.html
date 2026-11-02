@@ -11,11 +11,11 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=20261102-fix4">
+  <link rel="stylesheet" href="https://unpkg.com/@majidh1/jalalidatepicker@1.0.0/dist/jalalidatepicker.min.css">\n  <link rel="stylesheet" href="style.css?v=20261102-jalali1">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>\n  <script defer src="https://unpkg.com/@majidh1/jalalidatepicker@1.0.0/dist/jalalidatepicker.min.js"></script>
   <script>window.addEventListener("error",function(e){if(e.target&&e.target.src&&e.target.src.includes("xlsx.full.min.js")&&!window.XLSX){var s=document.createElement("script");s.src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js";document.head.appendChild(s)}},true);</script>
-  <script defer src="app.js?v=20261102-renew2months1"></script>
+  <script defer src="app.js?v=20261102-jalali1"></script>
 </head>
 <body>
   <div id="terms-view" class="auth-wrap hidden">
@@ -143,7 +143,7 @@
         <form id="task-form" class="form-panel">
           <label>عنوان وظیفه<input id="task-title" required maxlength="120" placeholder="مثلاً حل تمرین ریاضی"></label>
           <label>توضیحات<input id="task-description" maxlength="250" placeholder="جزئیات اختیاری"></label>
-          <div class="form-row"><label>تاریخ مهلت<input id="task-due-date" type="date" lang="fa" aria-label="انتخاب تاریخ مهلت"></label><label>ساعت مهلت<input id="task-due-time" type="time"></label><label>اولویت<select id="task-priority"><option value="normal">معمولی</option><option value="high">زیاد</option><option value="low">کم</option></select></label></div>
+          <div class="form-row"><label>تاریخ مهلت<input id="task-due-date-jalali" type="text" data-jdp data-jdp-only-date data-jdp-target-value-input="#task-due-date" data-jdp-target-value-type="gregorian" placeholder="انتخاب تاریخ شمسی" autocomplete="off" aria-label="انتخاب تاریخ مهلت"><input id="task-due-date" type="hidden"></label><label>ساعت مهلت<input id="task-due-time" type="time"></label><label>اولویت<select id="task-priority"><option value="normal">معمولی</option><option value="high">زیاد</option><option value="low">کم</option></select></label></div>
           <button class="primary" type="submit">ثبت وظیفه</button>
         </form>
         <div class="filter-row"><button class="filter active" data-filter="all">همه</button><button class="filter" data-filter="pending">در انتظار</button><button class="filter" data-filter="done">انجام‌شده</button></div>
@@ -202,7 +202,7 @@
         <form id="admin-create-form" class="form-panel">
           <h3>ساخت حساب جدید</h3>
           <div class="form-row"><label>شناسه ورود دلخواه<input id="new-identifier" type="text" required maxlength="40" placeholder="نام کاربری، کد دلخواه یا ایمیل"></label><label>رمز عبور اولیه<input id="new-password" type="password" required minlength="8"></label></div>
-          <div class="form-row"><label>نام کاربر<input id="new-name" required></label><label>شروع اشتراک<input id="new-start" type="date" lang="fa" required></label><label>پایان اشتراک<input id="new-end" type="date" lang="fa" required></label></div>
+          <div class="form-row"><label>نام کاربر<input id="new-name" required></label><label>شروع اشتراک<input id="new-start-jalali" type="text" data-jdp data-jdp-only-date data-jdp-target-value-input="#new-start" data-jdp-target-value-type="gregorian" placeholder="تاریخ شمسی شروع" autocomplete="off" required><input id="new-start" type="hidden"></label><label>پایان اشتراک<input id="new-end-jalali" type="text" data-jdp data-jdp-only-date data-jdp-target-value-input="#new-end" data-jdp-target-value-type="gregorian" placeholder="تاریخ شمسی پایان" autocomplete="off" required><input id="new-end" type="hidden"></label></div>
           <p class="hint">شناسه می‌تواند نام، کد دلخواه یا ایمیل باشد؛ لازم نیست شماره موبایل باشد.</p>
           <button class="primary" type="submit">ساخت حساب و اشتراک</button><p id="admin-message" class="message"></p>
         </form>
