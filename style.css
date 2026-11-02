@@ -578,7 +578,7 @@ button{ -webkit-tap-highlight-color:transparent }
 .stat-card{position:relative;overflow:hidden;border:1px solid color-mix(in srgb,var(--line) 82%,transparent);border-radius:20px;background:linear-gradient(145deg,var(--panel),color-mix(in srgb,var(--panel2) 76%,var(--bg)));box-shadow:0 10px 28px #00000014}
 .stat-card:after{content:"";position:absolute;inset:0 0 auto;height:3px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:.65}
 .stat-card b{font-weight:900;font-variant-numeric:tabular-nums}
-.form-panel,.settings-block,.report-panel,.contact-panel,.chat-window,.chat-inbox,.post-card{border:1px solid color-mix(in srgb,var(--line) 88%,transparent);border-radius:20px;background:linear-gradient(145deg,var(--panel),color-mix(in srgb,var(--panel2) 35%,var(--panel));box-shadow:var(--shadow-soft)}
+.form-panel,.settings-block,.report-panel,.contact-panel,.chat-window,.chat-inbox,.post-card{border:1px solid color-mix(in srgb,var(--line) 88%,transparent);border-radius:20px;background:linear-gradient(145deg,var(--panel),color-mix(in srgb,var(--panel2) 35%,var(--panel)));box-shadow:var(--shadow-soft)}
 .section-head{gap:12px}
 .section-head h2,.form-panel h2,.settings-block h2{font-weight:850;letter-spacing:-.3px}
 label{font-weight:600}
