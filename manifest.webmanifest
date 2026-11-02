@@ -13,15 +13,9 @@
   "icons": [
     {
       "src": "assets/icon.svg",
-      "sizes": "192x192",
+      "sizes": "any 192x192 512x512",
       "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "assets/icon.svg",
-      "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "any"
+      "purpose": "any maskable"
     }
   ]
 }
