@@ -1,4 +1,4 @@
-const CACHE_NAME="mmd-shell-v23";
+const CACHE_NAME="mmd-shell-v24";
 const CORE=["./","./index.html","./install.html","./app.js","./style.css","./assets/icon.svg","./assets/icon-192.svg","./manifest.webmanifest","./version.json"];
 self.addEventListener("message",event=>{if(event.data?.type==="SKIP_WAITING")self.skipWaiting()});
 self.addEventListener("install",event=>{event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting()))});
@@ -19,5 +19,10 @@ self.addEventListener("fetch",event=>{
  event.respondWith(fetch(request).then(response=>{
   if(response&&response.ok){const copy=response.clone();caches.open(CACHE_NAME).then(cache=>cache.put(request,copy));}
   return response;
- }).catch(()=>caches.match(request).then(cached=>cached||caches.match("./index.html"))));
+ }).catch(async()=>{
+  const cached=await caches.match(request,{ignoreSearch:true});
+  if(cached)return cached;
+  if(request.mode==="navigate"||request.destination==="document")return caches.match("./index.html");
+  return new Response("Network unavailable and no cached copy exists.",{status:503,headers:{"Content-Type":"text/plain; charset=utf-8"}});
+ }));
 });
