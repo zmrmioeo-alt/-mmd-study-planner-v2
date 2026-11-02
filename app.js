@@ -38,6 +38,7 @@ $("accept-terms").addEventListener("click",async()=>{
  catch(err){console.error(err);message("terms-message","ذخیره تأیید قوانین ممکن نشد. تنظیمات مرورگر را بررسی کنید.",true)}
 });
 async function boot(){
+ if("serviceWorker" in navigator){navigator.serviceWorker.register("./service-worker.js").catch(err=>console.warn("Service worker unavailable",err));}
  if(localStorage.getItem("mmd_terms_accepted")!=="mmd-terms-2026-11-v1"){show("terms-view",true);show("auth-view",false);show("app-view",false);return}
  db.auth.onAuthStateChange((event)=>{if(event==="SIGNED_OUT"){currentUser=null;profile=null;show("app-view",false);show("expired-subscription-view",false);show("banned-account-view",false);show("auth-view",true)}});
  await continueAfterPolicy();
