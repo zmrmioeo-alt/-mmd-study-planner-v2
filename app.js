@@ -272,11 +272,11 @@ async function loadSupportChat(){
  if(profile?.chat_enabled===false&&!profile?.is_admin){show("chat-content",false);$("chat-status").textContent="دسترسی چت غیرفعال است.";return}
  show("chat-content",true);
  const {data:convs,error}=await db.from("private_conversations").select("*").order("created_at",{ascending:false});if(error)throw error;
- const {data:profiles,error:pe}=await db.from("profiles").select("id,display_name,chat_enabled").eq("is_approved",true);if(pe)throw pe;
+ const {data:profiles,error:pe}=await db.from("profiles").select("id,display_name,chat_enabled,school_grade,school_class,account_type").eq("is_approved",true);if(pe)throw pe;
  const names=new Map((profiles||[]).map(p=>[p.id,p.display_name||"کاربر"]));
  const list=$("chat-inbox-list");
  if(profile?.is_admin){list.innerHTML=(convs||[]).map(c=>'<button class="chat-thread" data-conv="'+c.id+'"><b>'+escapeHtml(names.get(c.user_one)||"کاربر")+" ↔ "+escapeHtml(names.get(c.user_two)||"کاربر")+'</b></button>').join("")||'<div class="empty">گفت‌وگویی نیست.</div>'}
- else {list.innerHTML=(profiles||[]).filter(p=>p.id!==currentUser.id&&p.chat_enabled!==false).map(p=>'<button class="chat-thread" data-person="'+p.id+'">'+escapeHtml(p.display_name||"کاربر")+'</button>').join("")||'<div class="empty">کاربر دیگری در دسترس نیست.</div>'}
+ else {list.innerHTML=(profiles||[]).filter(p=>p.id!==currentUser.id&&p.chat_enabled!==false).map(p=>{const grade=p.account_type==="teacher"?"معلم":(p.school_grade||"پایه نامشخص");const cls=p.school_class?" · کلاس "+p.school_class:"";return '<button class="chat-thread" data-person="'+p.id+'"><b>'+escapeHtml(p.display_name||"کاربر")+'</b><small>'+escapeHtml(grade+cls)+'</small></button>'}).join("")||'<div class="empty">کاربر دیگری در دسترس نیست.</div>'}
  if(!chatTargetUserId&&profile?.is_admin&&convs?.length)chatTargetUserId=convs[0].id;
  let conv=(convs||[]).find(c=>c.id===chatTargetUserId);
  if(!conv&&!profile?.is_admin&&chatTargetUserId){const pair=currentUser.id<chatTargetUserId?[currentUser.id,chatTargetUserId]:[chatTargetUserId,currentUser.id];const q=await db.from("private_conversations").select("*").eq("user_one",pair[0]).eq("user_two",pair[1]).maybeSingle();if(q.error)throw q.error;conv=q.data;if(!conv){const r=await db.from("private_conversations").insert({user_one:pair[0],user_two:pair[1]}).select().single();if(r.error)throw r.error;conv=r.data}}
