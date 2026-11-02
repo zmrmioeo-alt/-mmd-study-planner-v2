@@ -370,14 +370,21 @@ function csvCell(value){
 function downloadExportFile(file){
   const blob=file instanceof Blob?file:new Blob([file?.content??""],{type:file?.type||"text/csv;charset=utf-8"});
   const filename=file?.name||"MMD-Study-Planner.csv";
+  if(!blob.size)throw new Error("فایل خروجی خالی است.");
   if(window.__mmdExportUrl)URL.revokeObjectURL(window.__mmdExportUrl);
   const url=URL.createObjectURL(blob);window.__mmdExportUrl=url;
   let link=document.getElementById("mmd-export-download");
   if(!link){link=document.createElement("a");link.id="mmd-export-download";document.body.appendChild(link)}
-  link.href=url;link.download=filename;link.textContent="⬇ دانلود فایل خروجی";link.setAttribute("role","button");
-  link.style.cssText="position:fixed;z-index:99999;bottom:18px;left:18px;padding:14px 18px;background:#a4f05b;color:#17220e;border-radius:12px;font-weight:800;text-decoration:none;box-shadow:0 8px 25px #0005";
-  link.onclick=()=>{const usedUrl=url;setTimeout(()=>{if(window.__mmdExportUrl===usedUrl){URL.revokeObjectURL(usedUrl);window.__mmdExportUrl=null;link.remove()}},120000)};
-  toast("فایل آماده است؛ روی دکمه سبز «دانلود فایل خروجی» بزن.");
+  link.href=url;
+  link.download=filename;
+  link.textContent="⬇ برای دانلود و ذخیره فایل اینجا بزن";
+  link.setAttribute("role","button");
+  link.setAttribute("aria-label","دانلود فایل خروجی "+filename);
+  link.setAttribute("target","_self");
+  link.style.cssText="display:block;position:fixed;z-index:2147483647;bottom:calc(18px + env(safe-area-inset-bottom, 0px));left:12px;right:12px;width:auto;box-sizing:border-box;padding:16px 18px;background:#a4f05b;color:#17220e;border-radius:14px;font-weight:900;font-size:16px;text-align:center;text-decoration:none;box-shadow:0 8px 25px #0008;visibility:visible;opacity:1;pointer-events:auto";
+  link.onclick=()=>{link.textContent="در حال ذخیره فایل…";const usedUrl=url;setTimeout(()=>{if(window.__mmdExportUrl===usedUrl){URL.revokeObjectURL(usedUrl);window.__mmdExportUrl=null;link.remove()}},600000)};
+  link.scrollIntoView?.({block:"nearest"});
+  toast("فایل آماده است. نوار سبز پایین صفحه را لمس کن تا دانلود شود.");
 }
 $("export-users").addEventListener("click",async()=>{
  const btn=$("export-users");btn.disabled=true;
