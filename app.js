@@ -64,7 +64,7 @@ if($("expired-logout-btn"))$("expired-logout-btn").addEventListener("click",asyn
 if($("banned-logout-btn"))$("banned-logout-btn").addEventListener("click",async()=>{if(confirm("مطمئنی می‌خواهی از حساب خارج شوی؟"))await db.auth.signOut()});
 $("show-signup").addEventListener("click",()=>{show("login-card",false);show("signup-card",true)});
 $("show-login").addEventListener("click",()=>{show("signup-card",false);show("login-card",true)});
-$("signup-form").addEventListener("submit",async e=>{e.preventDefault();try{const {data,error}=await db.auth.signUp({email:$("signup-email").value.trim(),password:$("signup-password").value,options:{data:{display_name:$("signup-name").value.trim()}}});if(error)throw error;message("signup-message","ثبت‌نام انجام شد. ایمیل را تأیید کنید و منتظر تأیید مدیر بمانید.");}catch(err){message("signup-message",err.message,true)}});
+$("signup-form").addEventListener("submit",async e=>{e.preventDefault();try{const {data,error}=await db.auth.signUp({email:$("signup-email").value.trim(),password:$("signup-password").value,options:{data:{display_name:$("signup-name").value.trim()}}});if(error)throw error;if(data.session){show("signup-card",false);await enterApp(data.user)}else message("signup-message","ثبت‌نام انجام شد. ایمیل را تأیید کنید و منتظر تأیید مدیر بمانید.");}catch(err){message("signup-message",err.message,true)}});
 $("pending-logout").addEventListener("click",()=>db.auth.signOut());
 async function enterApp(user){
  if(enteringUserId===user.id)return;enteringUserId=user.id;
