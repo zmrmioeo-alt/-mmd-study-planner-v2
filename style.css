@@ -544,3 +544,5 @@ input[data-jdp]{direction:ltr;text-align:center;cursor:pointer}
 .jdp-container{z-index:10000!important}
 
 .school-profile-badge{display:inline-flex;align-items:center;margin-top:12px;padding:7px 13px;border:1px solid #a4f05b77;border-radius:999px;background:#a4f05b18;color:var(--accent);font-size:12px;font-weight:800}.school-profile-fields{align-items:start}.school-profile-fields label{min-width:0}.user-chip #school-grade-chip{color:var(--accent);font-weight:700}
+
+#signup-account-type{border-color:#a4f05b66;background:#101d27}
