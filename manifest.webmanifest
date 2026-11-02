@@ -1,0 +1,21 @@
+{
+  "name": "MMD Study Planner",
+  "short_name": "MMD",
+  "description": "برنامه‌ریز درسی MMD",
+  "lang": "fa",
+  "dir": "rtl",
+  "start_url": "./?source=installed-app",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0c111b",
+  "theme_color": "#101522",
+  "icons": [
+    {
+      "src": "assets/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
