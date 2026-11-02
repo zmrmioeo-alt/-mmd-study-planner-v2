@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101522"><meta name="description" content="نصب اپلیکیشن برنامه‌ریز درسی MMD">
+<link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<title>نصب اپلیکیشن MMD</title>
+<style>
+:root{color-scheme:dark;--bg:#0c111b;--panel:#151e2d;--line:#28364b;--text:#eef3fb;--muted:#91a0b6;--accent:#a4f05b;font-family:Tahoma,"Segoe UI",sans-serif}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:22px;background:radial-gradient(ellipse at 85% 0%,#1c2c3e 0,transparent 42%),var(--bg);color:var(--text)}
+main{width:min(100%,480px);padding:30px;background:var(--panel);border:1px solid var(--line);border-radius:25px;box-shadow:0 20px 60px #0005;text-align:center}
+.logo{width:100px;height:100px;object-fit:contain;margin:0 auto 20px}h1{font-size:25px;margin:0 0 10px}p{line-height:2;color:var(--muted);font-size:13px}
+button,a.btn{display:block;width:100%;padding:15px;margin-top:13px;border:0;border-radius:13px;background:var(--accent);color:#17220e;text-decoration:none;font:700 15px Tahoma;cursor:pointer}
+a.secondary{background:#202d40;color:var(--text);border:1px solid var(--line)}
+.steps{text-align:right;margin:20px 0;padding:15px;border:1px solid var(--line);border-radius:14px;color:var(--muted);font-size:12px;line-height:2}
+#status{min-height:24px;color:var(--accent);font-size:12px}
+</style></head>
+<body><main>
+<img class="logo" src="assets/icon.svg" alt="MMD">
+<h1>نصب اپلیکیشن MMD</h1>
+<p>برنامه‌ریز درسی MMD را به صفحهٔ اصلی گوشی اضافه کن تا مانند یک اپلیکیشن مستقل باز شود. با انتشار نسخه‌های جدید، برنامه به‌روز می‌شود.</p>
+<button id="install" hidden>نصب اپلیکیشن روی گوشی</button>
+<a class="btn secondary" id="open-app" href="./">ورود به برنامه</a>
+<div class="steps" id="instructions">اگر دکمهٔ نصب نمایش داده نشد:<br>۱. این صفحه را در Chrome باز کن.<br>۲. منوی سه‌نقطه را بزن.<br>۳. گزینهٔ «Install app» یا «افزودن به صفحهٔ اصلی» را انتخاب کن.</div>
+<p id="status"></p>
+</main>
+<script>
+let deferredPrompt=null;
+const installButton=document.getElementById("install"),status=document.getElementById("status");
+if("serviceWorker" in navigator){navigator.serviceWorker.register("./service-worker.js").catch(()=>{status.textContent="ثبت سرویس آفلاین انجام نشد؛ نصب از منوی مرورگر همچنان ممکن است."});}
+window.addEventListener("beforeinstallprompt",event=>{event.preventDefault();deferredPrompt=event;installButton.hidden=false;});
+installButton.addEventListener("click",async()=>{if(!deferredPrompt)return;deferredPrompt.prompt();const choice=await deferredPrompt.userChoice;status.textContent=choice.outcome==="accepted"?"درخواست نصب پذیرفته شد.":"نصب لغو شد.";deferredPrompt=null;installButton.hidden=true;});
+window.addEventListener("appinstalled",()=>{status.textContent="اپلیکیشن با موفقیت به گوشی اضافه شد.";installButton.hidden=true;});
+if(window.matchMedia("(display-mode: standalone)").matches)status.textContent="اپلیکیشن از قبل نصب شده است.";
+</script></body></html>
