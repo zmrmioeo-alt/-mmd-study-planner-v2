@@ -108,7 +108,7 @@ async function enterApp(user){
   await loadProfile();if(!currentUser)return;
   await loadFeatureFlags();
   if(profile?.is_approved===false){show("app-view",false);show("auth-view",false);show("pending-approval-view",true);return;}
-  await Promise.all([loadTasks(),loadRoutines(),loadSettings(),loadAnnouncements(),loadHumorFeed()]);renderAll();syncSmartPlanner();startAnnouncementRealtime();checkAppUpdateNotice();startUpdateMonitor();
+  await Promise.all([loadTasks(),loadRoutines(),loadSettings(),loadAnnouncements(),loadHumorFeed()]);renderAll();syncSmartPlanner();startAnnouncementRealtime();startMessageRealtime();checkAppUpdateNotice();startUpdateMonitor();
  }catch(err){console.error("App loading failed:",err);show("app-view",false);show("auth-view",true);show("login-card",true);message("auth-message","خطا در ورود: "+(err.message||"خطای نامشخص"),true);throw err}
  finally{enteringUserId=null}
 }
@@ -188,7 +188,39 @@ document.addEventListener("click",async e=>{
  const nav=e.target.closest("[data-page]");if(nav)navigate(nav.dataset.page);
 });
 
-let chatChannel=null,chatTargetUserId=null;
+let chatChannel=null,chatTargetUserId=null,messageNoticeChannel=null;
+const PUSH_PUBLIC_KEY="BA18A8ln4zGToMNrHhAT5Q72Vbp-PXFWKTxHqCXDlH_p3xXpqJgha3kvMxY_VYCQuDLHf15xpmOLeG-6w-7aW8E";
+function base64UrlToBytes(value){const padding="=".repeat((4-value.length%4)%4);const raw=atob((value+padding).replace(/-/g,"+").replace(/_/g,"/"));return Uint8Array.from([...raw].map(c=>c.charCodeAt(0)))}
+async function syncPushStatus(){
+ const el=$("push-status");if(!el)return;
+ if(!("Notification"in window)||!window.isSecureContext){el.textContent="این مرورگر از اعلان پشتیبانی نمی‌کند.";return}
+ const reg=await navigator.serviceWorker?.getRegistration();const sub=await reg?.pushManager?.getSubscription();
+ el.textContent=sub?"اعلان پیام‌ها فعال است.":Notification.permission==="denied"?"اعلان‌ها در تنظیمات مرورگر مسدود شده‌اند.":"اعلان پیام‌ها هنوز فعال نشده است.";
+}
+async function enablePushNotifications(){
+ const btn=$("enable-push");btn.disabled=true;
+ try{
+  if(!("Notification"in window)||!window.isSecureContext||!("serviceWorker"in navigator))throw new Error("مرورگر یا اتصال امن از اعلان پشتیبانی نمی‌کند.");
+  const permission=await Notification.requestPermission();if(permission!=="granted")throw new Error("اجازه اعلان داده نشد. از تنظیمات مرورگر، اعلان‌ها را فعال کن.");
+  const reg=await navigator.serviceWorker.register("./service-worker.js");let sub=await reg.pushManager.getSubscription();
+  if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:base64UrlToBytes(PUSH_PUBLIC_KEY)});
+  const {error}=await db.functions.invoke("push-notify",{body:{action:"subscribe",subscription:sub.toJSON()}});if(error)throw error;
+  toast("اعلان پیام‌ها فعال شد.");await syncPushStatus();
+ }catch(err){console.error("Push setup failed",err);toast(err.message||"فعال‌سازی اعلان ناموفق بود.");await syncPushStatus()}
+ finally{btn.disabled=false}
+}
+$("enable-push")?.addEventListener("click",enablePushNotifications);
+async function startMessageRealtime(){
+ if(messageNoticeChannel){await db.removeChannel(messageNoticeChannel);messageNoticeChannel=null}
+ if(!currentUser)return;
+ messageNoticeChannel=db.channel("mmd-message-notices").on("postgres_changes",{event:"INSERT",schema:"public",table:"private_messages"},async payload=>{
+  const msg=payload.new;if(!msg||msg.sender_id===currentUser.id)return;
+  try{const {data:conv,error}=await db.from("private_conversations").select("user_one,user_two").eq("id",msg.conversation_id).maybeSingle();if(error||!conv||![conv.user_one,conv.user_two].includes(currentUser.id))return;if(document.visibilityState==="visible")toast("پیام جدید دریافت شد.");}
+  catch(err){console.debug("Message notice skipped",err)}
+ }).subscribe();
+ syncPushStatus().catch(()=>{});
+}
+function stopMessageRealtime(){if(messageNoticeChannel){db.removeChannel(messageNoticeChannel);messageNoticeChannel=null}}
 function stopChatRealtime(){if(chatChannel){db.removeChannel(chatChannel);chatChannel=null}}
 function startChatRealtime(){stopChatRealtime();chatChannel=db.channel("private-chat").on("postgres_changes",{event:"*",schema:"public",table:"private_messages"},()=>{if(!$("page-chat").classList.contains("hidden"))loadSupportChat().catch(e=>message("chat-message",e.message,true))}).subscribe()}
 async function loadSupportChat(){
@@ -211,7 +243,7 @@ async function loadSupportChat(){
  $("chat-messages").innerHTML=rendered.join("");
 }
 $("chat-inbox-list").addEventListener("click",async e=>{const p=e.target.closest("[data-person]"),c=e.target.closest("[data-conv]");if(p)chatTargetUserId=p.dataset.person;else if(c)chatTargetUserId=c.dataset.conv;else return;try{await loadSupportChat()}catch(x){message("chat-message",x.message,true)}});
-$("chat-form").addEventListener("submit",async e=>{e.preventDefault();if(!chatTargetUserId)return;const body=$("chat-input").value.trim(),file=$("chat-file").files[0];if(!body&&!file)return;try{let path=null,type=null;if(file){if(file.size>52428800)throw Error("حداکثر حجم فایل ۵۰ مگابایت است.");path=currentUser.id+"/"+crypto.randomUUID()+"-"+file.name.replace(/[^a-zA-Z0-9._-]/g,"_");const up=await db.storage.from("private-chat-media").upload(path,file,{contentType:file.type});if(up.error)throw up.error;type=file.type}const r=await db.from("private_messages").insert({conversation_id:chatTargetUserId,sender_id:currentUser.id,body,media_path:path,media_type:type});if(r.error)throw r.error;$("chat-input").value="";$("chat-file").value="";await loadSupportChat()}catch(x){message("chat-message",x.message,true)}});
+$("chat-form").addEventListener("submit",async e=>{e.preventDefault();if(!chatTargetUserId)return;const body=$("chat-input").value.trim(),file=$("chat-file").files[0];if(!body&&!file)return;try{let path=null,type=null;if(file){if(file.size>52428800)throw Error("حداکثر حجم فایل ۵۰ مگابایت است.");path=currentUser.id+"/"+crypto.randomUUID()+"-"+file.name.replace(/[^a-zA-Z0-9._-]/g,"_");const up=await db.storage.from("private-chat-media").upload(path,file,{contentType:file.type});if(up.error)throw up.error;type=file.type}const r=await db.from("private_messages").insert({conversation_id:chatTargetUserId,sender_id:currentUser.id,body,media_path:path,media_type:type}).select("id").single();if(r.error)throw r.error;db.functions.invoke("push-notify",{body:{action:"send",conversation_id:chatTargetUserId,message_id:r.data.id}}).then(({error})=>{if(error)console.warn("Push send skipped",error)});$("chat-input").value="";$("chat-file").value="";await loadSupportChat()}catch(x){message("chat-message",x.message,true)}});
 $("chat-messages").addEventListener("click",async e=>{const b=e.target.closest("[data-delete-msg]");if(!b||!confirm("پیام حذف شود؟"))return;const r=await db.from("private_messages").update({deleted_at:new Date().toISOString(),body:"",media_path:null,media_type:null}).eq("id",b.dataset.deleteMsg).eq("sender_id",currentUser.id);if(r.error)message("chat-message",r.error.message,true);else loadSupportChat()});
 
 function navigate(page){if(page==="chat"&&!featureFlags.chat_enabled&&!profile?.is_admin){toast("بخش چت غیرفعال است.");page="today"}if(page==="humor"&&!featureFlags.humor_enabled&&!profile?.is_admin){toast("بخش همتانه غیرفعال است.");page="today"}document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));show("page-"+page,true);document.querySelectorAll(".nav-link").forEach(b=>b.classList.toggle("active",b.dataset.page===page));const titles={"public-profile":"پروفایل کاربر",today:"امروز","today-work":"کارهای امروز",profile:"پروفایل من",announcements:"اعلانات",contact:"ارتباط با ادمین",chat:"چت با ادمین",smart:"برنامه‌ریز هوشمند",tasks:"وظایف و تکالیف",routines:"برنامه ثابت",reports:"گزارش پیشرفت",settings:"تنظیمات",admin:"مدیریت کاربران"};if(page==="smart"&&!smartEnabled())page="today";$("page-title").textContent=titles[page]||"امروز";if(page==="admin")loadAdminUsers().catch(e=>message("admin-message",e.message,true));if(page==="chat"){chatTargetUserId=null;loadSupportChat().then(startChatRealtime).catch(e=>message("chat-message",e.message,true))}else stopChatRealtime()}
@@ -335,7 +367,18 @@ function csvCell(value){
  if(/^[=+@\\-]/.test(s))s="'"+s;
  return '"'+s.replace(/"/g,'""')+'"';
 }
-function downloadExportFile(file){if(window.__mmdExportUrl)URL.revokeObjectURL(window.__mmdExportUrl);const url=URL.createObjectURL(file);window.__mmdExportUrl=url;let link=document.getElementById("mmd-export-download");if(!link){link=document.createElement("a");link.id="mmd-export-download";document.body.appendChild(link)}link.href=url;link.download=file.name;link.textContent="⬇ دریافت فایل خروجی Excel";link.setAttribute("role","button");link.style.cssText="position:fixed;z-index:99999;bottom:18px;left:18px;padding:14px 18px;background:#a4f05b;color:#17220e;border-radius:12px;font-weight:800;text-decoration:none;box-shadow:0 8px 25px #0005";link.onclick=()=>{setTimeout(()=>{if(window.__mmdExportUrl===url){URL.revokeObjectURL(url);window.__mmdExportUrl=null;link.remove()}},600000)};toast("فایل آماده است؛ دکمه سبز دریافت فایل را بزنید.")}
+function downloadExportFile(file){
+  const blob=file instanceof Blob?file:new Blob([file?.content??""],{type:file?.type||"text/csv;charset=utf-8"});
+  const filename=file?.name||"MMD-Study-Planner.csv";
+  if(window.__mmdExportUrl)URL.revokeObjectURL(window.__mmdExportUrl);
+  const url=URL.createObjectURL(blob);window.__mmdExportUrl=url;
+  let link=document.getElementById("mmd-export-download");
+  if(!link){link=document.createElement("a");link.id="mmd-export-download";document.body.appendChild(link)}
+  link.href=url;link.download=filename;link.textContent="⬇ دانلود فایل خروجی";link.setAttribute("role","button");
+  link.style.cssText="position:fixed;z-index:99999;bottom:18px;left:18px;padding:14px 18px;background:#a4f05b;color:#17220e;border-radius:12px;font-weight:800;text-decoration:none;box-shadow:0 8px 25px #0005";
+  link.onclick=()=>{const usedUrl=url;setTimeout(()=>{if(window.__mmdExportUrl===usedUrl){URL.revokeObjectURL(usedUrl);window.__mmdExportUrl=null;link.remove()}},120000)};
+  toast("فایل آماده است؛ روی دکمه سبز «دانلود فایل خروجی» بزن.");
+}
 $("export-users").addEventListener("click",async()=>{
  const btn=$("export-users");btn.disabled=true;
  try{
