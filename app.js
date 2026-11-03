@@ -542,20 +542,27 @@ function openAvatarCropper(file){
    const stage=modal.querySelector(".avatar-crop-stage"),preview=modal.querySelector(".avatar-crop-image"),zoomInput=modal.querySelector(".avatar-crop-zoom");
    const size=260,baseScale=Math.max(size/img.naturalWidth,size/img.naturalHeight),baseW=img.naturalWidth*baseScale,baseH=img.naturalHeight*baseScale;
    let zoom=1,dx=0,dy=0,drag=false,lastX=0,lastY=0,settled=false;
-   preview.src=url;preview.style.width=baseW+"px";preview.style.height=baseH+"px";
-   const paint=()=>{preview.style.transform="translate(calc(-50% + "+dx+"px),calc(-50% + "+dy+"px)) scale("+zoom+")"};
+   preview.src=url;
+   const bounds=()=>({minX:size-baseW*zoom,maxX:0,minY:size-baseH*zoom,maxY:0});
+   const clamp=()=>{const b=bounds();dx=Math.min(b.maxX,Math.max(b.minX,dx));dy=Math.min(b.maxY,Math.max(b.minY,dy))};
+   const paint=()=>{
+    preview.style.width=(baseW*zoom)+"px";preview.style.height=(baseH*zoom)+"px";
+    preview.style.left=((size-baseW*zoom)/2+dx)+"px";preview.style.top=((size-baseH*zoom)/2+dy)+"px";
+    preview.style.transform="none";
+   };
    const finish=value=>{if(settled)return;settled=true;URL.revokeObjectURL(url);modal.remove();resolve(value)};
    const close=()=>finish(null);
    modal.querySelector(".avatar-crop-close").onclick=close;modal.querySelector(".avatar-crop-cancel").onclick=close;
-   zoomInput.oninput=()=>{zoom=Number(zoomInput.value);paint()};
+   zoomInput.oninput=()=>{zoom=Number(zoomInput.value);clamp();paint()};
    stage.addEventListener("pointerdown",e=>{drag=true;lastX=e.clientX;lastY=e.clientY;stage.setPointerCapture(e.pointerId)});
-   stage.addEventListener("pointermove",e=>{if(!drag)return;dx+=e.clientX-lastX;dy+=e.clientY-lastY;lastX=e.clientX;lastY=e.clientY;paint()});
+   stage.addEventListener("pointermove",e=>{if(!drag)return;dx+=e.clientX-lastX;dy+=e.clientY-lastY;lastX=e.clientX;lastY=e.clientY;clamp();paint()});
    stage.addEventListener("pointerup",()=>drag=false);stage.addEventListener("pointercancel",()=>drag=false);
    modal.querySelector(".avatar-crop-confirm").onclick=()=>{
     const scale=baseScale*zoom;
-    let sx=(size/2-dx-zoom*baseW/2)/scale,sy=(size/2-dy-zoom*baseH/2)/scale;
+    const left=(size-baseW*zoom)/2+dx,top=(size-baseH*zoom)/2+dy;
+    const sx=Math.max(0,Math.min(img.naturalWidth-size/scale,-left/scale));
+    const sy=Math.max(0,Math.min(img.naturalHeight-size/scale,-top/scale));
     const sw=size/scale,sh=size/scale;
-    sx=Math.max(0,Math.min(img.naturalWidth-sw,sx));sy=Math.max(0,Math.min(img.naturalHeight-sh,sy));
     const canvas=document.createElement("canvas");canvas.width=512;canvas.height=512;
     const ctx=canvas.getContext("2d");ctx.drawImage(img,sx,sy,sw,sh,0,0,512,512);
     canvas.toBlob(blob=>{if(!blob){finish(null);return}finish(new File([blob],"profile.jpg",{type:"image/jpeg",lastModified:Date.now()}))},"image/jpeg",.92);
