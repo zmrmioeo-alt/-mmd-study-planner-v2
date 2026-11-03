@@ -504,27 +504,31 @@ function plannerDueOffset(task){
 }
 function plannerCandidateOffsets(task){
  const due=plannerDueOffset(task);
- if(due<0)return [];
- const last=Math.min(6,due>6?6:due===0?0:due-1);
- const preferred=due>6?0:due>=2?due-2:0;
- const offsets=[];for(let i=preferred;i<=last;i++)offsets.push(i);
- for(let i=0;i<preferred;i++)offsets.push(i);
- return offsets;
+ if(!task.due_at||due>6)return {primary:[0,1,2,3,4,5,6],fallback:[]};
+ if(due<0)return {primary:[],fallback:[]};
+ const last=due===0?0:due-1,preferred=due>=2?due-2:0;
+ const primary=[];for(let i=preferred;i>=0;i--)primary.push(i);
+ const fallback=[];for(let i=preferred+1;i<=last;i++)fallback.push(i);
+ return {primary,fallback};
 }
 function plannerChooseSlot(task,entries){
  const duration=Number(task.estimated_minutes);if(!Number.isFinite(duration)||duration<5)return null;
- const offsets=plannerCandidateOffsets(task),choices=[];
- for(const offset of offsets){
-  const date=plannerDateAt(offset),dateKey=plannerDateKey(date),day=date.getDay();
-  const slot=plannerFindSlot(day,dateKey,duration);
-  if(slot&&(!task.due_at||slot.end<=new Date(task.due_at))){
-   const used=entries.filter(p=>p.date===dateKey).reduce((n,p)=>n+Number(p.duration||0),0);
-   const avail=weeklyAvailability[String(day)],capacity=plannerMinutes(avail.end)-plannerMinutes(avail.start);
-   choices.push({dateKey,slot,ratio:capacity?used/capacity:1,offset});
+ const sets=plannerCandidateOffsets(task);
+ const findChoices=offsets=>{
+  const choices=[];
+  for(const offset of offsets){
+   const date=plannerDateAt(offset),dateKey=plannerDateKey(date),day=date.getDay();
+   const slot=plannerFindSlot(day,dateKey,duration);
+   if(slot&&(!task.due_at||slot.end<=new Date(task.due_at))){
+    const used=entries.filter(p=>p.date===dateKey).reduce((n,p)=>n+Number(p.duration||0),0);
+    const avail=weeklyAvailability[String(day)],capacity=plannerMinutes(avail.end)-plannerMinutes(avail.start);
+    choices.push({dateKey,slot,ratio:capacity?used/capacity:1,offset});
+   }
   }
- }
- choices.sort((a,b)=>a.ratio-b.ratio||a.offset-b.offset||a.slot.start-b.slot.start);
- return choices[0]||null;
+  choices.sort((a,b)=>a.ratio-b.ratio||a.offset-b.offset||a.slot.start-b.slot.start);
+  return choices[0]||null;
+ };
+ return findChoices(sets.primary)||findChoices(sets.fallback);
 }
 function renderWeeklyPlan(){
  const host=$("smart-plan-output");if(!host)return;
