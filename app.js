@@ -285,7 +285,7 @@ function showChatPublicProfile(userId){
  const avatar=p.avatar_path?'<img src="'+escapeHtml(db.storage.from("profile-avatars").getPublicUrl(p.avatar_path).data.publicUrl)+'" alt="">':escapeHtml(p.avatar_emoji||"👤");
  const details=[chatProfileMeta(p),p.chat_enabled===false?"چت غیرفعال":"چت فعال"].map(x=>'<span>'+escapeHtml(x)+'</span>').join("");
  $("chat-public-profile-card").innerHTML='<div class="chat-public-avatar">'+avatar+'</div><h3>'+escapeHtml(p.display_name||"کاربر")+'</h3><div class="chat-public-profile-details">'+details+'</div><p>'+escapeHtml(p.bio||"این کاربر هنوز توضیحی برای پروفایل خود ثبت نکرده است.")+'</p><button type="button" class="primary" id="chat-start-with-user" data-user-id="'+p.id+'" '+(p.chat_enabled===false?"disabled":"")+'>'+(p.chat_enabled===false?"چت این کاربر غیرفعال است":"چت با این کاربر")+'</button>';
- $("chat-directory-view").classList.add("hidden");$("chat-public-profile-view").classList.remove("hidden");
+ $("chat-directory-view").classList.add("hidden");document.querySelectorAll("#chat-content > .chat-inbox,#chat-content > .chat-window").forEach(x=>x.classList.add("hidden"));$("chat-public-profile-view").classList.remove("hidden");
 }
 async function startChatWithUser(userId){
  const p=(window.__chatProfiles||[]).find(x=>x.id===userId);if(!p)return;
@@ -299,7 +299,7 @@ $("chat-profile-back")?.addEventListener("click",()=>{$("chat-public-profile-vie
 $("chat-directory-search")?.addEventListener("input",e=>{const q=e.target.value.trim().toLocaleLowerCase("fa");$("chat-directory-list").querySelectorAll("[data-directory-user]").forEach(x=>x.classList.toggle("hidden",!x.textContent.toLocaleLowerCase("fa").includes(q)))});
 $("chat-directory-list")?.addEventListener("click",e=>{const b=e.target.closest("[data-directory-user]");if(b)showChatPublicProfile(b.dataset.directoryUser)});
 $("chat-public-profile-card")?.addEventListener("click",e=>{const b=e.target.closest("#chat-start-with-user");if(b)startChatWithUser(b.dataset.userId).catch(x=>message("chat-message",x.message,true))});
-function loadSupportChat(){
+async function loadSupportChat(){
  if(!currentUser)return;
  if(profile?.chat_enabled===false&&!profile?.is_admin){show("chat-content",false);$("chat-status").textContent="دسترسی چت غیرفعال است.";return}
  show("chat-content",true);
