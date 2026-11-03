@@ -911,3 +911,12 @@ body.light .chat-compose button{
  .public-profile-modal .wa-profile-info-card{margin:10px 12px;padding:13px}
 }
 @keyframes profileModalSheet{from{transform:translateY(35px);opacity:.8}to{transform:translateY(0);opacity:1}}
+
+/* Personal two-account switcher */
+.switch-dialog{position:fixed;inset:0;z-index:1000;background:#050a12cc;display:grid;place-items:center;padding:18px}
+.switch-dialog-card{width:min(100%,430px);display:grid;gap:14px;padding:24px;background:var(--panel);border:1px solid var(--line);border-radius:20px;box-shadow:var(--shadow)}
+.switch-dialog-card h3,.switch-dialog-card p{margin:0;line-height:1.9}
+.switch-dialog-card p{font-size:12px;color:var(--muted)}
+.switch-dialog-actions{display:flex;gap:10px;justify-content:flex-end}
+#switch-account-btn{white-space:nowrap;align-self:center}
+@media(max-width:560px){.switch-dialog-card{padding:19px}.switch-dialog-actions button{flex:1}#switch-account-btn{font-size:11px;padding:9px 11px}}
