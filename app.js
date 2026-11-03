@@ -169,8 +169,8 @@ async function loadProfile(){
  if(profile.is_approved===false){show("app-view",false);show("auth-view",false);show("pending-approval-view",true);return;}
  if(profile.is_banned){show("app-view",false);show("auth-view",false);show("expired-subscription-view",false);show("banned-account-view",true);$("banned-user-name").textContent=profile.display_name||"کاربر";return}
  $("user-name").textContent=profile.display_name||"کاربر";$("user-avatar").textContent=profile.avatar_emoji|| (profile.display_name||"M").slice(0,1);$("school-grade-chip").textContent=schoolProfileLabel(profile)||"پایه یا کلاس ثبت نشده";
- show("admin-nav",!!profile.is_admin);show("announcement-admin-form",!!profile.is_admin);show("chat-nav",profile.chat_enabled!==false||!!profile.is_admin);
- if(profile.is_admin){$("subscription-label").textContent="مدیر سامانه";loadPendingUsers().catch(console.error);loadAdminHumor().catch(console.error);return;}
+ show("admin-nav",isManagementAdmin());show("announcement-admin-form",isManagementAdmin());show("chat-nav",profile.chat_enabled!==false||isManagementAdmin());
+ if(isManagementAdmin()){$("subscription-label").textContent="مدیر سامانه";loadPendingUsers().catch(console.error);loadAdminHumor().catch(console.error);return;}
  const {data:subs,error:subError}=await db.from("subscriptions").select("starts_at,ends_at").eq("user_id",currentUser.id).order("ends_at",{ascending:false}).limit(1);
  if(subError)throw subError;
  const sub=subs?.[0],now=Date.now();
