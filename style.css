@@ -872,3 +872,21 @@ body.light .chat-compose button{
 @media(min-width:561px){
   .wa-profile-avatar{width:142px!important;height:142px!important;flex-basis:142px!important;padding:8px!important}
 }
+
+
+/* WhatsApp-style avatar selection and circular crop editor */
+.avatar-crop-modal{position:fixed;inset:0;z-index:10050;background:rgba(7,15,20,.82);display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(5px)}
+.avatar-crop-panel{width:min(100%,430px);background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:22px;padding:18px;box-shadow:0 24px 80px #0008}
+.avatar-crop-head{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:17px}
+.avatar-crop-close{width:36px;height:36px;border:0;border-radius:50%;background:var(--panel2);color:var(--text);font-size:26px}
+.avatar-crop-hint{font-size:13px;line-height:1.8;color:var(--muted);text-align:center;margin:14px 0}
+.avatar-crop-stage{position:relative;width:260px;height:260px;max-width:100%;margin:16px auto 22px;overflow:hidden;border-radius:50%;background:#111;touch-action:none;cursor:grab}
+.avatar-crop-stage:active{cursor:grabbing}
+.avatar-crop-image{position:absolute;left:50%;top:50%;max-width:none!important;max-height:none!important;object-fit:fill!important;transform-origin:center;user-select:none;pointer-events:none}
+.avatar-crop-ring{position:absolute;inset:0;border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 999px #0005;pointer-events:none}
+.avatar-zoom-label{display:flex;align-items:center;gap:12px;font-size:13px;margin:8px 0 20px}
+.avatar-zoom-label input{flex:1;accent-color:var(--accent)}
+.avatar-crop-actions{display:flex;gap:10px}
+.avatar-crop-actions button{flex:1;min-height:46px;border-radius:12px}
+.avatar-crop-cancel{background:var(--panel2);border:1px solid var(--line);color:var(--text)}
+.avatar-crop-confirm{font-weight:700}
