@@ -163,16 +163,16 @@ async function enterApp(user){
  finally{enteringUserId=null}
 }
 async function loadFeatureFlags(){
- const {data,error}=await db.from("app_feature_flags").select("chat_enabled,humor_enabled").eq("id",1).single();
+ const {data,error}=await db.from("app_feature_flags").select("chat_enabled,humor_enabled,humor_requires_approval").eq("id",1).single();
  if(error)throw error;
- featureFlags={chat_enabled:data.chat_enabled!==false,humor_enabled:data.humor_enabled!==false};
+ featureFlags={chat_enabled:data.chat_enabled!==false,humor_enabled:data.humor_enabled!==false,humor_requires_approval:data.humor_requires_approval!==false};
  applyFeatureFlags();
 }
 function applyFeatureFlags(){
  $("chat-nav").classList.toggle("hidden",!featureFlags.chat_enabled&&!profile?.is_admin);
  document.querySelectorAll('[data-page="humor"]').forEach(b=>b.classList.toggle("hidden",!featureFlags.humor_enabled&&!profile?.is_admin));
  if($("feature-chat-toggle"))$("feature-chat-toggle").checked=featureFlags.chat_enabled;
- if($("feature-humor-toggle"))$("feature-humor-toggle").checked=featureFlags.humor_enabled;
+ if($("feature-humor-toggle"))$("feature-humor-toggle").checked=featureFlags.humor_enabled;\n if($("feature-humor-approval-toggle"))$("feature-humor-approval-toggle").checked=featureFlags.humor_requires_approval;
  if(!featureFlags.chat_enabled&&!profile?.is_admin)stopChatRealtime();
  if(!featureFlags.humor_enabled&&!profile?.is_admin){$("humor-feed").textContent="این بخش موقتاً غیرفعال است.";const f=$("humor-submit-form");if(f)f.classList.add("hidden");}
  else {const f=$("humor-submit-form");if(f)f.classList.remove("hidden");}
@@ -180,8 +180,10 @@ function applyFeatureFlags(){
 $("feature-flags-form")?.addEventListener("submit",async e=>{
  e.preventDefault();const b=e.submitter;b.disabled=true;
  try{
-  const result=await callAdmin("set_feature_flags",{chat_enabled:$("feature-chat-toggle").checked,humor_enabled:$("feature-humor-toggle").checked});
-  featureFlags={chat_enabled:result.chat_enabled,humor_enabled:result.humor_enabled};applyFeatureFlags();toast("وضعیت بخش‌ها ذخیره شد.");
+  const nextFlags={chat_enabled:$("feature-chat-toggle").checked,humor_enabled:$("feature-humor-toggle").checked,humor_requires_approval:$("feature-humor-approval-toggle").checked};
+  const {error}=await db.from("app_feature_flags").update(nextFlags).eq("id",1);if(error)throw error;
+  if(!nextFlags.humor_requires_approval){const {error:publishError}=await db.from("humor_posts").update({status:"approved",reviewed_at:new Date().toISOString()}).eq("status","pending");if(publishError)throw publishError;}
+  featureFlags=nextFlags;applyFeatureFlags();await loadAdminHumor();await loadHumorFeed();toast("تنظیمات همتانه ذخیره شد.");
  }catch(x){$("feature-chat-toggle").checked=featureFlags.chat_enabled;$("feature-humor-toggle").checked=featureFlags.humor_enabled;toast(x.message)}
  finally{b.disabled=false}
 });
@@ -652,7 +654,7 @@ async function uploadHumorVideoResumable(file,path){
   }).catch(reject);
  });
 }
-$("humor-submit-form").addEventListener("submit",async e=>{e.preventDefault();const b=e.submitter||$("humor-submit-form").querySelector('button[type="submit"]');if(b)b.disabled=true;try{let path=null,type="text";const f=$("humor-file").files[0];if(f){message("humor-submit-message","در حال آماده‌سازی فایل...");if(f.size>52428800)throw new Error("حداکثر حجم فایل ۵۰ مگابایت است.");const compressed=f.type.startsWith("video/")?f:await compressUploadFile(f);if(compressed.size>52428800)throw new Error("حجم فایل بیشتر از ۵۰ مگابایت است.");type=f.type.startsWith("video/")?"video":"image";path=currentUser.id+"/"+makeUUID()+"-"+compressed.name.replace(/[^a-zA-Z0-9._-]/g,"_");message("humor-submit-message","در حال بارگذاری فایل...");if(type==="video"){resetHumorUploadProgress();if(compressed.size<=6*1024*1024){await uploadHumorVideoDirect(compressed,path)}else{await uploadHumorVideoResumable(compressed,path)}}else{const {error}=await db.storage.from("humor-media").upload(path,compressed,{contentType:compressed.type,upsert:false});if(error)throw new Error("بارگذاری فایل ناموفق بود: "+error.message)}}message("humor-submit-message","فایل بارگذاری شد؛ در حال ثبت مطلب برای بررسی...");const {error}=await db.from("humor_posts").insert({user_id:currentUser.id,title:$("humor-title").value.trim(),body:$("humor-body").value.trim(),media_path:path,media_type:type,status:"pending"});if(error){if(path)await db.storage.from("humor-media").remove([path]);throw new Error("ثبت مطلب ناموفق بود: "+error.message)}e.target.reset();message("humor-submit-message","مطلب ارسال شد و در انتظار بررسی مدیر است.");resetHumorUploadProgress();await loadHumorFeed()}catch(x){message("humor-submit-message",x.message||"ارسال ناموفق بود.",true)}finally{if(b)b.disabled=false}});
+$("humor-submit-form").addEventListener("submit",async e=>{e.preventDefault();const b=e.submitter||$("humor-submit-form").querySelector('button[type="submit"]');if(b)b.disabled=true;try{let path=null,type="text";const f=$("humor-file").files[0];if(f){message("humor-submit-message","در حال آماده‌سازی فایل...");if(f.size>52428800)throw new Error("حداکثر حجم فایل ۵۰ مگابایت است.");const compressed=f.type.startsWith("video/")?f:await compressUploadFile(f);if(compressed.size>52428800)throw new Error("حجم فایل بیشتر از ۵۰ مگابایت است.");type=f.type.startsWith("video/")?"video":"image";path=currentUser.id+"/"+makeUUID()+"-"+compressed.name.replace(/[^a-zA-Z0-9._-]/g,"_");message("humor-submit-message","در حال بارگذاری فایل...");if(type==="video"){resetHumorUploadProgress();if(compressed.size<=6*1024*1024){await uploadHumorVideoDirect(compressed,path)}else{await uploadHumorVideoResumable(compressed,path)}}else{const {error}=await db.storage.from("humor-media").upload(path,compressed,{contentType:compressed.type,upsert:false});if(error)throw new Error("بارگذاری فایل ناموفق بود: "+error.message)}}message("humor-submit-message","فایل بارگذاری شد؛ در حال ثبت مطلب برای بررسی...");const {error}=await db.from("humor_posts").insert({user_id:currentUser.id,title:$("humor-title").value.trim(),body:$("humor-body").value.trim(),media_path:path,media_type:type,status:(featureFlags.humor_requires_approval?"pending":"approved")});if(error){if(path)await db.storage.from("humor-media").remove([path]);throw new Error("ثبت مطلب ناموفق بود: "+error.message)}e.target.reset();message("humor-submit-message",featureFlags.humor_requires_approval?"مطلب ارسال شد و در انتظار بررسی مدیر است.":"مطلب با موفقیت منتشر شد و برای همه قابل مشاهده است.");resetHumorUploadProgress();await loadHumorFeed()}catch(x){message("humor-submit-message",x.message||"ارسال ناموفق بود.",true)}finally{if(b)b.disabled=false}});
 async function loadAdminUsers(){if(!profile?.is_admin)return;const result=await callAdmin("list_users");window.__adminUsers=result.users||[];$("admin-users").innerHTML=window.__adminUsers.length?window.__adminUsers.map(u=>'<article class="task-item"><div class="task-main"><h3>'+escapeHtml(u.display_name||"بدون نام")+'</h3><p>شناسه: '+escapeHtml(u.login_id||u.phone||u.email||"—")+' · '+(u.ends_at?"پایان اشتراک: "+jalaliDate(u.ends_at):"بدون اشتراک")+'</p><p>'+escapeHtml(u.email||"")+'</p></div><span class="priority">'+(u.is_banned?"مسدود":u.is_active?"فعال":"غیرفعال")+'</span>'+(u.is_admin?"":'<label class="switch-row"><input type="checkbox" data-chat-toggle="'+u.id+'" '+(u.chat_enabled!==false?"checked":"")+'> اجازه چت</label><div class="task-actions"><button class="secondary" data-renew-user="'+u.id+'">تمدید اشتراک</button><button class="secondary" data-edit-user="'+u.id+'">ویرایش حساب</button><button class="secondary" data-ban-user="'+u.id+'">'+(u.is_banned?"رفع بن":"بن کاربر")+'</button><button class="danger" data-delete-user="'+u.id+'">حذف کاربر</button></div>')+'</article>').join(""):'<div class="empty">کاربری ثبت نشده است.</div>'}
 document.addEventListener("change",async e=>{const t=e.target.closest("[data-chat-toggle]");if(!t)return;try{await callAdmin("set_chat_enabled",{user_id:t.dataset.chatToggle,enabled:t.checked});toast("دسترسی چت به‌روزرسانی شد.")}catch(x){t.checked=!t.checked;toast(x.message)}});
 async function loadExcelLibrary(){
