@@ -819,3 +819,5 @@ body.light .chat-compose button{
 .chat-file-preview button{border:0;border-radius:50%;width:30px;height:30px;background:#fee2e2;color:#b91c1c;font-size:20px;flex:0 0 30px}
 .chat-image-open{display:inline-block;max-width:100%}
 .chat-bubble img{object-fit:contain;background:#e9f2ed}
+
+.humor-upload-progress{margin:12px 0 4px;display:flex;align-items:center;gap:10px}.humor-upload-progress.hidden{display:none}.humor-upload-track{height:9px;flex:1;background:var(--line);border-radius:20px;overflow:hidden}.humor-upload-bar{height:100%;width:0;background:var(--accent);border-radius:20px;transition:width .15s linear}.humor-upload-progress small{min-width:150px;color:var(--text);font-size:12px;direction:rtl;text-align:left}
