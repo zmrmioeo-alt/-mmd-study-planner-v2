@@ -485,12 +485,12 @@ async function openPublicProfile(id){
  const p=q.data;
  const posts=await db.from("humor_posts").select("id,title,body,media_path,media_type,created_at").eq("user_id",id).eq("status","approved").order("created_at",{ascending:false}).limit(8);
  if(posts.error)throw posts.error;
- const root=$("public-profile-content");root.innerHTML="";
+ const overlay=document.createElement("div");overlay.className="public-profile-modal";overlay.setAttribute("role","dialog");overlay.setAttribute("aria-modal","true");overlay.setAttribute("aria-label","پروفایل کاربر");
  const shell=document.createElement("div");shell.className="wa-profile";
  const top=document.createElement("div");top.className="wa-profile-top";
- const back=document.createElement("button");back.type="button";back.className="wa-profile-back";back.textContent="‹";back.setAttribute("aria-label","بازگشت");back.addEventListener("click",()=>navigate("humor"));
+ const back=document.createElement("button");back.type="button";back.className="wa-profile-back";back.textContent="×";back.setAttribute("aria-label","بستن پروفایل");
  const topTitle=document.createElement("span");topTitle.textContent="اطلاعات کاربر";
- top.append(back,topTitle);shell.append(top);
+ back.addEventListener("click",closePublicProfileModal);top.append(back,topTitle);shell.append(top);
  const hero=document.createElement("section");hero.className="wa-profile-hero";
  const avatarWrap=document.createElement("div");avatarWrap.className="wa-profile-avatar";
  if(p.avatar_path){const img=document.createElement("img");img.src=db.storage.from("profile-avatars").getPublicUrl(p.avatar_path).data.publicUrl+"?v="+Date.now();img.alt="تصویر پروفایل";avatarWrap.append(img)}else avatarWrap.textContent="👤";
@@ -524,7 +524,15 @@ async function openPublicProfile(id){
   if(post.media_path){const media=document.createElement("small");media.className="wa-profile-media-note";media.textContent=post.media_type?.startsWith("video/")?"🎬 ویدئو":"🖼 تصویر";card.append(media)}
   const date=document.createElement("small");date.textContent=new Intl.DateTimeFormat("fa-IR",{dateStyle:"medium"}).format(new Date(post.created_at));card.append(date);postSection.append(card);
  }
- shell.append(postSection);root.append(shell);navigate("public-profile");
+ shell.append(postSection);overlay.append(shell);
+ overlay.addEventListener("click",ev=>{if(ev.target===overlay)closePublicProfileModal()});
+ document.body.append(overlay);
+ const onKey=ev=>{if(ev.key==="Escape")closePublicProfileModal()};
+ document.addEventListener("keydown",onKey);overlay._cleanup=()=>document.removeEventListener("keydown",onKey);
+}
+function closePublicProfileModal(){
+ const modal=document.querySelector(".public-profile-modal");if(!modal)return;
+ modal._cleanup?.();modal.remove();
 }
 function openAvatarCropper(file){
  return new Promise((resolve,reject)=>{
