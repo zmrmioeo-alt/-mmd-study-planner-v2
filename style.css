@@ -660,7 +660,7 @@ body.light .stat-card,body.light .form-panel,body.light .settings-block,body.lig
 
 /* Chat user directory and public profile */
 .chat-inbox-title{display:grid;gap:10px}.chat-inbox-title .primary{width:100%;padding:10px 12px;font-size:12px}
-.chat-directory-view,.chat-public-profile-view{grid-column:1/-1;padding:20px;min-width:0}
+.chat-directory-view,.chat-public-profile-view{grid-column:1/-1;width:100%;min-width:0;padding:20px;align-self:stretch}.chat-public-profile-view{min-height:420px;background:var(--panel2);border:1px solid var(--line);border-radius:20px}
 .chat-directory-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;margin-top:16px}
 .chat-directory-user{display:flex;align-items:center;gap:12px;text-align:right;padding:14px;border:1px solid var(--line);border-radius:16px;background:var(--panel2);color:var(--text);cursor:pointer;min-width:0}
 .chat-directory-user:hover{border-color:var(--accent);transform:translateY(-1px)}
