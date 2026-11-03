@@ -36,7 +36,7 @@ async function compressImageForUpload(file,{maxBytes=1572864,maxSide=1920}={}){
  const canvas=document.createElement("canvas"),ctx=canvas.getContext("2d");
  canvas.width=width;canvas.height=height;ctx.drawImage(bitmap,0,0,width,height);bitmap.close?.();
  let quality=.84,blob=null;
- for(let i=0;i<7;i++){blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/jpeg",quality));if(!blob||blob.size<=maxBytes)break;quality=Math.max(.48,quality-.08);if(i===3){canvas.width=Math.max(1,Math.round(width*.78));canvas.height=Math.max(1,Math.round(height*.78));ctx.drawImage(file,0,0,canvas.width,canvas.height);width=canvas.width;height=canvas.height}}
+ for(let i=0;i<8;i++){blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/jpeg",quality));if(!blob||blob.size<=maxBytes)break;quality=Math.max(.35,quality-.07)}
  if(!blob)return file;
  return new File([blob],file.name.replace(/\.[^.]+$/,"")+".jpg",{type:"image/jpeg",lastModified:Date.now()});
 }
