@@ -394,13 +394,15 @@ $("profile-grade").addEventListener("change",()=>{syncSchoolClassOptions();updat
 $("profile-form").addEventListener("submit",async e=>{
  e.preventDefault();const btn=e.submitter||e.target.querySelector('[type="submit"]');btn.disabled=true;message("profile-message","در حال ذخیره...");
  try{
-  const display_name=$("profile-name").value.trim(),bio=$("profile-bio").value.trim(),profile_color=$("profile-color").value,school_grade=profile.account_type==="teacher"?"معلم":$("profile-grade").value,school_class=school_grade==="معلم"?null:$("profile-class").value;
+  if(!profile)await loadProfile();
+  if(!profile)throw new Error("اطلاعات حساب بارگذاری نشده است؛ یک‌بار خارج شوید و دوباره وارد شوید.");
+  const display_name=$("profile-name").value.trim(),bio=$("profile-bio").value.trim(),profile_color=$("profile-color").value,school_grade=profile?.account_type==="teacher"?"معلم":$("profile-grade").value,school_class=school_grade==="معلم"?null:$("profile-class").value;
   if(!display_name)throw new Error("نام نمایشی را وارد کنید.");
   if(!school_grade||(school_grade!=="معلم"&&!school_class))throw new Error("پایه و نام کلاس را انتخاب کنید.");
   const payload={display_name,bio,profile_color,school_grade,school_class};
   const {data,error}=await db.from("profiles").update(payload).eq("id",currentUser.id).select("*").single();
   if(error)throw error;if(!data)throw new Error("اطلاعات پروفایل ذخیره نشد.");
-  profile={...profile,...data};$("profile-grade").disabled=profile.account_type==="teacher";
+  profile={...profile,...data};$("profile-grade").disabled=profile?.account_type==="teacher";
   $("user-name").textContent=display_name;if(profile.avatar_path){const avatarUrl=db.storage.from("profile-avatars").getPublicUrl(profile.avatar_path).data.publicUrl;$("user-avatar").innerHTML='<img src="'+avatarUrl+'" alt="">'}else $("user-avatar").textContent="👤";$("school-grade-chip").textContent=schoolProfileLabel(profile);
   if(profile.avatar_path){const u=db.storage.from("profile-avatars").getPublicUrl(profile.avatar_path).data.publicUrl;$("user-avatar").innerHTML='<img src="'+u+'" alt="">'}
   updateProfilePreview();document.body.dataset.profileColor=profile_color;$("welcome-title").textContent="سلام "+display_name+", برنامه امروزت آماده است.";
