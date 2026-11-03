@@ -526,7 +526,58 @@ async function openPublicProfile(id){
  }
  shell.append(postSection);root.append(shell);navigate("public-profile");
 }
-$("profile-photo").addEventListener("change",async e=>{const file=e.target.files?.[0];if(!file)return;const input=e.target;input.disabled=true;message("profile-message","در حال بارگذاری تصویر...");try{const compressed=await compressUploadFile(file,{image:{maxBytes:1048576,maxSide:1600}});if(!currentUser?.id)throw new Error("نشست کاربری معتبر نیست؛ دوباره وارد شوید.");const mime=({"image/jpeg":"jpg","image/png":"png","image/webp":"webp"})[file.type];if(!mime)throw new Error("فرمت عکس پشتیبانی نمی‌شود. فقط JPG، PNG یا WebP انتخاب کنید.");const path=currentUser.id+"/"+makeUUID()+".jpg";const up=await db.storage.from("profile-avatars").upload(path,compressed,{contentType:compressed.type,cacheControl:"3600",upsert:false});if(up.error)throw new Error("خطای فضای ذخیره‌سازی: "+up.error.message);const saved=await db.from("profiles").update({avatar_path:path}).eq("id",currentUser.id).select("id,avatar_path").maybeSingle();if(saved.error){await db.storage.from("profile-avatars").remove([path]);throw new Error("فایل بارگذاری شد، اما ثبت پروفایل ناموفق بود: "+saved.error.message)}if(!saved.data)throw new Error("پروفایل به‌روزرسانی نشد؛ دوباره وارد حساب شوید.");const oldPath=profile.avatar_path;profile.avatar_path=path;const url=db.storage.from("profile-avatars").getPublicUrl(path).data.publicUrl+"?v="+Date.now();$("profile-preview-avatar").innerHTML='<img src="'+url+'" alt="تصویر پروفایل">';$("user-avatar").innerHTML='<img src="'+url+'" alt="">';if(oldPath)db.storage.from("profile-avatars").remove([oldPath]).then(({error})=>{if(error)console.warn("Old avatar cleanup failed",error)});message("profile-message","تصویر پروفایل با موفقیت تغییر کرد.")}catch(err){console.error("Avatar upload failed",err);message("profile-message","بارگذاری تصویر ناموفق بود: "+(err.message||"خطای نامشخص"),true)}finally{input.value="";input.disabled=false}});
+function openAvatarCropper(file){
+ return new Promise((resolve,reject)=>{
+  const url=URL.createObjectURL(file),img=new Image();
+  img.onload=()=>{
+   const modal=document.createElement("div");modal.className="avatar-crop-modal";modal.innerHTML='<div class="avatar-crop-panel" dir="rtl"><div class="avatar-crop-head"><button type="button" class="avatar-crop-close" aria-label="بستن">×</button><strong>تنظیم تصویر پروفایل</strong><span></span></div><p class="avatar-crop-hint">عکس را جابه‌جا یا بزرگ‌نمایی کن تا داخل قاب دایره‌ای قرار بگیرد.</p><div class="avatar-crop-stage"><img class="avatar-crop-image" alt="پیش‌نمایش برش تصویر"><div class="avatar-crop-ring"></div></div><label class="avatar-zoom-label">بزرگ‌نمایی <input class="avatar-crop-zoom" type="range" min="1" max="3" step=".01" value="1"></label><div class="avatar-crop-actions"><button type="button" class="avatar-crop-cancel">لغو</button><button type="button" class="primary avatar-crop-confirm">تأیید و ادامه</button></div></div>';
+   const stage=modal.querySelector(".avatar-crop-stage"),preview=modal.querySelector(".avatar-crop-image"),zoomInput=modal.querySelector(".avatar-crop-zoom");
+   const size=260,baseScale=Math.max(size/img.naturalWidth,size/img.naturalHeight),baseW=img.naturalWidth*baseScale,baseH=img.naturalHeight*baseScale;
+   let zoom=1,dx=0,dy=0,drag=false,lastX=0,lastY=0,settled=false;
+   preview.src=url;preview.style.width=baseW+"px";preview.style.height=baseH+"px";
+   const paint=()=>{preview.style.transform="translate(calc(-50% + "+dx+"px),calc(-50% + "+dy+"px)) scale("+zoom+")"};
+   const finish=value=>{if(settled)return;settled=true;URL.revokeObjectURL(url);modal.remove();resolve(value)};
+   const close=()=>finish(null);
+   modal.querySelector(".avatar-crop-close").onclick=close;modal.querySelector(".avatar-crop-cancel").onclick=close;
+   zoomInput.oninput=()=>{zoom=Number(zoomInput.value);paint()};
+   stage.addEventListener("pointerdown",e=>{drag=true;lastX=e.clientX;lastY=e.clientY;stage.setPointerCapture(e.pointerId)});
+   stage.addEventListener("pointermove",e=>{if(!drag)return;dx+=e.clientX-lastX;dy+=e.clientY-lastY;lastX=e.clientX;lastY=e.clientY;paint()});
+   stage.addEventListener("pointerup",()=>drag=false);stage.addEventListener("pointercancel",()=>drag=false);
+   modal.querySelector(".avatar-crop-confirm").onclick=()=>{
+    const scale=baseScale*zoom;
+    let sx=(size/2-dx-zoom*baseW/2)/scale,sy=(size/2-dy-zoom*baseH/2)/scale;
+    const sw=size/scale,sh=size/scale;
+    sx=Math.max(0,Math.min(img.naturalWidth-sw,sx));sy=Math.max(0,Math.min(img.naturalHeight-sh,sy));
+    const canvas=document.createElement("canvas");canvas.width=512;canvas.height=512;
+    const ctx=canvas.getContext("2d");ctx.drawImage(img,sx,sy,sw,sh,0,0,512,512);
+    canvas.toBlob(blob=>{if(!blob){finish(null);return}finish(new File([blob],"profile.jpg",{type:"image/jpeg",lastModified:Date.now()}))},"image/jpeg",.92);
+   };
+   document.body.append(modal);paint();
+  };
+  img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error("باز کردن تصویر انتخاب‌شده ممکن نیست."))};img.src=url;
+ });
+}
+$("profile-photo").addEventListener("change",async e=>{
+ const file=e.target.files?.[0];if(!file)return;const input=e.target;input.disabled=true;
+ try{
+  if(!/^image\/(jpeg|png|webp)$/.test(file.type))throw new Error("فقط تصویر JPG، PNG یا WebP انتخاب کنید.");
+  const cropped=await openAvatarCropper(file);if(!cropped)return;
+  message("profile-message","در حال ذخیره تصویر...");
+  if(!currentUser?.id)throw new Error("نشست کاربری معتبر نیست؛ دوباره وارد شوید.");
+  const path=currentUser.id+"/"+makeUUID()+".jpg";
+  const up=await db.storage.from("profile-avatars").upload(path,cropped,{contentType:"image/jpeg",cacheControl:"3600",upsert:false});
+  if(up.error)throw new Error("خطای فضای ذخیره‌سازی: "+up.error.message);
+  const saved=await db.from("profiles").update({avatar_path:path}).eq("id",currentUser.id).select("id,avatar_path").maybeSingle();
+  if(saved.error){await db.storage.from("profile-avatars").remove([path]);throw new Error("فایل بارگذاری شد، اما ثبت پروفایل ناموفق بود: "+saved.error.message)}
+  if(!saved.data)throw new Error("پروفایل به‌روزرسانی نشد؛ دوباره وارد حساب شوید.");
+  const oldPath=profile.avatar_path;profile.avatar_path=path;
+  const url=db.storage.from("profile-avatars").getPublicUrl(path).data.publicUrl+"?v="+Date.now();
+  $("profile-preview-avatar").innerHTML='<img src="'+url+'" alt="تصویر پروفایل">';$("user-avatar").innerHTML='<img src="'+url+'" alt="">';
+  if(oldPath)db.storage.from("profile-avatars").remove([oldPath]).then(({error})=>{if(error)console.warn("Old avatar cleanup failed",error)});
+  message("profile-message","تصویر پروفایل ذخیره شد.");
+ }catch(err){console.error("Avatar upload failed",err);message("profile-message","بارگذاری تصویر ناموفق بود: "+(err.message||"خطای نامشخص"),true)}
+ finally{input.value="";input.disabled=false}
+});
 $("remove-profile-photo").addEventListener("click",async()=>{if(!profile?.avatar_path){toast("تصویر جداگانه‌ای برای حذف وجود ندارد.");return}const btn=$("remove-profile-photo");btn.disabled=true;message("profile-message","در حال حذف تصویر...");try{const oldPath=profile.avatar_path;const {data,error}=await db.from("profiles").update({avatar_path:null}).eq("id",currentUser.id).select("id").maybeSingle();if(error)throw error;if(!data)throw new Error("حذف تصویر از پروفایل انجام نشد.");profile.avatar_path=null;$("profile-preview-avatar").textContent="👤";$("user-avatar").textContent="👤";const rm=await db.storage.from("profile-avatars").remove([oldPath]);if(rm.error)console.warn("Avatar file cleanup failed",rm.error);message("profile-message","تصویر پروفایل حذف شد.")}catch(err){console.error("Avatar removal failed",err);message("profile-message","حذف تصویر ناموفق بود: "+err.message,true)}finally{btn.disabled=false}});
 
 async function ensureTusLibrary(){
