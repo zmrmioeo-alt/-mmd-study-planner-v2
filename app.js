@@ -518,7 +518,7 @@ function plannerChooseSlot(task,entries){
  for(const offset of offsets){
   const date=plannerDateAt(offset),dateKey=plannerDateKey(date),day=date.getDay();
   const slot=plannerFindSlot(day,dateKey,duration);
-  if(slot){
+  if(slot&&(!task.due_at||slot.end<=new Date(task.due_at))){
    const used=entries.filter(p=>p.date===dateKey).reduce((n,p)=>n+Number(p.duration||0),0);
    const avail=weeklyAvailability[String(day)],capacity=plannerMinutes(avail.end)-plannerMinutes(avail.start);
    choices.push({dateKey,slot,ratio:capacity?used/capacity:1,offset});
@@ -552,7 +552,7 @@ async function movePlannerTask(taskId,dateKey,time){
  const date=new Date(dateKey+"T12:00:00"),day=date.getDay(),avail=weeklyAvailability[String(day)];
  if(!avail){toast("برای این روز ساعت آزاد تعریف نشده است.");return}
  const duration=Number(task.estimated_minutes);if(!duration){toast("ابتدا مدت‌زمان این تکلیف را مشخص کنید.");return}
- const start=plannerLocalDateTime(dateKey,time||avail.start),end=new Date(start.getTime()+duration*60000);
+ const chosen=time?{start:plannerLocalDateTime(dateKey,time)}:plannerFindSlot(day,dateKey,duration,taskId);if(!chosen){toast("در این روز برای این کار زمان پیوسته کافی وجود ندارد.");return}const start=chosen.start,end=new Date(start.getTime()+duration*60000);
  const dayStart=plannerLocalDateTime(dateKey,avail.start),dayEnd=plannerLocalDateTime(dateKey,avail.end);
  if(start<dayStart||end>dayEnd){toast("این زمان خارج از ساعت آزاد روز است.");return}
  if(task.due_at&&end>new Date(task.due_at)){toast("این زمان بعد از مهلت تحویل قرار می‌گیرد.");return}
@@ -568,7 +568,8 @@ async function movePlannerTask(taskId,dateKey,time){
 async function generateWeeklyPlan(persist=true){
  if(!currentUser)return;
  const taskMap=new Map(tasks.map(t=>[String(t.id),t]));
- const retained=weeklyPlan.filter(p=>{const t=taskMap.get(String(p.task_id));return t&&(t.status==="done"||p.locked||t.schedule_locked)});
+ const weekStartKey=plannerDateKey(plannerWeekStart()),weekEndKey=plannerDateKey(plannerDateAt(6));
+ const retained=weeklyPlan.filter(p=>{const t=taskMap.get(String(p.task_id));return t&&p.date>=weekStartKey&&p.date<=weekEndKey&&(t.status==="done"||p.locked||t.schedule_locked)});
  const retainedIds=new Set(retained.map(p=>String(p.task_id)));
  const scheduled=tasks.filter(t=>t.status==="pending"&&!retainedIds.has(String(t.id))).sort((a,b)=>{
   const ad=a.due_at?new Date(a.due_at).getTime():Infinity,bd=b.due_at?new Date(b.due_at).getTime():Infinity;
