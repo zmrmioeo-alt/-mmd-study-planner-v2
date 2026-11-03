@@ -184,7 +184,7 @@ $("feature-flags-form")?.addEventListener("submit",async e=>{
   const {error}=await db.from("app_feature_flags").update(nextFlags).eq("id",1);if(error)throw error;
   if(!nextFlags.humor_requires_approval){const {error:publishError}=await db.from("humor_posts").update({status:"approved",reviewed_at:new Date().toISOString()}).eq("status","pending");if(publishError)throw publishError;}
   featureFlags=nextFlags;applyFeatureFlags();await loadAdminHumor();await loadHumorFeed();toast("تنظیمات همتانه ذخیره شد.");
- }catch(x){$("feature-chat-toggle").checked=featureFlags.chat_enabled;$("feature-humor-toggle").checked=featureFlags.humor_enabled;toast(x.message)}
+ }catch(x){$("feature-chat-toggle").checked=featureFlags.chat_enabled;$("feature-humor-toggle").checked=featureFlags.humor_enabled;$("feature-humor-approval-toggle").checked=featureFlags.humor_requires_approval;toast(x.message)}
  finally{b.disabled=false}
 });
 
