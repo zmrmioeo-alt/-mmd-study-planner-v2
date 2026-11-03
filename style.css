@@ -855,6 +855,20 @@ body.light .chat-compose button{
 @media(max-width:560px){#public-profile-content{padding:8px}.wa-profile{border-radius:16px}.wa-profile-avatar{width:124px;height:124px}.wa-profile-hero{padding-top:24px}.wa-profile-info-card{margin:10px;padding:14px}}
 
 
-/* WhatsApp-style circular profile photo: enforce a true round crop */
-.wa-profile-avatar{border-radius:50%!important;overflow:hidden!important;clip-path:circle(50% at 50% 50%)}
-.wa-profile-avatar img{display:block;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;object-fit:cover!important;border-radius:50%!important}
+
+/* Keep the complete uploaded profile picture visible inside the circular frame */
+.wa-profile-avatar{
+  width:124px!important;height:124px!important;flex:0 0 124px!important;
+  padding:7px!important;overflow:hidden!important;
+  border-radius:50%!important;clip-path:circle(50% at 50% 50%);
+  background:var(--panel2)!important;
+}
+.wa-profile-avatar img{
+  display:block!important;width:100%!important;height:100%!important;
+  max-width:100%!important;max-height:100%!important;
+  object-fit:contain!important;object-position:center!important;
+  border-radius:0!important;
+}
+@media(min-width:561px){
+  .wa-profile-avatar{width:142px!important;height:142px!important;flex-basis:142px!important;padding:8px!important}
+}
