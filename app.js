@@ -554,6 +554,39 @@ function renderWeeklyPlan(){
  host.querySelectorAll("[data-plan-drop]").forEach(el=>{el.addEventListener("dragover",e=>{e.preventDefault();el.classList.add("drag-over")});el.addEventListener("dragleave",()=>el.classList.remove("drag-over"));el.addEventListener("drop",async e=>{e.preventDefault();el.classList.remove("drag-over");const id=e.dataTransfer.getData("text/plain");if(id)await movePlannerTask(id,el.dataset.planDrop,null)})});
  host.querySelectorAll("[draggable=true]").forEach(el=>el.addEventListener("dragstart",e=>{e.dataTransfer.setData("text/plain",el.dataset.planKey);e.dataTransfer.effectAllowed="move"}));
 }
+function plannerFindPartialSlot(day,dateKey,remaining,exceptPlanId=null){
+ const todayKey=plannerDateKey(new Date());if(dateKey<todayKey)return null;
+ const avail=weeklyAvailability[String(day)];if(!avail)return null;
+ const dayStart=plannerLocalDateTime(dateKey,avail.start),dayEnd=plannerLocalDateTime(dateKey,avail.end);
+ let cursor=new Date(dayStart);const now=new Date();
+ if(dateKey===todayKey&&cursor<now){cursor=new Date(now);cursor.setMinutes(Math.ceil(cursor.getMinutes()/15)*15,0,0)}
+ const occupied=planEntriesForDate(dateKey,exceptPlanId);
+ const makeSlot=gapEnd=>{const gap=Math.floor((gapEnd-cursor)/60000),duration=Math.min(remaining,Math.floor(gap/5)*5);return duration>=5?{start:new Date(cursor),end:new Date(cursor.getTime()+duration*60000),duration}:null};
+ for(const item of occupied){
+  if(cursor<item.startDate){const slot=makeSlot(new Date(item.startDate.getTime()-plannerBreakMinutes*60000));if(slot)return slot;cursor=new Date(item.endDate.getTime()+plannerBreakMinutes*60000)}
+  else if(cursor<new Date(item.endDate.getTime()+plannerBreakMinutes*60000))cursor=new Date(item.endDate.getTime()+plannerBreakMinutes*60000);
+ }
+ return makeSlot(dayEnd);
+}
+function plannerChoosePartialSlot(task,entries,remaining,avoidDays=new Set()){
+ const sets=plannerCandidateOffsets(task);
+ const findChoices=offsets=>{
+  const choices=[];
+  for(const offset of offsets){
+   const date=plannerDateAt(offset),dateKey=plannerDateKey(date),day=date.getDay();
+   const slot=plannerFindPartialSlot(day,dateKey,remaining);
+   if(slot&&(!task.due_at||slot.end<=new Date(task.due_at))){
+    const used=entries.filter(p=>p.date===dateKey).reduce((n,p)=>n+Number(p.duration||0),0);
+    const avail=weeklyAvailability[String(day)],capacity=plannerMinutes(avail.end)-plannerMinutes(avail.start);
+    choices.push({dateKey,slot,ratio:capacity?used/capacity:1,offset,avoided:avoidDays.has(dateKey)});
+   }
+  }
+  const fresh=choices.filter(c=>!c.avoided),pool=fresh.length?fresh:choices;
+  pool.sort((a,b)=>a.ratio-b.ratio||a.offset-b.offset||b.slot.duration-a.slot.duration);
+  return pool[0]||null;
+ };
+ return findChoices(sets.primary)||findChoices(sets.fallback);
+}
 function plannerTimeValue(date){return String(date.getHours()).padStart(2,"0")+":"+String(date.getMinutes()).padStart(2,"0")}
 async function movePlannerTask(planId,dateKey,time){
  const entry=weeklyPlan.find(p=>String(p.id||p.task_id)===String(planId));if(!entry)return;
