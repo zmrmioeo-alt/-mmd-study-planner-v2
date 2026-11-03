@@ -464,14 +464,16 @@ const plannerDailyRestTotal=60,plannerDailyRestParts=6,plannerDailyRestPart=10;
 function plannerRestIntervals(day,dateKey){
  const avail=weeklyAvailability[String(day)];if(!avail)return [];
  const start=plannerLocalDateTime(dateKey,avail.start),end=plannerLocalDateTime(dateKey,avail.end),span=end-start;
- if(span<plannerDailyRestTotal*60000+plannerDailyRestParts*15*60000)return [];
+ const spanMinutes=span/60000;if(spanMinutes<plannerDailyRestTotal)return [];
+ const count=Math.min(plannerDailyRestParts,Math.max(1,Math.floor((spanMinutes-plannerDailyRestTotal)/5)+1));
+ const partMinutes=plannerDailyRestTotal/count,gap=(spanMinutes-plannerDailyRestTotal)/(count+1);
  const result=[];
- for(let i=1;i<=plannerDailyRestParts;i++){
-  let at=new Date(start.getTime()+span*i/(plannerDailyRestParts+1));
+ for(let i=1;i<=count;i++){
+  let at=new Date(start.getTime()+(gap*i+partMinutes*(i-1))*60000);
   at.setMinutes(Math.round(at.getMinutes()/5)*5,0,0);
-  const finish=new Date(at.getTime()+plannerDailyRestPart*60000);
+  const finish=new Date(at.getTime()+partMinutes*60000);
   if(at<start||finish>end)continue;
-  result.push({id:"rest-"+dateKey+"-"+i,rest:true,startDate:at,endDate:finish,date:dateKey,duration:plannerDailyRestPart});
+  result.push({id:"rest-"+dateKey+"-"+i,rest:true,startDate:at,endDate:finish,date:dateKey,duration:partMinutes});
  }
  return result;
 }
@@ -572,7 +574,7 @@ function renderWeeklyPlan(){
    return '<article class="planner-task '+(done?"is-done":"")+'" draggable="'+(!done)+'" data-plan-key="'+escapeHtml(planKey)+'"><div class="planner-task-top"><b>'+escapeHtml(t?.title||"کار حذف‌شده")+'</b><span>'+plannerTimeLabel(start)+' · '+fa(p.duration)+' دقیقه'+part+'</span></div><small>مهلت: '+(t?.due_at?jalaliDate(t.due_at,true):"تعیین نشده")+(p.locked?" · جابه‌جایی دستی":"")+'</small><div class="planner-move-controls"><select aria-label="انتقال به روز" data-plan-day="'+escapeHtml(planKey)+'">'+plannerDayOrder.map(d=>{const dt=plannerDateAt((d-6+7)%7),k=plannerDateKey(dt);return '<option value="'+k+'" '+(k===key?"selected":"")+'>'+plannerDayNames[d]+'</option>'}).join("")+'</select><input aria-label="ساعت شروع" type="time" value="'+plannerTimeValue(start)+'" data-plan-time="'+escapeHtml(planKey)+'"><button type="button" class="secondary" data-plan-save="'+escapeHtml(planKey)+'" '+(done?"disabled":"")+'>تغییر زمان</button>'+(p.locked?'<button type="button" class="secondary" data-plan-unlock="'+escapeHtml(planKey)+'">خودکار</button>':"")+'</div></article>';
   }).join(""):'<p class="planner-empty">کاری برای این روز زمان‌بندی نشده است.</p>')+'</div></section>';
  }).join("");
- const invalidLocked=valid.filter(p=>p.locked).filter(p=>{const a=weeklyAvailability[String(new Date(p.date+"T12:00:00").getDay())],t=tasksById.get(String(p.task_id));if(!a)return true;const st=new Date(p.start),en=new Date(p.end),lo=plannerLocalDateTime(p.date,a.start),hi=plannerLocalDateTime(p.date,a.end);if(st<lo||en>hi||(t?.due_at&&en>new Date(t.due_at)))return true;return planEntriesForDate(p.date,p.id||p.task_id).some(x=>st<new Date(x.endDate.getTime()+plannerBreakMinutes*60000)&&en>new Date(x.startDate.getTime()-plannerBreakMinutes*60000))});
+ const invalidLocked=valid.filter(p=>p.locked).filter(p=>{const a=weeklyAvailability[String(new Date(p.date+"T12:00:00").getDay())],t=tasksById.get(String(p.task_id));if(!a)return true;const st=new Date(p.start),en=new Date(p.end),lo=plannerLocalDateTime(p.date,a.start),hi=plannerLocalDateTime(p.date,a.end);if(st<lo||en>hi||(t?.due_at&&en>new Date(t.due_at)))return true;return plannerDayOccupancy(new Date(p.date+"T12:00:00").getDay(),p.date,p.id||p.task_id).some(x=>st<new Date(x.endDate.getTime()+(x.rest?0:plannerBreakMinutes)*60000)&&en>new Date(x.startDate.getTime()-(x.rest?0:plannerBreakMinutes)*60000))});
  const conflictWarning=invalidLocked.length?'<section class="planner-unscheduled"><b>بررسی جابه‌جایی‌های دستی</b>'+invalidLocked.map(p=>'<p>'+escapeHtml(tasksById.get(String(p.task_id))?.title||"کار")+' — ساعت آزاد یا فاصله زمانی با برنامه جدید سازگار نیست؛ زمانش را اصلاح کن.</p>').join("")+'</section>':"";
  const warning=unscheduled.length?'<section class="planner-unscheduled"><b>نیازمند زمان‌بندی کامل</b>'+unscheduled.map(t=>{const done=assigned.get(String(t.id))||0,remaining=Math.max(0,Number(t.estimated_minutes||0)-done);return '<div class="planner-unscheduled-row"><p>'+escapeHtml(t.title)+' — '+(!t.estimated_minutes?"مدت‌زمان مشخص نشده":done?fa(done)+' از '+fa(t.estimated_minutes)+' دقیقه زمان‌بندی شد؛ '+fa(remaining)+' دقیقه باقی‌مانده':"زمان آزاد کافی تا مهلت پیدا نشد")+'</p>'+(!t.estimated_minutes?'<input type="number" min="5" max="1440" step="5" placeholder="دقیقه" aria-label="مدت‌زمان به دقیقه" data-plan-duration="'+escapeHtml(t.id)+'"><button type="button" class="secondary" data-plan-duration-save="'+escapeHtml(t.id)+'">ثبت مدت‌زمان</button>':"")+'</div>'}).join("")+'</section>':"";
  host.innerHTML='<div class="planner-week-grid">'+groups+'</div>'+conflictWarning+warning;
