@@ -853,3 +853,8 @@ body.light .chat-compose button{
 .wa-profile-media-note{color:var(--accent)!important}
 .wa-profile-empty{padding:16px;color:var(--muted);text-align:center}
 @media(max-width:560px){#public-profile-content{padding:8px}.wa-profile{border-radius:16px}.wa-profile-avatar{width:124px;height:124px}.wa-profile-hero{padding-top:24px}.wa-profile-info-card{margin:10px;padding:14px}}
+
+
+/* WhatsApp-style circular profile photo: enforce a true round crop */
+.wa-profile-avatar{border-radius:50%!important;overflow:hidden!important;clip-path:circle(50% at 50% 50%)}
+.wa-profile-avatar img{display:block;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;object-fit:cover!important;border-radius:50%!important}
