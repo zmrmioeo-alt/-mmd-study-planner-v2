@@ -482,7 +482,7 @@ async function saveWeeklyAvailability(){
  weeklyAvailability=next;await savePlannerData();
 }
 function planTaskById(id){return tasks.find(t=>String(t.id)===String(id))}
-function planEntriesForDate(dateKey,exceptId=null){return weeklyPlan.filter(p=>p.date===dateKey&&String(p.task_id)!==String(exceptId)).map(p=>({...p,startDate:new Date(p.start),endDate:new Date(p.end)})).sort((a,b)=>a.startDate-b.startDate)}
+function planEntriesForDate(dateKey,exceptId=null){return weeklyPlan.filter(p=>p.date===dateKey&&String(p.id||p.task_id)!==String(exceptId)).map(p=>({...p,startDate:new Date(p.start),endDate:new Date(p.end)})).sort((a,b)=>a.startDate-b.startDate)}
 function plannerFindSlot(day,dateKey,duration,exceptId=null){
  const todayKey=plannerDateKey(new Date());if(dateKey<todayKey)return null;
  const avail=weeklyAvailability[String(day)];if(!avail)return null;
@@ -535,71 +535,83 @@ function renderWeeklyPlan(){
  const host=$("smart-plan-output");if(!host)return;
  const tasksById=new Map(tasks.map(t=>[String(t.id),t]));
  const valid=weeklyPlan.filter(p=>tasksById.has(String(p.task_id)));
- const unscheduled=tasks.filter(t=>t.status==="pending"&&!valid.some(p=>String(p.task_id)===String(t.id)));
+ const assigned=new Map();for(const p of valid)assigned.set(String(p.task_id),(assigned.get(String(p.task_id))||0)+Number(p.duration||0));
+ const unscheduled=tasks.filter(t=>t.status==="pending"&&(!t.estimated_minutes||(assigned.get(String(t.id))||0)<Number(t.estimated_minutes)));
  const groups=plannerDayOrder.map(day=>{
   const date=plannerDateAt((day-6+7)%7),key=plannerDateKey(date);
   const dayEntries=valid.filter(p=>p.date===key).sort((a,b)=>new Date(a.start)-new Date(b.start));
   const a=weeklyAvailability[String(day)];
   return '<section class="planner-day" data-plan-drop="'+key+'"><header><b>'+plannerDayNames[day]+'</b><span>'+jalaliDate(date)+'</span><small>'+(a?a.start+" تا "+a.end:"بدون زمان آزاد")+'</small></header><div class="planner-day-items">'+(dayEntries.length?dayEntries.map(p=>{
-   const t=tasksById.get(String(p.task_id)),done=t?.status==="done",start=new Date(p.start);
-   return '<article class="planner-task '+(done?"is-done":"")+'" draggable="'+(!done)+'" data-plan-task="'+escapeHtml(p.task_id)+'"><div class="planner-task-top"><b>'+escapeHtml(t?.title||"کار حذف‌شده")+'</b><span>'+plannerTimeLabel(start)+' · '+fa(p.duration)+' دقیقه</span></div><small>مهلت: '+(t?.due_at?jalaliDate(t.due_at,true):"تعیین نشده")+(p.locked?" · جابه‌جایی دستی":"")+'</small><div class="planner-move-controls"><select aria-label="انتقال به روز" data-plan-day="'+escapeHtml(p.task_id)+'">'+plannerDayOrder.map(d=>{const dt=plannerDateAt((d-6+7)%7),k=plannerDateKey(dt);return '<option value="'+k+'" '+(k===key?"selected":"")+'>'+plannerDayNames[d]+'</option>'}).join("")+'</select><input aria-label="ساعت شروع" type="time" value="'+plannerTimeValue(start)+'" data-plan-time="'+escapeHtml(p.task_id)+'"><button type="button" class="secondary" data-plan-save="'+escapeHtml(p.task_id)+'" '+(done?"disabled":"")+'>تغییر زمان</button>'+(p.locked?'<button type="button" class="secondary" data-plan-unlock="'+escapeHtml(p.task_id)+'">خودکار</button>':"")+'</div></article>';
+   const t=tasksById.get(String(p.task_id)),done=t?.status==="done",start=new Date(p.start),planKey=String(p.id||p.task_id);
+   const part=p.segment_total>1?' · بخش '+fa(p.segment_index)+' از '+fa(p.segment_total):"";
+   return '<article class="planner-task '+(done?"is-done":"")+'" draggable="'+(!done)+'" data-plan-key="'+escapeHtml(planKey)+'"><div class="planner-task-top"><b>'+escapeHtml(t?.title||"کار حذف‌شده")+'</b><span>'+plannerTimeLabel(start)+' · '+fa(p.duration)+' دقیقه'+part+'</span></div><small>مهلت: '+(t?.due_at?jalaliDate(t.due_at,true):"تعیین نشده")+(p.locked?" · جابه‌جایی دستی":"")+'</small><div class="planner-move-controls"><select aria-label="انتقال به روز" data-plan-day="'+escapeHtml(planKey)+'">'+plannerDayOrder.map(d=>{const dt=plannerDateAt((d-6+7)%7),k=plannerDateKey(dt);return '<option value="'+k+'" '+(k===key?"selected":"")+'>'+plannerDayNames[d]+'</option>'}).join("")+'</select><input aria-label="ساعت شروع" type="time" value="'+plannerTimeValue(start)+'" data-plan-time="'+escapeHtml(planKey)+'"><button type="button" class="secondary" data-plan-save="'+escapeHtml(planKey)+'" '+(done?"disabled":"")+'>تغییر زمان</button>'+(p.locked?'<button type="button" class="secondary" data-plan-unlock="'+escapeHtml(planKey)+'">خودکار</button>':"")+'</div></article>';
   }).join(""):'<p class="planner-empty">کاری برای این روز زمان‌بندی نشده است.</p>')+'</div></section>';
  }).join("");
- const invalidLocked=valid.filter(p=>p.locked).filter(p=>{const a=weeklyAvailability[String(new Date(p.date+"T12:00:00").getDay())],t=tasksById.get(String(p.task_id));if(!a)return true;const st=new Date(p.start),en=new Date(p.end),lo=plannerLocalDateTime(p.date,a.start),hi=plannerLocalDateTime(p.date,a.end);if(st<lo||en>hi||(t?.due_at&&en>new Date(t.due_at)))return true;return planEntriesForDate(p.date,p.task_id).some(x=>st<new Date(x.endDate.getTime()+plannerBreakMinutes*60000)&&en>new Date(x.startDate.getTime()-plannerBreakMinutes*60000))});
+ const invalidLocked=valid.filter(p=>p.locked).filter(p=>{const a=weeklyAvailability[String(new Date(p.date+"T12:00:00").getDay())],t=tasksById.get(String(p.task_id));if(!a)return true;const st=new Date(p.start),en=new Date(p.end),lo=plannerLocalDateTime(p.date,a.start),hi=plannerLocalDateTime(p.date,a.end);if(st<lo||en>hi||(t?.due_at&&en>new Date(t.due_at)))return true;return planEntriesForDate(p.date,p.id||p.task_id).some(x=>st<new Date(x.endDate.getTime()+plannerBreakMinutes*60000)&&en>new Date(x.startDate.getTime()-plannerBreakMinutes*60000))});
  const conflictWarning=invalidLocked.length?'<section class="planner-unscheduled"><b>بررسی جابه‌جایی‌های دستی</b>'+invalidLocked.map(p=>'<p>'+escapeHtml(tasksById.get(String(p.task_id))?.title||"کار")+' — ساعت آزاد یا فاصله زمانی با برنامه جدید سازگار نیست؛ زمانش را اصلاح کن.</p>').join("")+'</section>':"";
- const warning=unscheduled.length?'<section class="planner-unscheduled"><b>نیازمند زمان‌بندی</b>'+unscheduled.map(t=>'<div class="planner-unscheduled-row"><p>'+escapeHtml(t.title)+' — '+(!t.estimated_minutes?"مدت‌زمان مشخص نشده":"زمان آزاد کافی تا مهلت پیدا نشد")+'</p>'+(!t.estimated_minutes?'<input type="number" min="5" max="1440" step="5" placeholder="دقیقه" aria-label="مدت‌زمان به دقیقه" data-plan-duration="'+escapeHtml(t.id)+'"><button type="button" class="secondary" data-plan-duration-save="'+escapeHtml(t.id)+'">ثبت مدت‌زمان</button>':"")+'</div>').join("")+'</section>':"";
+ const warning=unscheduled.length?'<section class="planner-unscheduled"><b>نیازمند زمان‌بندی کامل</b>'+unscheduled.map(t=>{const done=assigned.get(String(t.id))||0,remaining=Math.max(0,Number(t.estimated_minutes||0)-done);return '<div class="planner-unscheduled-row"><p>'+escapeHtml(t.title)+' — '+(!t.estimated_minutes?"مدت‌زمان مشخص نشده":done?fa(done)+' از '+fa(t.estimated_minutes)+' دقیقه زمان‌بندی شد؛ '+fa(remaining)+' دقیقه باقی‌مانده':"زمان آزاد کافی تا مهلت پیدا نشد")+'</p>'+(!t.estimated_minutes?'<input type="number" min="5" max="1440" step="5" placeholder="دقیقه" aria-label="مدت‌زمان به دقیقه" data-plan-duration="'+escapeHtml(t.id)+'"><button type="button" class="secondary" data-plan-duration-save="'+escapeHtml(t.id)+'">ثبت مدت‌زمان</button>':"")+'</div>'}).join("")+'</section>':"";
  host.innerHTML='<div class="planner-week-grid">'+groups+'</div>'+conflictWarning+warning;
  host.querySelectorAll("[data-plan-drop]").forEach(el=>{el.addEventListener("dragover",e=>{e.preventDefault();el.classList.add("drag-over")});el.addEventListener("dragleave",()=>el.classList.remove("drag-over"));el.addEventListener("drop",async e=>{e.preventDefault();el.classList.remove("drag-over");const id=e.dataTransfer.getData("text/plain");if(id)await movePlannerTask(id,el.dataset.planDrop,null)})});
- host.querySelectorAll("[draggable=true]").forEach(el=>el.addEventListener("dragstart",e=>{e.dataTransfer.setData("text/plain",el.dataset.planTask);e.dataTransfer.effectAllowed="move"}));
+ host.querySelectorAll("[draggable=true]").forEach(el=>el.addEventListener("dragstart",e=>{e.dataTransfer.setData("text/plain",el.dataset.planKey);e.dataTransfer.effectAllowed="move"}));
 }
 function plannerTimeValue(date){return String(date.getHours()).padStart(2,"0")+":"+String(date.getMinutes()).padStart(2,"0")}
-async function movePlannerTask(taskId,dateKey,time){
- const task=planTaskById(taskId);if(!task||task.status==="done")return;
+async function movePlannerTask(planId,dateKey,time){
+ const entry=weeklyPlan.find(p=>String(p.id||p.task_id)===String(planId));if(!entry)return;
+ const task=planTaskById(entry.task_id);if(!task||task.status==="done")return;
  const date=new Date(dateKey+"T12:00:00"),day=date.getDay(),avail=weeklyAvailability[String(day)];
  if(!avail){toast("برای این روز ساعت آزاد تعریف نشده است.");return}
- const duration=Number(task.estimated_minutes);if(!duration){toast("ابتدا مدت‌زمان این تکلیف را مشخص کنید.");return}
- const chosen=time?{start:plannerLocalDateTime(dateKey,time)}:plannerFindSlot(day,dateKey,duration,taskId);if(!chosen){toast("در این روز برای این کار زمان پیوسته کافی وجود ندارد.");return}const start=chosen.start,end=new Date(start.getTime()+duration*60000);
+ const duration=Number(entry.duration);if(!duration){toast("مدت‌زمان این بخش مشخص نیست.");return}
+ const chosen=time?{start:plannerLocalDateTime(dateKey,time)}:plannerFindSlot(day,dateKey,duration,planId);if(!chosen){toast("در این روز برای این بخش زمان پیوسته کافی وجود ندارد.");return}
+ const start=chosen.start,end=new Date(start.getTime()+duration*60000);
  const dayStart=plannerLocalDateTime(dateKey,avail.start),dayEnd=plannerLocalDateTime(dateKey,avail.end);
  if(start<dayStart||end>dayEnd){toast("این زمان خارج از ساعت آزاد روز است.");return}
  if(task.due_at&&end>new Date(task.due_at)){toast("این زمان بعد از مهلت تحویل قرار می‌گیرد.");return}
- const conflict=planEntriesForDate(dateKey,taskId).some(p=>start<new Date(p.endDate.getTime()+plannerBreakMinutes*60000)&&end>new Date(p.startDate.getTime()-plannerBreakMinutes*60000));
+ const conflict=planEntriesForDate(dateKey,planId).some(p=>start<new Date(p.endDate.getTime()+plannerBreakMinutes*60000)&&end>new Date(p.startDate.getTime()-plannerBreakMinutes*60000));
  if(conflict){toast("این زمان با کار دیگری تداخل دارد یا فاصله استراحت را رعایت نمی‌کند.");return}
- const entry={task_id:task.id,date:dateKey,start:start.toISOString(),end:end.toISOString(),duration,locked:true};
- weeklyPlan=weeklyPlan.filter(p=>String(p.task_id)!==String(taskId));weeklyPlan.push(entry);
+ const updated={...entry,date:dateKey,start:start.toISOString(),end:end.toISOString(),locked:true};
+ weeklyPlan=weeklyPlan.map(p=>String(p.id||p.task_id)===String(planId)?updated:p);
  const {error}=await db.from("study_tasks").update({schedule_locked:true}).eq("id",task.id).eq("user_id",currentUser.id);
  if(error){toast(error.message);return}
  task.schedule_locked=true;
- try{await savePlannerData();renderWeeklyPlan();toast("زمان کار تغییر کرد و در برنامه ثابت شد.")}catch(err){toast("ذخیره برنامه انجام نشد: "+err.message)}
+ try{await savePlannerData();renderWeeklyPlan();toast("زمان این بخش تغییر کرد و در برنامه ثابت شد.")}catch(err){toast("ذخیره برنامه انجام نشد: "+err.message)}
 }
 async function generateWeeklyPlan(persist=true){
  if(!currentUser)return;
  const taskMap=new Map(tasks.map(t=>[String(t.id),t]));
  const weekStartKey=plannerDateKey(plannerWeekStart()),weekEndKey=plannerDateKey(plannerDateAt(6));
- const retained=weeklyPlan.filter(p=>{const t=taskMap.get(String(p.task_id));return t&&p.date>=weekStartKey&&p.date<=weekEndKey&&(t.status==="done"||p.locked)});
+ const lockedTaskIds=new Set(weeklyPlan.filter(p=>p.locked).map(p=>String(p.task_id)));
+ const retained=weeklyPlan.filter(p=>{const t=taskMap.get(String(p.task_id));return t&&p.date>=weekStartKey&&p.date<=weekEndKey&&(t.status==="done"||lockedTaskIds.has(String(t.id)))});
  const retainedIds=new Set(retained.map(p=>String(p.task_id)));
  const scheduled=tasks.filter(t=>t.status==="pending"&&!retainedIds.has(String(t.id))).sort((a,b)=>{
   const ad=a.due_at?new Date(a.due_at).getTime():Infinity,bd=b.due_at?new Date(b.due_at).getTime():Infinity;
   const priority={high:0,normal:1,low:2};return ad-bd||(priority[a.priority]??1)-(priority[b.priority]??1);
  });
  weeklyPlan=retained.slice();
- const missed=[];
  for(const task of scheduled){
-  if(!task.estimated_minutes){missed.push(task.id);continue}
-  const slot=plannerChooseSlot(task,weeklyPlan);
-  if(!slot){missed.push(task.id);continue}
-  weeklyPlan.push({task_id:task.id,date:slot.dateKey,start:slot.slot.start.toISOString(),end:slot.slot.end.toISOString(),duration:Number(task.estimated_minutes),locked:false});
+  const total=Number(task.estimated_minutes);if(!Number.isInteger(total)||total<5)continue;
+  const full=plannerChooseSlot(task,weeklyPlan);
+  if(full){weeklyPlan.push({id:makeUUID(),task_id:task.id,date:full.dateKey,start:full.slot.start.toISOString(),end:full.slot.end.toISOString(),duration:total,locked:false,segment_index:1,segment_total:1});continue}
+  let remaining=total,part=0;const usedDays=new Set(),newEntries=[];
+  while(remaining>=5){
+   const slot=plannerChoosePartialSlot(task,weeklyPlan,remaining,usedDays);if(!slot)break;
+   part++;const entry={id:makeUUID(),task_id:task.id,date:slot.dateKey,start:slot.slot.start.toISOString(),end:slot.slot.end.toISOString(),duration:slot.slot.duration,locked:false,segment_index:part,segment_total:0};
+   weeklyPlan.push(entry);newEntries.push(entry);usedDays.add(slot.dateKey);remaining-=slot.slot.duration;
+  }
+  newEntries.forEach(p=>p.segment_total=newEntries.length);
  }
  weeklyPlan.sort((a,b)=>a.date.localeCompare(b.date)||new Date(a.start)-new Date(b.start));
  if(persist){try{await savePlannerData()}catch(err){toast("ذخیره برنامه انجام نشد: "+err.message)}}
  renderWeeklyPlan();
- if(missed.length)toast("برنامه ساخته شد؛ "+fa(missed.length)+" کار به دلیل نبود مدت‌زمان یا ظرفیت کافی زمان‌بندی نشد.");
+ const assigned=new Map();for(const p of weeklyPlan)assigned.set(String(p.task_id),(assigned.get(String(p.task_id))||0)+Number(p.duration||0));
+ const missed=tasks.filter(t=>t.status==="pending"&&(!t.estimated_minutes||(assigned.get(String(t.id))||0)<Number(t.estimated_minutes)));
+ if(missed.length)toast("برنامه ساخته شد؛ "+fa(missed.length)+" کار به دلیل نبود مدت‌زمان یا ظرفیت کافی کامل زمان‌بندی نشد.");
 }
 $("planner-save-hours").addEventListener("click",async()=>{const b=$("planner-save-hours");b.disabled=true;try{await saveWeeklyAvailability();await generateWeeklyPlan(true);toast("ساعت‌های آزاد ذخیره شد.")}catch(err){toast(err.message)}finally{b.disabled=false}});
 $("smart-generate").addEventListener("click",async()=>{try{await saveWeeklyAvailability();await generateWeeklyPlan(true)}catch(err){toast(err.message)}});
 $("smart-clear").addEventListener("click",async()=>{if(!confirm("فقط برنامه‌های خودکار پاک شوند؟ زمان‌های دستی و کارهای انجام‌شده حفظ می‌شوند."))return;weeklyPlan=weeklyPlan.filter(p=>p.locked||planTaskById(p.task_id)?.status==="done");try{await savePlannerData();renderWeeklyPlan()}catch(err){toast(err.message)}});
 document.addEventListener("click",async e=>{
  const unlock=e.target.closest("[data-plan-unlock]");
- if(unlock){const id=unlock.dataset.planUnlock,t=planTaskById(id);if(!t)return;const {error}=await db.from("study_tasks").update({schedule_locked:false}).eq("id",id).eq("user_id",currentUser.id);if(error){toast(error.message);return}t.schedule_locked=false;weeklyPlan=weeklyPlan.filter(p=>String(p.task_id)!==String(id));await generateWeeklyPlan(true);toast("این کار دوباره به زمان‌بندی خودکار برگشت.");return}
+ if(unlock){const planId=unlock.dataset.planUnlock,entry=weeklyPlan.find(p=>String(p.id||p.task_id)===String(planId)),task=entry&&planTaskById(entry.task_id);if(!task)return;const {error}=await db.from("study_tasks").update({schedule_locked:false}).eq("id",task.id).eq("user_id",currentUser.id);if(error){toast(error.message);return}task.schedule_locked=false;weeklyPlan=weeklyPlan.filter(p=>String(p.task_id)!==String(task.id));await generateWeeklyPlan(true);toast("این تکلیف دوباره به زمان‌بندی خودکار برگشت.");return}
  const durationSave=e.target.closest("[data-plan-duration-save]");
  if(durationSave){const id=durationSave.dataset.planDurationSave,value=Number(document.querySelector("[data-plan-duration='"+id+"']")?.value);if(!Number.isInteger(value)||value<5||value>1440){toast("مدت‌زمان باید بین ۵ تا ۱۴۴۰ دقیقه باشد.");return}const {error}=await db.from("study_tasks").update({estimated_minutes:value}).eq("id",id).eq("user_id",currentUser.id);if(error){toast(error.message);return}const t=planTaskById(id);if(t)t.estimated_minutes=value;await generateWeeklyPlan(true);return}
  const b=e.target.closest("[data-plan-save]");if(!b)return;const id=b.dataset.planSave,date=document.querySelector("[data-plan-day='"+id+"']")?.value,time=document.querySelector("[data-plan-time='"+id+"']")?.value;if(!date||!time)return;await movePlannerTask(id,date,time)
