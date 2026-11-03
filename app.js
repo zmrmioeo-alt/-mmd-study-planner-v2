@@ -484,6 +484,31 @@ async function ensureTusLibrary(){
   document.head.appendChild(s);
  });
 }
+function showHumorUploadProgress(sent,total){
+ const p=document.getElementById("humor-upload-progress"),bar=document.getElementById("humor-upload-bar"),label=document.getElementById("humor-upload-percent");
+ if(!p||!bar||!label)return;
+ const percent=total?Math.min(100,Math.floor(sent/total*100)):0;
+ p.classList.remove("hidden");bar.style.width=percent+"%";label.textContent=percent+"٪ ("+(sent/1048576).toFixed(1)+" از "+(total/1048576).toFixed(1)+" مگابایت)";
+}
+function resetHumorUploadProgress(){const p=document.getElementById("humor-upload-progress"),bar=document.getElementById("humor-upload-bar"),label=document.getElementById("humor-upload-percent");if(p)p.classList.add("hidden");if(bar)bar.style.width="0%";if(label)label.textContent="0٪";}
+async function uploadHumorVideoDirect(file,path){
+ const {data:{session}}=await db.auth.getSession();
+ if(!session?.access_token)throw new Error("نشست ورود معتبر نیست؛ دوباره وارد شو.");
+ await new Promise((resolve,reject)=>{
+  const xhr=new XMLHttpRequest();
+  const objectPath=path.split("/").map(encodeURIComponent).join("/");
+  xhr.open("POST",SUPABASE_URL+"/storage/v1/object/humor-media/"+objectPath);
+  xhr.setRequestHeader("Authorization","Bearer "+session.access_token);
+  xhr.setRequestHeader("apikey",SUPABASE_KEY);
+  xhr.setRequestHeader("Content-Type",file.type||"video/mp4");
+  xhr.setRequestHeader("x-upsert","false");
+  xhr.upload.onprogress=e=>{if(e.lengthComputable)showHumorUploadProgress(e.loaded,e.total);};
+  xhr.onload=()=>{if(xhr.status>=200&&xhr.status<300)resolve();else{let msg=xhr.responseText;try{msg=JSON.parse(msg).message||msg}catch{}reject(new Error("بارگذاری ویدئو ناموفق بود: "+msg))}};
+  xhr.onerror=()=>reject(new Error("اتصال هنگام ارسال ویدئو قطع شد."));
+  xhr.ontimeout=()=>reject(new Error("ارسال ویدئو بیش از حد طول کشید؛ دوباره تلاش کن."));
+  xhr.timeout=180000;xhr.send(file);
+ });
+}
 async function uploadHumorVideoResumable(file,path){
  await ensureTusLibrary();
  const {data:{session}}=await db.auth.getSession();
@@ -497,7 +522,7 @@ async function uploadHumorVideoResumable(file,path){
    chunkSize:6*1024*1024,
    metadata:{bucketName:"humor-media",objectName:path,contentType:file.type||"video/mp4",cacheControl:"3600"},
    onError:error=>reject(new Error("بارگذاری ویدئو متوقف شد: "+(error.message||error))),
-   onProgress:(sent,total)=>{const percent=Math.min(100,Math.round(sent/total*100));message("humor-submit-message","در حال ارسال ویدئو… "+percent+"٪");},
+   onProgress:(sent,total)=>{showHumorUploadProgress(sent,total);},
    onSuccess:()=>resolve()
   });
   upload.findPreviousUploads().then(previous=>{
@@ -506,7 +531,7 @@ async function uploadHumorVideoResumable(file,path){
   }).catch(reject);
  });
 }
-$("humor-submit-form").addEventListener("submit",async e=>{e.preventDefault();const b=e.submitter||$("humor-submit-form").querySelector('button[type="submit"]');if(b)b.disabled=true;try{let path=null,type="text";const f=$("humor-file").files[0];if(f){message("humor-submit-message","در حال آماده‌سازی فایل...");if(f.size>52428800)throw new Error("حداکثر حجم فایل ۵۰ مگابایت است.");const compressed=f.type.startsWith("video/")?f:await compressUploadFile(f);if(compressed.size>52428800)throw new Error("حجم فایل بیشتر از ۵۰ مگابایت است.");type=f.type.startsWith("video/")?"video":"image";path=currentUser.id+"/"+makeUUID()+"-"+compressed.name.replace(/[^a-zA-Z0-9._-]/g,"_");message("humor-submit-message","در حال بارگذاری فایل...");if(type==="video"){await uploadHumorVideoResumable(compressed,path)}else{const {error}=await db.storage.from("humor-media").upload(path,compressed,{contentType:compressed.type,upsert:false});if(error)throw new Error("بارگذاری فایل ناموفق بود: "+error.message)}}message("humor-submit-message","فایل بارگذاری شد؛ در حال ثبت مطلب برای بررسی...");const {error}=await db.from("humor_posts").insert({user_id:currentUser.id,title:$("humor-title").value.trim(),body:$("humor-body").value.trim(),media_path:path,media_type:type,status:"pending"});if(error){if(path)await db.storage.from("humor-media").remove([path]);throw new Error("ثبت مطلب ناموفق بود: "+error.message)}e.target.reset();message("humor-submit-message","مطلب ارسال شد و در انتظار بررسی مدیر است.");await loadHumorFeed()}catch(x){message("humor-submit-message",x.message||"ارسال ناموفق بود.",true)}finally{if(b)b.disabled=false}});
+$("humor-submit-form").addEventListener("submit",async e=>{e.preventDefault();const b=e.submitter||$("humor-submit-form").querySelector('button[type="submit"]');if(b)b.disabled=true;try{let path=null,type="text";const f=$("humor-file").files[0];if(f){message("humor-submit-message","در حال آماده‌سازی فایل...");if(f.size>52428800)throw new Error("حداکثر حجم فایل ۵۰ مگابایت است.");const compressed=f.type.startsWith("video/")?f:await compressUploadFile(f);if(compressed.size>52428800)throw new Error("حجم فایل بیشتر از ۵۰ مگابایت است.");type=f.type.startsWith("video/")?"video":"image";path=currentUser.id+"/"+makeUUID()+"-"+compressed.name.replace(/[^a-zA-Z0-9._-]/g,"_");message("humor-submit-message","در حال بارگذاری فایل...");if(type==="video"){resetHumorUploadProgress();if(compressed.size<=6*1024*1024){await uploadHumorVideoDirect(compressed,path)}else{await uploadHumorVideoResumable(compressed,path)}}else{const {error}=await db.storage.from("humor-media").upload(path,compressed,{contentType:compressed.type,upsert:false});if(error)throw new Error("بارگذاری فایل ناموفق بود: "+error.message)}}message("humor-submit-message","فایل بارگذاری شد؛ در حال ثبت مطلب برای بررسی...");const {error}=await db.from("humor_posts").insert({user_id:currentUser.id,title:$("humor-title").value.trim(),body:$("humor-body").value.trim(),media_path:path,media_type:type,status:"pending"});if(error){if(path)await db.storage.from("humor-media").remove([path]);throw new Error("ثبت مطلب ناموفق بود: "+error.message)}e.target.reset();message("humor-submit-message","مطلب ارسال شد و در انتظار بررسی مدیر است.");resetHumorUploadProgress();await loadHumorFeed()}catch(x){message("humor-submit-message",x.message||"ارسال ناموفق بود.",true)}finally{if(b)b.disabled=false}});
 async function loadAdminUsers(){if(!profile?.is_admin)return;const result=await callAdmin("list_users");window.__adminUsers=result.users||[];$("admin-users").innerHTML=window.__adminUsers.length?window.__adminUsers.map(u=>'<article class="task-item"><div class="task-main"><h3>'+escapeHtml(u.display_name||"بدون نام")+'</h3><p>شناسه: '+escapeHtml(u.login_id||u.phone||u.email||"—")+' · '+(u.ends_at?"پایان اشتراک: "+jalaliDate(u.ends_at):"بدون اشتراک")+'</p><p>'+escapeHtml(u.email||"")+'</p></div><span class="priority">'+(u.is_banned?"مسدود":u.is_active?"فعال":"غیرفعال")+'</span>'+(u.is_admin?"":'<label class="switch-row"><input type="checkbox" data-chat-toggle="'+u.id+'" '+(u.chat_enabled!==false?"checked":"")+'> اجازه چت</label><div class="task-actions"><button class="secondary" data-renew-user="'+u.id+'">تمدید اشتراک</button><button class="secondary" data-edit-user="'+u.id+'">ویرایش حساب</button><button class="secondary" data-ban-user="'+u.id+'">'+(u.is_banned?"رفع بن":"بن کاربر")+'</button><button class="danger" data-delete-user="'+u.id+'">حذف کاربر</button></div>')+'</article>').join(""):'<div class="empty">کاربری ثبت نشده است.</div>'}
 document.addEventListener("change",async e=>{const t=e.target.closest("[data-chat-toggle]");if(!t)return;try{await callAdmin("set_chat_enabled",{user_id:t.dataset.chatToggle,enabled:t.checked});toast("دسترسی چت به‌روزرسانی شد.")}catch(x){t.checked=!t.checked;toast(x.message)}});
 async function loadExcelLibrary(){
