@@ -11,10 +11,11 @@ if(window.jalaliDatepicker){window.jalaliDatepicker.startWatch({persianDigits:tr
 const fa = (n) => new Intl.NumberFormat("fa-IR").format(n);
 const weekdays = ["یکشنبه","دوشنبه","سه‌شنبه","چهارشنبه","پنجشنبه","جمعه","شنبه"];
 let currentUser = null, profile = null, tasks = [], routines = [], settings = {}, taskFilter = "all";
+let weeklyAvailability = {}, weeklyPlan = [];
 let featureFlags={chat_enabled:true,humor_enabled:true};
 const smartKey=()=> "mmd_smart_planner_"+(currentUser?.id||"guest");
-function smartEnabled(){return !!currentUser && localStorage.getItem(smartKey())==="on";}
-function syncSmartPlanner(){const enabled=smartEnabled();if($("smart-planner-toggle"))$("smart-planner-toggle").checked=enabled;show("smart-planner-nav",enabled);}
+function smartEnabled(){return !!currentUser;}
+function syncSmartPlanner(){if($("smart-planner-toggle")){$("smart-planner-toggle").checked=true;$("smart-planner-toggle").disabled=true;}show("smart-planner-nav",!!currentUser);}
 const show = (id, yes=true) => $(id).classList.toggle("hidden", !yes);
 function toast(message){const el=$("toast");el.textContent=message;el.classList.add("show");clearTimeout(window.__toastTimer);window.__toastTimer=setTimeout(()=>el.classList.remove("show"),3000)}
 function message(id,text,isError=false){$(id).textContent=text;$(id).style.color=isError?"var(--danger)":"var(--accent)"}
@@ -292,7 +293,7 @@ async function loadProfile(){
 async function loadTasks(){const {data,error}=await db.from("study_tasks").select("*").eq("user_id",currentUser.id).order("position").order("created_at",{ascending:false});if(error)throw error;tasks=data||[]}
 async function loadRoutines(){const {data,error}=await db.from("routines").select("*").eq("user_id",currentUser.id).order("weekday").order("scheduled_time");if(error)throw error;routines=data||[]}
 async function loadSettings(){const {data,error}=await db.from("planner_settings").select("*").eq("user_id",currentUser.id).maybeSingle();if(error)throw error;settings=data||{}}
-function renderAll(){if(!currentUser)return;renderAnnouncements();renderTasks();renderRoutines();renderReports();syncProfileForm();$("welcome-title").textContent="سلام "+(profile.display_name||"")+", برنامه امروزت آماده است."; $("display-name").value=profile.display_name||"";$("sleep-hours").value=settings.sleep_hours??"";$("wake-time").value=settings.wake_time?.slice(0,5)||"";$("accent-theme").value=settings.accent_theme||"emerald";$("appearance").value=settings.appearance||settings.theme||"light";$("season-theme").value=settings.season_theme||"auto";$("humor-enabled").checked=!!settings.humor_enabled;applyTheme(settings.accent_theme||"emerald",settings.appearance||settings.theme||"light",settings.season_theme||"auto");updateHumor()}
+function renderAll(){if(!currentUser)return;weeklyAvailability=settings.weekly_availability||{};weeklyPlan=Array.isArray(settings.weekly_plan)?settings.weekly_plan:[];renderPlannerAvailability();renderWeeklyPlan();renderAnnouncements();renderTasks();renderRoutines();renderReports();syncProfileForm();$("welcome-title").textContent="سلام "+(profile.display_name||"")+", برنامه امروزت آماده است."; $("display-name").value=profile.display_name||"";$("sleep-hours").value=settings.sleep_hours??"";$("wake-time").value=settings.wake_time?.slice(0,5)||"";$("accent-theme").value=settings.accent_theme||"emerald";$("appearance").value=settings.appearance||settings.theme||"light";$("season-theme").value=settings.season_theme||"auto";$("humor-enabled").checked=!!settings.humor_enabled;applyTheme(settings.accent_theme||"emerald",settings.appearance||settings.theme||"light",settings.season_theme||"auto");updateHumor()}
 function taskMarkup(t){const done=t.status==="done";const due=t.due_at?jalaliDate(t.due_at,true):"بدون مهلت";return '<article class="task-item '+(done?'done':'')+'"><input class="task-check" type="checkbox" data-task-check="'+t.id+'" '+(done?'checked':'')+' aria-label="تغییر وضعیت"><div class="task-main"><h3>'+escapeHtml(t.title)+'</h3><p>'+escapeHtml(t.description||"")+' · '+due+'</p></div><span class="priority '+(t.priority==="high"?"high":"")+'">'+(t.priority==="high"?"زیاد":t.priority==="low"?"کم":"معمولی")+'</span><div class="task-actions"><button class="icon-btn" data-task-delete="'+t.id+'">حذف</button></div></article>'}
 function renderTodayWork(){
  const today=tasks.filter(t=>isToday(t.due_at)||(!t.due_at&&t.status==="pending"));
@@ -313,13 +314,13 @@ function renderTasks(){
 function renderRoutines(){$("routine-list").innerHTML=routines.length?routines.map(r=>'<article class="routine-card"><b>'+escapeHtml(r.title)+'</b><small>'+weekdays[r.weekday]+' · '+(r.scheduled_time?r.scheduled_time.slice(0,5):"بدون ساعت")+'</small><p class="muted">'+escapeHtml(r.details||"")+'</p><button class="icon-btn" data-routine-delete="'+r.id+'">حذف</button></article>').join(""):'<div class="empty">هنوز برنامه ثابتی ثبت نشده است.</div>'}
 function renderReports(){const total=tasks.length,done=tasks.filter(t=>t.status==="done").length,cancelled=tasks.filter(t=>t.status==="cancelled").length,pct=total?Math.round(done/total*100):0;$("report-percent").textContent=fa(pct)+"٪";$("report-total").textContent=fa(total);$("report-done").textContent=fa(done);$("report-cancelled").textContent=fa(cancelled)}
 async function refreshTasks(){await loadTasks();renderTasks();renderReports()}
-$("task-form").addEventListener("submit",async e=>{e.preventDefault();const title=$("task-title").value.trim();const due=$("task-due-date").value,time=$("task-due-time").value||"23:59";if($("task-due-date-jalali").value&&!due){toast("تقویم بارگذاری نشده یا تبدیل تاریخ انجام نشد؛ صفحه را تازه‌سازی کنید.");return}let dueAt=null;if(due){const d=new Date(due+"T00:00:00");if(Number.isNaN(d.getTime())){toast("تاریخ انتخاب‌شده معتبر نیست.");return}const [hh,mm]=time.split(":").map(Number);d.setHours(hh,mm,0,0);dueAt=d.toISOString()}const row={user_id:currentUser.id,title,description:$("task-description").value.trim(),priority:$("task-priority").value,status:"pending",position:tasks.length,...(dueAt?{due_at:dueAt}:{})};const {error}=await db.from("study_tasks").insert(row);if(error){toast(error.message);return}e.target.reset();await refreshTasks();toast("وظیفه ثبت شد.")});
+$("task-form").addEventListener("submit",async e=>{e.preventDefault();const title=$("task-title").value.trim();const due=$("task-due-date").value,time=$("task-due-time").value||"23:59";if($("task-due-date-jalali").value&&!due){toast("تقویم بارگذاری نشده یا تبدیل تاریخ انجام نشد؛ صفحه را تازه‌سازی کنید.");return}let dueAt=null;if(due){const d=new Date(due+"T00:00:00");if(Number.isNaN(d.getTime())){toast("تاریخ انتخاب‌شده معتبر نیست.");return}const [hh,mm]=time.split(":").map(Number);d.setHours(hh,mm,0,0);dueAt=d.toISOString()}const estimate=Number($("task-estimated-minutes").value);if(!Number.isInteger(estimate)||estimate<5||estimate>1440){toast("مدت‌زمان باید بین ۵ تا ۱۴۴۰ دقیقه باشد.");return}const row={user_id:currentUser.id,title,description:$("task-description").value.trim(),priority:$("task-priority").value,status:"pending",position:tasks.length,estimated_minutes:estimate,schedule_locked:false,...(dueAt?{due_at:dueAt}:{})};const {error}=await db.from("study_tasks").insert(row);if(error){toast(error.message);return}e.target.reset();await refreshTasks();await generateWeeklyPlan(true);toast("وظیفه ثبت شد و برنامه هفته به‌روزرسانی شد.")});
 $("routine-form").addEventListener("submit",async e=>{e.preventDefault();const row={user_id:currentUser.id,title:$("routine-title").value.trim(),details:$("routine-details").value.trim(),weekday:Number($("routine-weekday").value),scheduled_time:$("routine-time").value||null};const {error}=await db.from("routines").insert(row);if(error){toast(error.message);return}e.target.reset();await loadRoutines();renderRoutines();toast("برنامه ثابت اضافه شد.")});
 document.addEventListener("click",async e=>{
  const profileBack=e.target.closest('#page-public-profile [data-page="humor"]');
  if(profileBack){navigate("humor");return}
 
- const check=e.target.closest("[data-task-check]");if(check){const id=check.dataset.taskCheck;const {error}=await db.from("study_tasks").update({status:check.checked?"done":"pending"}).eq("id",id).eq("user_id",currentUser.id);if(error)toast(error.message);else await refreshTasks();return}
+ const check=e.target.closest("[data-task-check]");if(check){const id=check.dataset.taskCheck;const {error}=await db.from("study_tasks").update({status:check.checked?"done":"pending"}).eq("id",id).eq("user_id",currentUser.id);if(error)toast(error.message);else{await refreshTasks();await generateWeeklyPlan(true)}return}
  const del=e.target.closest("[data-task-delete]");if(del){if(!confirm("این وظیفه حذف شود؟"))return;const {error}=await db.from("study_tasks").delete().eq("id",del.dataset.taskDelete).eq("user_id",currentUser.id);if(error)toast(error.message);else{await refreshTasks();toast("وظیفه حذف شد.")}return}
  const rd=e.target.closest("[data-routine-delete]");if(rd){if(!confirm("این برنامه حذف شود؟"))return;const {error}=await db.from("routines").delete().eq("id",rd.dataset.routineDelete).eq("user_id",currentUser.id);if(error)toast(error.message);else{await loadRoutines();renderRoutines();toast("برنامه حذف شد.")}return}
  const go=e.target.closest("[data-go]");if(go)navigate(go.dataset.go);
@@ -451,15 +452,146 @@ function navigate(page){if(page==="admin"&&!isManagementAdmin()){toast("دستر
 document.querySelector("#page-public-profile [data-page=humor]")?.addEventListener("click",()=>navigate("humor"));
 document.querySelectorAll("[data-filter]").forEach(b=>b.addEventListener("click",()=>{taskFilter=b.dataset.filter;document.querySelectorAll("[data-filter]").forEach(x=>x.classList.toggle("active",x===b));renderTasks()}));
 $("smart-planner-toggle").addEventListener("change",e=>{if(e.target.checked)localStorage.setItem(smartKey(),"on");else localStorage.removeItem(smartKey());syncSmartPlanner();toast(e.target.checked?"برنامه‌ریز هوشمند فعال شد.":"برنامه‌ریز هوشمند غیرفعال شد.");});
-function buildSmartPlan(){
- const open=tasks.filter(t=>t.status==="pending").sort((a,b)=>{const ad=a.due_at?new Date(a.due_at).getTime():Infinity,bd=b.due_at?new Date(b.due_at).getTime():Infinity;return ad-bd||(a.priority==="high"?-1:0)-(b.priority==="high"?-1:0)});
- if(!open.length){$("smart-plan-output").innerHTML='<div class="empty">وظیفه باز برای زمان‌بندی وجود ندارد.</div>';return;}
- const duration=Number($("smart-session").value),rest=Number($("smart-break").value);let cursor=new Date();cursor.setMinutes(Math.ceil(cursor.getMinutes()/15)*15,0,0);const rows=[];
- for(const t of open){if(t.due_at&&new Date(t.due_at)<cursor){rows.push({task:t,late:true,start:new Date(cursor)});continue;}let start=new Date(cursor);if(t.due_at&&start.getTime()+duration*60000>new Date(t.due_at).getTime()){rows.push({task:t,late:true,start});continue;}rows.push({task:t,start,late:false});cursor=new Date(cursor.getTime()+(duration+rest)*60000);}
- $("smart-plan-output").innerHTML=rows.map(x=>'<article class="task-item"><div class="task-main"><h3>'+escapeHtml(x.task.title)+'</h3><p>'+(x.late?'مهلت گذشته یا زمان کافی تا مهلت وجود ندارد':'پیشنهاد شروع: '+jalaliDate(x.start,true))+'</p></div><span class="priority '+(x.late?'high':'')+'">'+(x.late?'نیازمند بررسی':duration+' دقیقه')+'</span></article>').join("");
+
+const plannerDayOrder=[6,0,1,2,3,4,5];
+const plannerDayNames={0:"یکشنبه",1:"دوشنبه",2:"سه‌شنبه",3:"چهارشنبه",4:"پنجشنبه",5:"جمعه",6:"شنبه"};
+const plannerBreakMinutes=10;
+function plannerWeekStart(){const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()-((d.getDay()+1)%7));return d}
+function plannerDateAt(offset){const d=plannerWeekStart();d.setDate(d.getDate()+offset);return d}
+function plannerDateKey(d){return [d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-")}
+function plannerOffsetForDate(d){return Math.round((new Date(d.getFullYear(),d.getMonth(),d.getDate())-plannerWeekStart())/86400000)}
+function plannerMinutes(value){if(!value)return null;const [h,m]=value.split(":").map(Number);return h*60+m}
+function plannerLocalDateTime(dateKey,time){const [y,m,d]=dateKey.split("-").map(Number),[h,mi]=time.split(":").map(Number);return new Date(y,m-1,d,h,mi,0,0)}
+function plannerTimeLabel(date){return new Intl.DateTimeFormat("fa-IR",{hour:"2-digit",minute:"2-digit"}).format(date)}
+function renderPlannerAvailability(){
+ const order=plannerDayOrder;
+ order.forEach(day=>{const a=weeklyAvailability[String(day)]||{};const s=$("availability-start-"+day),e=$("availability-end-"+day);if(s)s.value=a.start||"";if(e)e.value=a.end||""});
 }
-$("smart-generate").addEventListener("click",()=>{if(!smartEnabled()){toast("ابتدا این قابلیت را در تنظیمات فعال کنید.");return;}buildSmartPlan()});
-$("smart-clear").addEventListener("click",()=>{$("smart-plan-output").innerHTML='<div class="empty">پیشنهاد پاک شد.</div>'});
+async function savePlannerData(){
+ const row={user_id:currentUser.id,sleep_hours:settings.sleep_hours??null,wake_time:settings.wake_time||null,theme:settings.theme||"light",accent_theme:settings.accent_theme||"emerald",appearance:settings.appearance||settings.theme||"light",humor_enabled:!!settings.humor_enabled,season_theme:settings.season_theme||"auto",weekly_availability:weeklyAvailability,weekly_plan:weeklyPlan};
+ const {error}=await db.from("planner_settings").upsert(row,{onConflict:"user_id"});if(error)throw error;settings={...settings,...row};
+}
+async function saveWeeklyAvailability(){
+ const next={};
+ for(const day of plannerDayOrder){
+  const start=$("availability-start-"+day).value,end=$("availability-end-"+day).value;
+  if(!start&&!end)continue;
+  if(!start||!end||plannerMinutes(start)>=plannerMinutes(end))throw new Error("برای "+plannerDayNames[day]+" ساعت شروع و پایان معتبر وارد کنید.");
+  next[String(day)]={start,end};
+ }
+ weeklyAvailability=next;await savePlannerData();
+}
+function planTaskById(id){return tasks.find(t=>String(t.id)===String(id))}
+function planEntriesForDate(dateKey,exceptId=null){return weeklyPlan.filter(p=>p.date===dateKey&&String(p.task_id)!==String(exceptId)).map(p=>({...p,startDate:new Date(p.start),endDate:new Date(p.end)})).sort((a,b)=>a.startDate-b.startDate)}
+function plannerFindSlot(day,dateKey,duration,exceptId=null){
+ const avail=weeklyAvailability[String(day)];if(!avail)return null;
+ const dayStart=plannerLocalDateTime(dateKey,avail.start),dayEnd=plannerLocalDateTime(dateKey,avail.end);
+ let cursor=new Date(dayStart);const now=new Date();
+ if(dateKey===plannerDateKey(now)&&cursor<now){cursor=new Date(now);cursor.setMinutes(Math.ceil(cursor.getMinutes()/15)*15,0,0)}
+ const occupied=planEntriesForDate(dateKey,exceptId);
+ for(const item of occupied){
+  const breakEnd=new Date(cursor.getTime()+duration*60000);
+  const protectedStart=new Date(item.startDate.getTime()-plannerBreakMinutes*60000);
+  if(breakEnd<=protectedStart)break;
+  if(cursor<item.endDate)cursor=new Date(item.endDate.getTime()+plannerBreakMinutes*60000);
+ }
+ if(cursor.getTime()+duration*60000>dayEnd.getTime())return null;
+ return {start:cursor,end:new Date(cursor.getTime()+duration*60000)};
+}
+function plannerDueOffset(task){
+ if(!task.due_at)return 6;
+ const due=new Date(task.due_at);if(Number.isNaN(due.getTime()))return 6;
+ return plannerOffsetForDate(due);
+}
+function plannerCandidateOffsets(task){
+ const due=plannerDueOffset(task);
+ if(due<0)return [];
+ const last=Math.min(6,due>6?6:due===0?0:due-1);
+ const preferred=due>6?6:due>=2?due-2:0;
+ const offsets=[];for(let i=preferred;i<=last;i++)offsets.push(i);
+ for(let i=0;i<preferred;i++)offsets.push(i);
+ return offsets;
+}
+function plannerChooseSlot(task,entries){
+ const duration=Number(task.estimated_minutes);if(!Number.isFinite(duration)||duration<5)return null;
+ const offsets=plannerCandidateOffsets(task),choices=[];
+ for(const offset of offsets){
+  const date=plannerDateAt(offset),dateKey=plannerDateKey(date),day=date.getDay();
+  const slot=plannerFindSlot(day,dateKey,duration);
+  if(slot){
+   const used=entries.filter(p=>p.date===dateKey).reduce((n,p)=>n+Number(p.duration||0),0);
+   const avail=weeklyAvailability[String(day)],capacity=plannerMinutes(avail.end)-plannerMinutes(avail.start);
+   choices.push({dateKey,slot,ratio:capacity?used/capacity:1,offset});
+  }
+ }
+ choices.sort((a,b)=>a.ratio-b.ratio||a.offset-b.offset||a.slot.start-b.slot.start);
+ return choices[0]||null;
+}
+function renderWeeklyPlan(){
+ const host=$("smart-plan-output");if(!host)return;
+ const tasksById=new Map(tasks.map(t=>[String(t.id),t]));
+ const valid=weeklyPlan.filter(p=>tasksById.has(String(p.task_id)));
+ const unscheduled=tasks.filter(t=>t.status==="pending"&&!valid.some(p=>String(p.task_id)===String(t.id)));
+ const groups=plannerDayOrder.map(day=>{
+  const date=plannerDateAt((day-6+7)%7),key=plannerDateKey(date);
+  const dayEntries=valid.filter(p=>p.date===key).sort((a,b)=>new Date(a.start)-new Date(b.start));
+  const a=weeklyAvailability[String(day)];
+  return '<section class="planner-day" data-plan-drop="'+key+'"><header><b>'+plannerDayNames[day]+'</b><span>'+jalaliDate(date)+'</span><small>'+(a?a.start+" تا "+a.end:"بدون زمان آزاد")+'</small></header><div class="planner-day-items">'+(dayEntries.length?dayEntries.map(p=>{
+   const t=tasksById.get(String(p.task_id)),done=t?.status==="done",start=new Date(p.start);
+   return '<article class="planner-task '+(done?"is-done":"")+'" draggable="'+(!done)+'" data-plan-task="'+escapeHtml(p.task_id)+'"><div class="planner-task-top"><b>'+escapeHtml(t?.title||"کار حذف‌شده")+'</b><span>'+plannerTimeLabel(start)+' · '+fa(p.duration)+' دقیقه</span></div><small>مهلت: '+(t?.due_at?jalaliDate(t.due_at,true):"تعیین نشده")+(p.locked?" · جابه‌جایی دستی":"")+'</small><div class="planner-move-controls"><select aria-label="انتقال به روز" data-plan-day="'+escapeHtml(p.task_id)+'">'+plannerDayOrder.map(d=>{const dt=plannerDateAt((d-6+7)%7),k=plannerDateKey(dt);return '<option value="'+k+'" '+(k===key?"selected":"")+'>'+plannerDayNames[d]+'</option>'}).join("")+'</select><input aria-label="ساعت شروع" type="time" value="'+plannerTimeValue(start)+'" data-plan-time="'+escapeHtml(p.task_id)+'"><button type="button" class="secondary" data-plan-save="'+escapeHtml(p.task_id)+'" '+(done?"disabled":"")+'>تغییر زمان</button></div></article>';
+  }).join(""):'<p class="planner-empty">کاری برای این روز زمان‌بندی نشده است.</p>')+'</div></section>';
+ }).join("");
+ const warning=unscheduled.length?'<section class="planner-unscheduled"><b>نیازمند زمان‌بندی</b>'+unscheduled.map(t=>'<p>'+escapeHtml(t.title)+' — '+(!t.estimated_minutes?"مدت‌زمان مشخص نشده":"زمان آزاد کافی تا مهلت پیدا نشد")+'</p>').join("")+'</section>':"";
+ host.innerHTML='<div class="planner-week-grid">'+groups+'</div>'+warning;
+ host.querySelectorAll("[data-plan-drop]").forEach(el=>{el.addEventListener("dragover",e=>{e.preventDefault();el.classList.add("drag-over")});el.addEventListener("dragleave",()=>el.classList.remove("drag-over"));el.addEventListener("drop",async e=>{e.preventDefault();el.classList.remove("drag-over");const id=e.dataTransfer.getData("text/plain");if(id)await movePlannerTask(id,el.dataset.planDrop,null)})});
+ host.querySelectorAll("[draggable=true]").forEach(el=>el.addEventListener("dragstart",e=>{e.dataTransfer.setData("text/plain",el.dataset.planTask);e.dataTransfer.effectAllowed="move"}));
+}
+function plannerTimeValue(date){return String(date.getHours()).padStart(2,"0")+":"+String(date.getMinutes()).padStart(2,"0")}
+async function movePlannerTask(taskId,dateKey,time){
+ const task=planTaskById(taskId);if(!task||task.status==="done")return;
+ const date=new Date(dateKey+"T12:00:00"),day=date.getDay(),avail=weeklyAvailability[String(day)];
+ if(!avail){toast("برای این روز ساعت آزاد تعریف نشده است.");return}
+ const duration=Number(task.estimated_minutes);if(!duration){toast("ابتدا مدت‌زمان این تکلیف را مشخص کنید.");return}
+ const start=plannerLocalDateTime(dateKey,time||avail.start),end=new Date(start.getTime()+duration*60000);
+ const dayStart=plannerLocalDateTime(dateKey,avail.start),dayEnd=plannerLocalDateTime(dateKey,avail.end);
+ if(start<dayStart||end>dayEnd){toast("این زمان خارج از ساعت آزاد روز است.");return}
+ if(task.due_at&&end>new Date(task.due_at)){toast("این زمان بعد از مهلت تحویل قرار می‌گیرد.");return}
+ const conflict=planEntriesForDate(dateKey,taskId).some(p=>start<new Date(p.end.getTime()+plannerBreakMinutes*60000)&&end>new Date(p.startDate.getTime()-plannerBreakMinutes*60000));
+ if(conflict){toast("این زمان با کار دیگری تداخل دارد یا فاصله استراحت را رعایت نمی‌کند.");return}
+ const entry={task_id:task.id,date:dateKey,start:start.toISOString(),end:end.toISOString(),duration,locked:true};
+ weeklyPlan=weeklyPlan.filter(p=>String(p.task_id)!==String(taskId));weeklyPlan.push(entry);
+ const {error}=await db.from("study_tasks").update({schedule_locked:true}).eq("id",task.id).eq("user_id",currentUser.id);
+ if(error){toast(error.message);return}
+ task.schedule_locked=true;
+ try{await savePlannerData();renderWeeklyPlan();toast("زمان کار تغییر کرد و در برنامه ثابت شد.")}catch(err){toast("ذخیره برنامه انجام نشد: "+err.message)}
+}
+async function generateWeeklyPlan(persist=true){
+ if(!currentUser)return;
+ const taskMap=new Map(tasks.map(t=>[String(t.id),t]));
+ const retained=weeklyPlan.filter(p=>{const t=taskMap.get(String(p.task_id));return t&&(t.status==="done"||p.locked||t.schedule_locked)});
+ const retainedIds=new Set(retained.map(p=>String(p.task_id)));
+ const scheduled=tasks.filter(t=>t.status==="pending"&&!retainedIds.has(String(t.id))).sort((a,b)=>{
+  const ad=a.due_at?new Date(a.due_at).getTime():Infinity,bd=b.due_at?new Date(b.due_at).getTime():Infinity;
+  const priority={high:0,normal:1,low:2};return ad-bd||(priority[a.priority]??1)-(priority[b.priority]??1);
+ });
+ weeklyPlan=retained.slice();
+ const missed=[];
+ for(const task of scheduled){
+  if(!task.estimated_minutes){missed.push(task.id);continue}
+  const slot=plannerChooseSlot(task,weeklyPlan);
+  if(!slot){missed.push(task.id);continue}
+  weeklyPlan.push({task_id:task.id,date:slot.dateKey,start:slot.slot.start.toISOString(),end:slot.slot.end.toISOString(),duration:Number(task.estimated_minutes),locked:false});
+ }
+ weeklyPlan.sort((a,b)=>a.date.localeCompare(b.date)||new Date(a.start)-new Date(b.start));
+ if(persist){try{await savePlannerData()}catch(err){toast("ذخیره برنامه انجام نشد: "+err.message)}}
+ renderWeeklyPlan();
+ if(missed.length)toast("برنامه ساخته شد؛ "+fa(missed.length)+" کار به دلیل نبود مدت‌زمان یا ظرفیت کافی زمان‌بندی نشد.");
+}
+$("planner-save-hours").addEventListener("click",async()=>{const b=$("planner-save-hours");b.disabled=true;try{await saveWeeklyAvailability();await generateWeeklyPlan(true);toast("ساعت‌های آزاد ذخیره شد.")}catch(err){toast(err.message)}finally{b.disabled=false}});
+$("smart-generate").addEventListener("click",async()=>{try{await saveWeeklyAvailability();await generateWeeklyPlan(true)}catch(err){toast(err.message)}});
+$("smart-clear").addEventListener("click",async()=>{if(!confirm("فقط برنامه‌های خودکار پاک شوند؟ زمان‌های دستی و کارهای انجام‌شده حفظ می‌شوند."))return;weeklyPlan=weeklyPlan.filter(p=>p.locked||planTaskById(p.task_id)?.status==="done");try{await savePlannerData();renderWeeklyPlan()}catch(err){toast(err.message)}});
+document.addEventListener("click",async e=>{const b=e.target.closest("[data-plan-save]");if(!b)return;const id=b.dataset.planSave,date=$("[data-plan-day='"+id+"']")?.value,time=$("[data-plan-time='"+id+"']")?.value;if(!date||!time)return;await movePlannerTask(id,date,time)});
+
 $("settings-form").addEventListener("submit",async e=>{e.preventDefault();const row={user_id:currentUser.id,sleep_hours:$("sleep-hours").value?Number($("sleep-hours").value):null,wake_time:$("wake-time").value||null,theme:$("appearance").value,accent_theme:$("accent-theme").value,appearance:$("appearance").value,season_theme:$("season-theme").value,humor_enabled:$("humor-enabled").checked};const {error}=await db.from("planner_settings").upsert(row,{onConflict:"user_id"});if(error){toast(error.message);return}settings=row;profile.display_name=$("display-name").value.trim()||"کاربر";const {error:pe}=await db.from("profiles").update({display_name:profile.display_name}).eq("id",currentUser.id);if(pe){toast(pe.message);return} $("user-name").textContent=profile.display_name;$("user-avatar").textContent="👤";applyTheme(row.accent_theme,row.appearance,row.season_theme);updateHumor();toast("تنظیمات ذخیره شد.")});
 function applyTheme(accent="emerald",appearance="light",season="auto"){const m=new Date().getMonth()+1;const detected=m>=3&&m<=5?"spring":m>=6&&m<=8?"summer":m>=9&&m<=11?"autumn":"winter";document.body.dataset.theme=accent;document.body.dataset.appearance=appearance;document.body.dataset.season=season==="auto"?detected:season;document.body.classList.toggle("light",appearance==="light"||(appearance==="system"&&matchMedia("(prefers-color-scheme: light)").matches));document.documentElement.dataset.font="vazirmatn"}
 const humorLines=["اگر تکلیف‌ها خودشان انجام می‌شدند، احتمالاً الان اینجا نبودیم!","یک قدم کوچک هم از صفر کیلومتر جلوتر است.","مغزت را روشن کن؛ حالت پرواز برای بعد از درس!","امروز با خودت رقابت کن، نه با کل دنیا.","استراحت کوتاه مجاز است؛ ناپدید شدن سه‌ساعته نه!","هر تیک، یک پیروزی کوچک است."];
