@@ -316,7 +316,7 @@ function showChatDirectory(){
 }
 function showChatPublicProfile(userId){
  const p=(window.__chatProfiles||[]).find(x=>x.id===userId);if(!p)return;
- const avatar=p.avatar_path?'<img src="'+escapeHtml(db.storage.from("profile-avatars").getPublicUrl(p.avatar_path).data.publicUrl)+'" alt="">':escapeHtml(p.avatar_emoji||"👤");
+ const avatar=p.avatar_path?'<img src="'+escapeHtml(db.storage.from("profile-avatars").getPublicUrl(p.avatar_path).data.publicUrl)+'" alt="">':"👤";
  const details=[chatProfileMeta(p),p.chat_enabled===false?"چت غیرفعال":"چت فعال"].map(x=>'<span>'+escapeHtml(x)+'</span>').join("");
  $("chat-public-profile-card").innerHTML='<div class="chat-public-avatar">'+avatar+'</div><h3>'+escapeHtml(p.display_name||"کاربر")+'</h3><div class="chat-public-profile-details">'+details+'</div><p>'+escapeHtml(p.bio||"این کاربر هنوز توضیحی برای پروفایل خود ثبت نکرده است.")+'</p><button type="button" class="primary" id="chat-start-with-user" data-user-id="'+p.id+'" '+(p.chat_enabled===false?"disabled":"")+'>'+(p.chat_enabled===false?"چت این کاربر غیرفعال است":"چت با این کاربر")+'</button>';
  $("chat-directory-view").classList.add("hidden");document.querySelectorAll("#chat-content > .chat-inbox,#chat-content > .chat-window").forEach(x=>x.classList.add("hidden"));$("chat-public-profile-view").classList.remove("hidden");
