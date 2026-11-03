@@ -732,3 +732,24 @@ body.light .chat-attach{background:#edf7f1;color:#398363}
 .chat-peer-card{cursor:pointer}
 .chat-back-button{border-radius:999px}
 @media(max-width:850px){.chat-layout{min-height:0}.chat-inbox-list{display:grid;max-height:62vh;overflow:auto}.chat-thread{width:100%;max-width:none;min-width:0}.chat-window{min-height:68vh}.chat-messages{min-height:48vh}}
+
+
+/* Full-screen one-to-one conversation: no inbox, directory or site chrome */
+#chat-content.focused-chat{position:fixed!important;inset:0!important;z-index:99999!important;display:block!important;width:100vw!important;height:100dvh!important;max-width:none!important;margin:0!important;padding:0!important;background:#f3fbf7!important;border:0!important;border-radius:0!important;overflow:hidden!important;box-shadow:none!important}
+#chat-content.focused-chat>.chat-window{display:flex!important;width:100%!important;height:100%!important;min-height:0!important;max-height:none!important;border:0!important;border-radius:0!important;overflow:hidden!important;background:#f8fcfa!important}
+#chat-content.focused-chat>.chat-inbox,#chat-content.focused-chat>#chat-directory-view,#chat-content.focused-chat>#chat-public-profile-view{display:none!important}
+#chat-content.focused-chat .chat-heading{flex:0 0 auto;min-height:76px;padding:12px 18px;background:#fff;border-bottom:1px solid #dceee5;display:flex;align-items:center;gap:14px;box-shadow:0 3px 16px #214b3510}
+#chat-content.focused-chat .chat-peer-card{display:flex;align-items:center;gap:12px;flex:1;min-width:0}
+#chat-content.focused-chat .chat-peer-avatar{width:46px;height:46px;flex:0 0 46px;border-radius:50%;overflow:hidden;background:#dcf7e9;display:grid;place-items:center}
+#chat-content.focused-chat .chat-peer-avatar img{width:100%;height:100%;object-fit:cover}
+#chat-content.focused-chat .chat-messages{flex:1;min-height:0;max-height:none;padding:22px max(16px,calc((100vw - 900px)/2));gap:14px;background-color:#f4faf6;background-image:radial-gradient(#d9eae0 1px,transparent 1px);background-size:19px 19px}
+#chat-content.focused-chat .chat-bubble{max-width:min(78%,620px);border:0;border-radius:18px;padding:12px 16px;box-shadow:0 2px 8px #234a3510}
+#chat-content.focused-chat .chat-bubble.mine{background:#d5f8e4;border-radius:18px 18px 4px 18px}
+#chat-content.focused-chat .chat-bubble.theirs{background:#fff;border-radius:18px 18px 18px 4px}
+#chat-content.focused-chat .chat-compose{flex:0 0 auto;display:flex;align-items:flex-end;gap:10px;padding:14px max(14px,calc((100vw - 900px)/2));background:#fff;border-top:1px solid #dceee5}
+#chat-content.focused-chat .chat-compose textarea{flex:1;min-height:48px;max-height:120px;border:1px solid #dcece3;border-radius:24px;background:#f6faf7;padding:13px 18px;resize:none}
+#chat-content.focused-chat .chat-compose button{min-width:88px;border-radius:24px}
+#chat-content.focused-chat .chat-attach{white-space:nowrap;border-radius:22px;padding:12px;background:#edf7f1;color:#398363}
+#chat-content.focused-chat .hint,#chat-content.focused-chat #chat-message{display:none}
+#chat-content.focused-chat .chat-back-button{display:inline-flex!important;white-space:nowrap;border-radius:24px;background:#edf7f1;border:0;color:#287b58}
+@media(max-width:600px){#chat-content.focused-chat .chat-heading{padding:10px 12px;min-height:68px}#chat-content.focused-chat .chat-messages{padding:14px 10px}#chat-content.focused-chat .chat-compose{padding:10px;gap:7px}#chat-content.focused-chat .chat-compose button{min-width:65px;padding-inline:12px}#chat-content.focused-chat .chat-attach{font-size:11px;padding:11px 8px}#chat-content.focused-chat .chat-bubble{max-width:88%}}
