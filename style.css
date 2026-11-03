@@ -821,3 +821,35 @@ body.light .chat-compose button{
 .chat-bubble img{object-fit:contain;background:#e9f2ed}
 
 .humor-upload-progress{margin:12px 0 4px;display:flex;align-items:center;gap:10px}.humor-upload-progress.hidden{display:none}.humor-upload-track{height:9px;flex:1;background:var(--line);border-radius:20px;overflow:hidden}.humor-upload-bar{height:100%;width:0;background:var(--accent);border-radius:20px;transition:width .15s linear}.humor-upload-progress small{min-width:150px;color:var(--text);font-size:12px;direction:rtl;text-align:left}
+
+
+/* WhatsApp-like public profile */
+#page-public-profile{padding:0!important}
+#page-public-profile>.section-head{padding:14px 18px;margin:0;border-bottom:1px solid var(--line)}
+#public-profile-content{max-width:720px;margin:0 auto;padding:14px}
+.wa-profile{overflow:hidden;border:1px solid var(--line);border-radius:22px;background:var(--panel);box-shadow:0 12px 36px rgba(0,0,0,.10)}
+.wa-profile-top{height:58px;display:flex;align-items:center;gap:14px;padding:0 18px;background:var(--panel2);border-bottom:1px solid var(--line);font-weight:700}
+.wa-profile-back{width:36px;height:36px;border:0;border-radius:50%;background:transparent;color:var(--text);font-size:30px;line-height:1;cursor:pointer}
+.wa-profile-hero{display:flex;align-items:center;flex-direction:column;text-align:center;padding:30px 18px 22px;background:linear-gradient(180deg,var(--panel2),var(--panel))}
+.wa-profile-avatar{width:142px;height:142px;display:grid;place-items:center;overflow:hidden;border-radius:50%;background:var(--panel2);border:4px solid var(--panel);box-shadow:0 4px 18px rgba(0,0,0,.16);font-size:48px}
+.wa-profile-avatar img{width:100%;height:100%;object-fit:cover}
+.wa-profile-hero h2{margin:16px 0 4px;font-size:24px}
+.wa-profile-type{margin:0;color:var(--muted);font-size:13px}
+.wa-profile-actions{display:flex;justify-content:center;padding:14px 18px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.wa-profile-actions button{min-width:160px}
+.wa-profile-info-card{margin:14px;padding:17px 18px;border:1px solid var(--line);border-radius:16px;background:var(--panel2)}
+.wa-profile-info-card>small{display:block;color:var(--accent);font-weight:700;margin-bottom:10px}
+.wa-profile-info-card>p{margin:0;line-height:1.9;overflow-wrap:anywhere}
+.wa-profile-info-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.wa-profile-info-row:last-child{border-bottom:0;padding-bottom:0}
+.wa-profile-info-row span{color:var(--muted);font-size:13px}
+.wa-profile-info-row b{font-size:14px;text-align:left}
+.wa-profile-posts{padding:4px 14px 16px}
+.wa-profile-posts>h3{font-size:16px;margin:12px 4px}
+.wa-profile-post{padding:14px;margin:10px 0;border:1px solid var(--line);border-radius:14px;background:var(--panel2)}
+.wa-profile-post h4{margin:0 0 8px;font-size:15px}
+.wa-profile-post p{margin:0 0 10px;line-height:1.8;white-space:pre-wrap;overflow-wrap:anywhere}
+.wa-profile-post>small{display:inline-block;color:var(--muted);font-size:11px;margin-left:10px}
+.wa-profile-media-note{color:var(--accent)!important}
+.wa-profile-empty{padding:16px;color:var(--muted);text-align:center}
+@media(max-width:560px){#public-profile-content{padding:8px}.wa-profile{border-radius:16px}.wa-profile-avatar{width:124px;height:124px}.wa-profile-hero{padding-top:24px}.wa-profile-info-card{margin:10px;padding:14px}}
