@@ -182,7 +182,7 @@ $("feature-flags-form")?.addEventListener("submit",async e=>{
  e.preventDefault();const b=e.submitter;b.disabled=true;
  try{
   const nextFlags={chat_enabled:$("feature-chat-toggle").checked,humor_enabled:$("feature-humor-toggle").checked,humor_requires_approval:$("feature-humor-approval-toggle").checked};
-  const {error}=await db.from("app_feature_flags").update(nextFlags).eq("id",1);if(error)throw error;
+  const {data:savedFlags,error}=await db.from("app_feature_flags").update(nextFlags).eq("id",1).select("id").maybeSingle();if(error)throw error;if(!savedFlags)throw new Error("تنظیمات ذخیره نشد؛ دسترسی مدیر برای تغییر تنظیمات تأیید نشد. یک‌بار خارج شو و دوباره وارد شو.");
   if(!nextFlags.humor_requires_approval){const {error:publishError}=await db.from("humor_posts").update({status:"approved",reviewed_at:new Date().toISOString()}).eq("status","pending");if(publishError)throw publishError;}
   featureFlags=nextFlags;applyFeatureFlags();await loadAdminHumor();await loadHumorFeed();toast("تنظیمات همتانه ذخیره شد.");
  }catch(x){$("feature-chat-toggle").checked=featureFlags.chat_enabled;$("feature-humor-toggle").checked=featureFlags.humor_enabled;$("feature-humor-approval-toggle").checked=featureFlags.humor_requires_approval;toast(x.message)}
