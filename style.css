@@ -890,3 +890,24 @@ body.light .chat-compose button{
 .avatar-crop-actions button{flex:1;min-height:46px;border-radius:12px}
 .avatar-crop-cancel{background:var(--panel2);border:1px solid var(--line);color:var(--text)}
 .avatar-crop-confirm{font-weight:700}
+
+
+/* Public profile opens as a centered, dismissible WhatsApp-like dialog */
+.public-profile-modal{position:fixed;inset:0;z-index:10040;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(8,16,22,.66);backdrop-filter:blur(7px);animation:profileModalFade .18s ease}
+.public-profile-modal .wa-profile{width:min(100%,560px);max-height:min(88dvh,820px);overflow-y:auto;overscroll-behavior:contain;border:1px solid var(--line);border-radius:24px;box-shadow:0 28px 90px #0006;animation:profileModalRise .22s ease}
+.public-profile-modal .wa-profile-top{position:sticky;top:0;z-index:2}
+.public-profile-modal .wa-profile-back{font-size:28px;display:grid;place-items:center;background:var(--panel);border:1px solid var(--line)}
+.public-profile-modal .wa-profile-hero{padding:28px 18px 22px}
+.public-profile-modal .wa-profile-avatar{width:132px!important;height:132px!important;flex-basis:132px!important}
+.public-profile-modal .wa-profile-info-card{margin:12px 16px}
+.public-profile-modal .wa-profile-posts{padding-bottom:20px}
+@keyframes profileModalFade{from{opacity:0}to{opacity:1}}
+@keyframes profileModalRise{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media(max-width:560px){
+ .public-profile-modal{align-items:flex-end;padding:0}
+ .public-profile-modal .wa-profile{width:100%;max-width:none;max-height:91dvh;border-radius:24px 24px 0 0;border-bottom:0;animation:profileModalSheet .22s ease}
+ .public-profile-modal .wa-profile-hero{padding-top:22px}
+ .public-profile-modal .wa-profile-avatar{width:116px!important;height:116px!important;flex-basis:116px!important}
+ .public-profile-modal .wa-profile-info-card{margin:10px 12px;padding:13px}
+}
+@keyframes profileModalSheet{from{transform:translateY(35px);opacity:.8}to{transform:translateY(0);opacity:1}}
