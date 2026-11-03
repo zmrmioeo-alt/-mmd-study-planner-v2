@@ -460,6 +460,24 @@ function plannerWeekStart(){const d=new Date();d.setHours(0,0,0,0);d.setDate(d.g
 function plannerDateAt(offset){const d=plannerWeekStart();d.setDate(d.getDate()+offset);return d}
 function plannerDateKey(d){return [d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-")}
 function plannerOffsetForDate(d){return Math.round((new Date(d.getFullYear(),d.getMonth(),d.getDate())-plannerWeekStart())/86400000)}
+const plannerDailyRestTotal=60,plannerDailyRestParts=6,plannerDailyRestPart=10;
+function plannerRestIntervals(day,dateKey){
+ const avail=weeklyAvailability[String(day)];if(!avail)return [];
+ const start=plannerLocalDateTime(dateKey,avail.start),end=plannerLocalDateTime(dateKey,avail.end),span=end-start;
+ if(span<plannerDailyRestTotal*60000+plannerDailyRestParts*15*60000)return [];
+ const result=[];
+ for(let i=1;i<=plannerDailyRestParts;i++){
+  let at=new Date(start.getTime()+span*i/(plannerDailyRestParts+1));
+  at.setMinutes(Math.round(at.getMinutes()/5)*5,0,0);
+  const finish=new Date(at.getTime()+plannerDailyRestPart*60000);
+  if(at<start||finish>end)continue;
+  result.push({id:"rest-"+dateKey+"-"+i,rest:true,startDate:at,endDate:finish,date:dateKey,duration:plannerDailyRestPart});
+ }
+ return result;
+}
+function plannerDayOccupancy(day,dateKey,exceptId=null){
+ return [...planEntriesForDate(dateKey,exceptId),...plannerRestIntervals(day,dateKey)].sort((a,b)=>a.startDate-b.startDate);
+}
 function plannerMinutes(value){if(!value)return null;const [h,m]=value.split(":").map(Number);return h*60+m}
 function plannerLocalDateTime(dateKey,time){const [y,m,d]=dateKey.split("-").map(Number),[h,mi]=time.split(":").map(Number);return new Date(y,m-1,d,h,mi,0,0)}
 function plannerTimeLabel(date){return new Intl.DateTimeFormat("fa-IR",{hour:"2-digit",minute:"2-digit"}).format(date)}
@@ -489,11 +507,17 @@ function plannerFindSlot(day,dateKey,duration,exceptId=null){
  const dayStart=plannerLocalDateTime(dateKey,avail.start),dayEnd=plannerLocalDateTime(dateKey,avail.end);
  let cursor=new Date(dayStart);const now=new Date();
  if(dateKey===plannerDateKey(now)&&cursor<now){cursor=new Date(now);cursor.setMinutes(Math.ceil(cursor.getMinutes()/15)*15,0,0)}
- const occupied=planEntriesForDate(dateKey,exceptId);
+ const occupied=plannerDayOccupancy(day,dateKey,exceptId);
  for(const item of occupied){
-  const breakEnd=new Date(cursor.getTime()+duration*60000);
-  const protectedStart=new Date(item.startDate.getTime()-plannerBreakMinutes*60000);
-  if(cursor<item.startDate){if(breakEnd<=protectedStart)break;cursor=new Date(item.endDate.getTime()+plannerBreakMinutes*60000)}else if(cursor<new Date(item.endDate.getTime()+plannerBreakMinutes*60000)){cursor=new Date(item.endDate.getTime()+plannerBreakMinutes*60000)}
+  const buffer=item.rest?0:plannerBreakMinutes;
+  const protectedStart=new Date(item.startDate.getTime()-buffer*60000);
+  if(cursor<item.startDate){
+   const proposedEnd=new Date(cursor.getTime()+duration*60000);
+   if(proposedEnd<=protectedStart)break;
+   cursor=new Date(item.endDate.getTime()+(item.rest?0:plannerBreakMinutes*60000));
+  }else if(cursor<new Date(item.endDate.getTime()+buffer*60000)){
+   cursor=new Date(item.endDate.getTime()+buffer*60000);
+  }
  }
  if(cursor.getTime()+duration*60000>dayEnd.getTime())return null;
  return {start:cursor,end:new Date(cursor.getTime()+duration*60000)};
@@ -539,10 +563,11 @@ function renderWeeklyPlan(){
  const unscheduled=tasks.filter(t=>t.status==="pending"&&(!t.estimated_minutes||(assigned.get(String(t.id))||0)<Number(t.estimated_minutes)));
  const groups=plannerDayOrder.map(day=>{
   const date=plannerDateAt((day-6+7)%7),key=plannerDateKey(date);
-  const dayEntries=valid.filter(p=>p.date===key).sort((a,b)=>new Date(a.start)-new Date(b.start));
+  const dayEntries=[...valid.filter(p=>p.date===key).map(p=>({...p,startDate:new Date(p.start),endDate:new Date(p.end)})),...plannerRestIntervals(day,key)].sort((a,b)=>a.startDate-b.startDate);
   const a=weeklyAvailability[String(day)];
   return '<section class="planner-day" data-plan-drop="'+key+'"><header><b>'+plannerDayNames[day]+'</b><span>'+jalaliDate(date)+'</span><small>'+(a?a.start+" تا "+a.end:"بدون زمان آزاد")+'</small></header><div class="planner-day-items">'+(dayEntries.length?dayEntries.map(p=>{
-   const t=tasksById.get(String(p.task_id)),done=t?.status==="done",start=new Date(p.start),planKey=String(p.id||p.task_id);
+   if(p.rest)return '<article class="planner-task planner-rest"><div class="planner-task-top"><b>استراحت</b><span>'+plannerTimeLabel(p.startDate)+' · '+fa(p.duration)+' دقیقه</span></div><small>زمان استراحت روزانه</small></article>';
+   const t=tasksById.get(String(p.task_id)),done=t?.status==="done",start=p.startDate,planKey=String(p.id||p.task_id);
    const part=p.segment_total>1?' · بخش '+fa(p.segment_index)+' از '+fa(p.segment_total):"";
    return '<article class="planner-task '+(done?"is-done":"")+'" draggable="'+(!done)+'" data-plan-key="'+escapeHtml(planKey)+'"><div class="planner-task-top"><b>'+escapeHtml(t?.title||"کار حذف‌شده")+'</b><span>'+plannerTimeLabel(start)+' · '+fa(p.duration)+' دقیقه'+part+'</span></div><small>مهلت: '+(t?.due_at?jalaliDate(t.due_at,true):"تعیین نشده")+(p.locked?" · جابه‌جایی دستی":"")+'</small><div class="planner-move-controls"><select aria-label="انتقال به روز" data-plan-day="'+escapeHtml(planKey)+'">'+plannerDayOrder.map(d=>{const dt=plannerDateAt((d-6+7)%7),k=plannerDateKey(dt);return '<option value="'+k+'" '+(k===key?"selected":"")+'>'+plannerDayNames[d]+'</option>'}).join("")+'</select><input aria-label="ساعت شروع" type="time" value="'+plannerTimeValue(start)+'" data-plan-time="'+escapeHtml(planKey)+'"><button type="button" class="secondary" data-plan-save="'+escapeHtml(planKey)+'" '+(done?"disabled":"")+'>تغییر زمان</button>'+(p.locked?'<button type="button" class="secondary" data-plan-unlock="'+escapeHtml(planKey)+'">خودکار</button>':"")+'</div></article>';
   }).join(""):'<p class="planner-empty">کاری برای این روز زمان‌بندی نشده است.</p>')+'</div></section>';
@@ -560,11 +585,12 @@ function plannerFindPartialSlot(day,dateKey,remaining,exceptPlanId=null){
  const dayStart=plannerLocalDateTime(dateKey,avail.start),dayEnd=plannerLocalDateTime(dateKey,avail.end);
  let cursor=new Date(dayStart);const now=new Date();
  if(dateKey===todayKey&&cursor<now){cursor=new Date(now);cursor.setMinutes(Math.ceil(cursor.getMinutes()/15)*15,0,0)}
- const occupied=planEntriesForDate(dateKey,exceptPlanId);
+ const occupied=plannerDayOccupancy(day,dateKey,exceptPlanId);
  const makeSlot=gapEnd=>{const gap=Math.floor((gapEnd-cursor)/60000),duration=Math.min(remaining,Math.floor(gap/5)*5);return duration>=5?{start:new Date(cursor),end:new Date(cursor.getTime()+duration*60000),duration}:null};
  for(const item of occupied){
-  if(cursor<item.startDate){const slot=makeSlot(new Date(item.startDate.getTime()-plannerBreakMinutes*60000));if(slot)return slot;cursor=new Date(item.endDate.getTime()+plannerBreakMinutes*60000)}
-  else if(cursor<new Date(item.endDate.getTime()+plannerBreakMinutes*60000))cursor=new Date(item.endDate.getTime()+plannerBreakMinutes*60000);
+  const buffer=item.rest?0:plannerBreakMinutes;
+  if(cursor<item.startDate){const slot=makeSlot(new Date(item.startDate.getTime()-buffer*60000));if(slot)return slot;cursor=new Date(item.endDate.getTime()+buffer*60000)}
+  else if(cursor<new Date(item.endDate.getTime()+buffer*60000))cursor=new Date(item.endDate.getTime()+buffer*60000);
  }
  return makeSlot(dayEnd);
 }
@@ -599,7 +625,7 @@ async function movePlannerTask(planId,dateKey,time){
  const dayStart=plannerLocalDateTime(dateKey,avail.start),dayEnd=plannerLocalDateTime(dateKey,avail.end);
  if(start<dayStart||end>dayEnd){toast("این زمان خارج از ساعت آزاد روز است.");return}
  if(task.due_at&&end>new Date(task.due_at)){toast("این زمان بعد از مهلت تحویل قرار می‌گیرد.");return}
- const conflict=planEntriesForDate(dateKey,planId).some(p=>start<new Date(p.endDate.getTime()+plannerBreakMinutes*60000)&&end>new Date(p.startDate.getTime()-plannerBreakMinutes*60000));
+ const conflict=plannerDayOccupancy(day,dateKey,planId).some(p=>start<new Date(p.endDate.getTime()+(p.rest?0:plannerBreakMinutes)*60000)&&end>new Date(p.startDate.getTime()-(p.rest?0:plannerBreakMinutes)*60000));
  if(conflict){toast("این زمان با کار دیگری تداخل دارد یا فاصله استراحت را رعایت نمی‌کند.");return}
  const updated={...entry,date:dateKey,start:start.toISOString(),end:end.toISOString(),locked:true};
  weeklyPlan=weeklyPlan.map(p=>String(p.id||p.task_id)===String(planId)?updated:p);
