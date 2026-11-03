@@ -951,3 +951,8 @@ body.light .chat-compose button{
 .planner-unscheduled{margin-top:14px;padding:14px;border:1px solid var(--danger);border-radius:14px;background:color-mix(in srgb,var(--danger) 6%,var(--panel))}
 .planner-unscheduled p{margin:8px 0 0;font-size:12px}
 @media(max-width:700px){.planner-hours-grid,.planner-week-grid{grid-template-columns:1fr}.planner-hours-row{grid-template-columns:58px 1fr 1fr}.planner-actions>*{flex:1}.planner-task-top{flex-direction:column;gap:4px}.planner-move-controls{flex-wrap:wrap}.planner-move-controls select{flex:1}.planner-move-controls input{flex:1}.planner-move-controls button{flex:0 0 auto}}
+
+.planner-unscheduled-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px}
+.planner-unscheduled-row p{flex:1 1 220px;margin:0}
+.planner-unscheduled-row input{width:100px;min-height:36px}
+.planner-unscheduled-row button{white-space:nowrap}
