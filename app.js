@@ -150,14 +150,15 @@ function startUpdateMonitor(){
   }catch(e){console.debug("Update check skipped",e)}
  },10*60*1000);
 }
+async function waitForStartup(promise,label,ms=12000){let timer;try{return await Promise.race([promise,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error("زمان دریافت "+label+" بیش از حد طول کشید. اتصال اینترنت را بررسی و دوباره تلاش کنید.")),ms)})])}finally{clearTimeout(timer)}}
 async function enterApp(user){
  if(enteringUserId===user.id)return;enteringUserId=user.id;
  try{
   currentUser=user;show("auth-view",false);show("expired-subscription-view",false);show("app-view",true);$("today-date").textContent=dateLabel();
-  await loadProfile();if(!currentUser)return;
-  await loadFeatureFlags();
+  await waitForStartup(loadProfile(),"اطلاعات حساب");if(!currentUser)return;
+  await waitForStartup(loadFeatureFlags(),"تنظیمات سامانه");
   if(profile?.is_approved===false){show("app-view",false);show("auth-view",false);show("pending-approval-view",true);return;}
-  const startupResults=await Promise.allSettled([loadTasks(),loadRoutines(),loadSettings(),loadAnnouncements(),loadHumorFeed()]);const startupNames=["وظایف","برنامه ثابت","تنظیمات","اطلاعیه‌ها","بخش همتانه"];const startupErrors=startupResults.map((r,i)=>r.status==="rejected"?startupNames[i]+": "+(r.reason?.message||"خطای دریافت اطلاعات"):null).filter(Boolean);if(startupResults[0].status==="rejected")tasks=[];if(startupResults[1].status==="rejected")routines=[];if(startupResults[2].status==="rejected")settings={};if(startupResults[3].status==="rejected")window.__announcements=[];renderAll();syncSmartPlanner();try{startAnnouncementRealtime()}catch(e){console.warn("Announcement realtime unavailable",e)}startMessageRealtime().catch(e=>console.warn("Message realtime unavailable",e));try{startChatRealtime()}catch(e){console.warn("Chat realtime unavailable",e)}checkAppUpdateNotice();startUpdateMonitor();if(startupErrors.length){console.error("Some startup data failed:",startupErrors);toast("برنامه باز شد، اما دریافت بعضی اطلاعات ناموفق بود: "+startupErrors.join(" | "))}
+  const startupResults=await Promise.allSettled([waitForStartup(loadTasks(),"وظایف"),waitForStartup(loadRoutines(),"برنامه ثابت"),waitForStartup(loadSettings(),"تنظیمات شخصی"),waitForStartup(loadAnnouncements(),"اطلاعیه‌ها"),waitForStartup(loadHumorFeed(),"بخش همتانه",7000)]);const startupNames=["وظایف","برنامه ثابت","تنظیمات","اطلاعیه‌ها","بخش همتانه"];const startupErrors=startupResults.map((r,i)=>r.status==="rejected"?startupNames[i]+": "+(r.reason?.message||"خطای دریافت اطلاعات"):null).filter(Boolean);if(startupResults[0].status==="rejected")tasks=[];if(startupResults[1].status==="rejected")routines=[];if(startupResults[2].status==="rejected")settings={};if(startupResults[3].status==="rejected")window.__announcements=[];renderAll();syncSmartPlanner();try{startAnnouncementRealtime()}catch(e){console.warn("Announcement realtime unavailable",e)}startMessageRealtime().catch(e=>console.warn("Message realtime unavailable",e));try{startChatRealtime()}catch(e){console.warn("Chat realtime unavailable",e)}checkAppUpdateNotice();startUpdateMonitor();if(startupErrors.length){console.error("Some startup data failed:",startupErrors);toast("برنامه باز شد، اما دریافت بعضی اطلاعات ناموفق بود: "+startupErrors.join(" | "))}
  }catch(err){console.error("App loading failed:",err);show("app-view",false);show("auth-view",true);show("login-card",true);message("auth-message","خطا در ورود: "+(err.message||"خطای نامشخص"),true);throw err}
  finally{enteringUserId=null}
 }
