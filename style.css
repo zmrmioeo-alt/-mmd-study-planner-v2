@@ -956,3 +956,6 @@ body.light .chat-compose button{
 .planner-unscheduled-row p{flex:1 1 220px;margin:0}
 .planner-unscheduled-row input{width:100px;min-height:36px}
 .planner-unscheduled-row button{white-space:nowrap}
+
+.planner-task.planner-rest{border:1px dashed var(--border-color,#aab2c0);background:var(--surface-muted,rgba(128,128,128,.08));opacity:.9}
+.planner-task.planner-rest .planner-task-top b{font-weight:700}
