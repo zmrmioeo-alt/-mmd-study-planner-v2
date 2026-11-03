@@ -753,3 +753,49 @@ body.light .chat-attach{background:#edf7f1;color:#398363}
 #chat-content.focused-chat .hint,#chat-content.focused-chat #chat-message{display:none}
 #chat-content.focused-chat .chat-back-button{display:inline-flex!important;white-space:nowrap;border-radius:24px;background:#edf7f1;border:0;color:#287b58}
 @media(max-width:600px){#chat-content.focused-chat .chat-heading{padding:10px 12px;min-height:68px}#chat-content.focused-chat .chat-messages{padding:14px 10px}#chat-content.focused-chat .chat-compose{padding:10px;gap:7px}#chat-content.focused-chat .chat-compose button{min-width:65px;padding-inline:12px}#chat-content.focused-chat .chat-attach{font-size:11px;padding:11px 8px}#chat-content.focused-chat .chat-bubble{max-width:88%}}
+
+
+/* MMD: consistent green for primary actions and selected options */
+:root{--action-green:#20b981;--action-green-dark:#159b6b}
+.primary,
+.chat-compose button,
+#send-message,
+#send-chat-message,
+button[data-action="send-message"]{
+  background:linear-gradient(135deg,#20b981,#55d6a2)!important;
+  border:1px solid #1cac7c!important;
+  color:#fff!important;
+  box-shadow:0 7px 18px #20b9812b!important;
+}
+.primary:hover,
+.chat-compose button:hover,
+#send-message:hover,
+#send-chat-message:hover{
+  background:linear-gradient(135deg,#159b6b,#35c58e)!important;
+  filter:none!important;
+}
+.filter.active,
+.filter[aria-pressed="true"],
+.chat-tab.active,
+.chat-thread.active,
+.nav-link.active,
+[aria-selected="true"],
+[aria-checked="true"]{
+  border-color:#20b981!important;
+  background:color-mix(in srgb,#20b981 15%,var(--panel))!important;
+  color:#159b6b!important;
+}
+input[type="checkbox"]:checked,
+input[type="radio"]:checked,
+.task-check:checked{
+  accent-color:#20b981!important;
+}
+button:focus-visible,
+[role="button"]:focus-visible{
+  outline:3px solid #20b98188;
+  outline-offset:2px;
+}
+body.light .primary,
+body.light .chat-compose button{
+  color:#fff!important;
+}
