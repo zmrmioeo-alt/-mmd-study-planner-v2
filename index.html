@@ -159,7 +159,7 @@
         <form id="task-form" class="form-panel">
           <label>عنوان وظیفه<input id="task-title" required maxlength="120" placeholder="مثلاً حل تمرین ریاضی"></label>
           <label>توضیحات<input id="task-description" maxlength="250" placeholder="جزئیات اختیاری"></label>
-          <label>حداکثر زمان موردنیاز (دقیقه)<input id="task-estimated-minutes" type="number" min="5" max="1440" step="5" value="60" required></label>
+          <label>حداکثر زمان موردنیاز (دقیقه)<input id="task-estimated-minutes" type="number" min="5" max="1440" step="5" placeholder="مثلاً ۴۵" required></label>
           <div class="form-row"><label>تاریخ مهلت<input id="task-due-date-jalali" type="text" data-jdp data-jdp-only-date data-jdp-target-value-input="#task-due-date" data-jdp-target-value-type="gregorian" placeholder="انتخاب تاریخ شمسی" autocomplete="off" aria-label="انتخاب تاریخ مهلت"><input id="task-due-date" type="hidden"></label><label>ساعت مهلت<input id="task-due-time" type="time"></label><label>اولویت<select id="task-priority"><option value="normal">معمولی</option><option value="high">زیاد</option><option value="low">کم</option></select></label></div>
           <button class="primary" type="submit">ثبت وظیفه</button>
         </form>
