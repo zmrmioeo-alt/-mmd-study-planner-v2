@@ -274,7 +274,7 @@ $("support-chat-search")?.addEventListener("input",e=>{const q=e.target.value.tr
 $("support-inbox-list")?.addEventListener("click",async e=>{const b=e.target.closest("[data-support-user]");if(!b)return;supportChatTargetUserId=b.dataset.supportUser;try{await loadAdminSupportChat()}catch(x){message("support-chat-message",x.message,true)}});
 $("support-chat-form")?.addEventListener("submit",async e=>{e.preventDefault();const body=$("support-chat-input").value.trim(),file=$("support-chat-file")?.files?.[0];if((!body&&!file)||!supportChatTargetUserId)return;try{let media_path=null,media_type=null;if(file){if(file.size>52428800)throw Error("حداکثر حجم فایل ۵۰ مگابایت است.");media_path=currentUser.id+"/"+crypto.randomUUID()+"-"+file.name.replace(/[^a-zA-Z0-9._-]/g,"_");const up=await db.storage.from("private-chat-media").upload(media_path,file,{contentType:file.type||"application/octet-stream"});if(up.error)throw up.error;media_type=file.type||"application/octet-stream"}const r=await db.from("support_messages").insert({user_id:supportChatTargetUserId,sender_id:currentUser.id,body,media_path,media_type});if(r.error)throw r.error;$("support-chat-input").value="";$("support-chat-file").value="";await loadAdminSupportChat()}catch(x){message("support-chat-message",x.message,true)}});
 document.querySelectorAll("[data-chat-tab]").forEach(b=>b.addEventListener("click",async()=>{activeChatTab=b.dataset.chatTab;document.querySelectorAll("[data-chat-tab]").forEach(x=>x.classList.toggle("active",x===b));show("support-chat-content",activeChatTab==="support");show("chat-content",activeChatTab==="users");try{if(activeChatTab==="support")await loadAdminSupportChat();else await loadSupportChat()}catch(x){message(activeChatTab==="support"?"support-chat-message":"chat-message",x.message,true)}}));
-async function chatProfileMeta(p){const grade=p.account_type==="teacher"?"معلم":(p.school_grade||"پایه نامشخص");return grade+(p.school_class?" · کلاس "+p.school_class:"")}
+function chatProfileMeta(p){const grade=p.account_type==="teacher"?"معلم":(p.school_grade||"پایه نامشخص");return grade+(p.school_class?" · کلاس "+p.school_class:"")}
 function renderChatDirectory(){
  const list=$("chat-directory-list");if(!list)return;
  const users=(window.__chatProfiles||[]).filter(p=>p.id!==currentUser.id);
@@ -296,9 +296,16 @@ async function startChatWithUser(userId){
  const p=(window.__chatProfiles||[]).find(x=>x.id===userId);if(!p)return;
  if(p.chat_enabled===false){toast("امکان چت با این کاربر غیرفعال است.");return}
  if(profile?.is_admin){supportChatTargetUserId=userId;activeChatTab="support";document.querySelectorAll("[data-chat-tab]").forEach(x=>x.classList.toggle("active",x.dataset.chatTab==="support"));show("chat-content",false);show("support-chat-content",true);await loadAdminSupportChat();return}
- chatTargetUserId=userId;$("chat-directory-view").classList.add("hidden");$("chat-public-profile-view").classList.add("hidden");document.querySelectorAll("#chat-content > .chat-inbox").forEach(x=>x.classList.add("hidden"));document.querySelectorAll("#chat-content > .chat-window").forEach(x=>x.classList.remove("hidden"));await loadSupportChat();
+ activeChatTab="users";document.querySelectorAll("[data-chat-tab]").forEach(x=>x.classList.toggle("active",x.dataset.chatTab==="users"));
+ show("support-chat-content",false);show("chat-content",true);
+ $("chat-directory-view").classList.add("hidden");$("chat-public-profile-view").classList.add("hidden");
+ document.querySelectorAll("#chat-content > .chat-inbox").forEach(x=>x.classList.add("hidden"));
+ document.querySelectorAll("#chat-content > .chat-window").forEach(x=>x.classList.remove("hidden"));
+ chatTargetUserId=userId;
+ await loadSupportChat();
+ $("chat-back-to-list")?.classList.remove("hidden");
 }
-$("chat-back-to-list")?.addEventListener("click",()=>{chatTargetUserId=null;$("chat-back-to-list").classList.add("hidden");document.querySelectorAll("#chat-content > .chat-inbox").forEach(x=>x.classList.remove("hidden"));document.querySelectorAll("#chat-content > .chat-window").forEach(x=>x.classList.remove("hidden"));$("chat-heading-title").textContent="یک کاربر را انتخاب کنید";$("chat-peer-name").textContent="یک کاربر را انتخاب کنید";$("chat-messages").innerHTML="برای شروع یک گفت‌وگو، یکی از کاربران را انتخاب کنید."});
+$("chat-back-to-list")?.addEventListener("click",()=>{chatTargetUserId=null;chatPeerId=null;$("chat-back-to-list").classList.add("hidden");$("chat-directory-view").classList.add("hidden");$("chat-public-profile-view").classList.add("hidden");document.querySelectorAll("#chat-content > .chat-inbox").forEach(x=>x.classList.remove("hidden"));document.querySelectorAll("#chat-content > .chat-window").forEach(x=>x.classList.add("hidden"));$("chat-heading-title").textContent="یک کاربر را انتخاب کنید";$("chat-peer-name").textContent="یک کاربر را انتخاب کنید";$("chat-peer-meta").textContent="گفت‌وگوی خصوصی بین دو کاربر";$("chat-peer-status").textContent="وضعیت نامشخص";$("chat-messages").innerHTML='<div class="empty">برای شروع، یک گفت‌وگو را انتخاب کنید.</div>'});
 $("chat-find-user")?.addEventListener("click",showChatDirectory);
 $("chat-directory-back")?.addEventListener("click",()=>{$("chat-directory-view").classList.add("hidden");document.querySelectorAll("#chat-content > .chat-inbox,#chat-content > .chat-window").forEach(x=>x.classList.remove("hidden"))});
 $("chat-profile-back")?.addEventListener("click",()=>{$("chat-public-profile-view").classList.add("hidden");$("chat-directory-view").classList.remove("hidden")});
