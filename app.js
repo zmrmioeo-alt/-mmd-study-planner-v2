@@ -492,8 +492,7 @@ function plannerFindSlot(day,dateKey,duration,exceptId=null){
  for(const item of occupied){
   const breakEnd=new Date(cursor.getTime()+duration*60000);
   const protectedStart=new Date(item.startDate.getTime()-plannerBreakMinutes*60000);
-  if(breakEnd<=protectedStart)break;
-  if(cursor<item.endDate)cursor=new Date(item.endDate.getTime()+plannerBreakMinutes*60000);
+  if(cursor<item.startDate){if(breakEnd<=protectedStart)break;cursor=new Date(item.endDate.getTime()+plannerBreakMinutes*60000)}else if(cursor<new Date(item.endDate.getTime()+plannerBreakMinutes*60000)){cursor=new Date(item.endDate.getTime()+plannerBreakMinutes*60000)}
  }
  if(cursor.getTime()+duration*60000>dayEnd.getTime())return null;
  return {start:cursor,end:new Date(cursor.getTime()+duration*60000)};
@@ -595,8 +594,8 @@ document.addEventListener("click",async e=>{
  const unlock=e.target.closest("[data-plan-unlock]");
  if(unlock){const id=unlock.dataset.planUnlock,t=planTaskById(id);if(!t)return;const {error}=await db.from("study_tasks").update({schedule_locked:false}).eq("id",id).eq("user_id",currentUser.id);if(error){toast(error.message);return}t.schedule_locked=false;weeklyPlan=weeklyPlan.filter(p=>String(p.task_id)!==String(id));await generateWeeklyPlan(true);toast("این کار دوباره به زمان‌بندی خودکار برگشت.");return}
  const durationSave=e.target.closest("[data-plan-duration-save]");
- if(durationSave){const id=durationSave.dataset.planDurationSave,value=Number($("[data-plan-duration='"+id+"']")?.value);if(!Number.isInteger(value)||value<5||value>1440){toast("مدت‌زمان باید بین ۵ تا ۱۴۴۰ دقیقه باشد.");return}const {error}=await db.from("study_tasks").update({estimated_minutes:value}).eq("id",id).eq("user_id",currentUser.id);if(error){toast(error.message);return}const t=planTaskById(id);if(t)t.estimated_minutes=value;await generateWeeklyPlan(true);return}
- const b=e.target.closest("[data-plan-save]");if(!b)return;const id=b.dataset.planSave,date=$("[data-plan-day='"+id+"']")?.value,time=$("[data-plan-time='"+id+"']")?.value;if(!date||!time)return;await movePlannerTask(id,date,time)
+ if(durationSave){const id=durationSave.dataset.planDurationSave,value=Number(document.querySelector("[data-plan-duration='"+id+"']")?.value);if(!Number.isInteger(value)||value<5||value>1440){toast("مدت‌زمان باید بین ۵ تا ۱۴۴۰ دقیقه باشد.");return}const {error}=await db.from("study_tasks").update({estimated_minutes:value}).eq("id",id).eq("user_id",currentUser.id);if(error){toast(error.message);return}const t=planTaskById(id);if(t)t.estimated_minutes=value;await generateWeeklyPlan(true);return}
+ const b=e.target.closest("[data-plan-save]");if(!b)return;const id=b.dataset.planSave,date=document.querySelector("[data-plan-day='"+id+"']")?.value,time=document.querySelector("[data-plan-time='"+id+"']")?.value;if(!date||!time)return;await movePlannerTask(id,date,time)
 });
 
 $("settings-form").addEventListener("submit",async e=>{e.preventDefault();const row={user_id:currentUser.id,sleep_hours:$("sleep-hours").value?Number($("sleep-hours").value):null,wake_time:$("wake-time").value||null,theme:$("appearance").value,accent_theme:$("accent-theme").value,appearance:$("appearance").value,season_theme:$("season-theme").value,humor_enabled:$("humor-enabled").checked};const {error}=await db.from("planner_settings").upsert(row,{onConflict:"user_id"});if(error){toast(error.message);return}settings=row;profile.display_name=$("display-name").value.trim()||"کاربر";const {error:pe}=await db.from("profiles").update({display_name:profile.display_name}).eq("id",currentUser.id);if(pe){toast(pe.message);return} $("user-name").textContent=profile.display_name;$("user-avatar").textContent="👤";applyTheme(row.accent_theme,row.appearance,row.season_theme);updateHumor();toast("تنظیمات ذخیره شد.")});
