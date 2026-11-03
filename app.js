@@ -277,10 +277,10 @@ function startCommunityRealtime(){stopCommunityRealtime();communityChannel=db.ch
 let chatOnlineUsers=new Set();let chatPeerId=null;
 function updateChatPresence(){const x=$("chat-peer-status");if(x&&chatPeerId)x.textContent=chatOnlineUsers.has(chatPeerId)?"آنلاین":"آفلاین";document.querySelectorAll("[data-online-user]").forEach(n=>n.textContent=chatOnlineUsers.has(n.dataset.onlineUser)?"آنلاین":"آفلاین")}
 function startChatRealtime(){stopChatRealtime();chatChannel=db.channel("private-chat",{config:{presence:{key:currentUser.id}}}).on("presence",{event:"sync"},()=>{const p=chatChannel.presenceState();chatOnlineUsers=new Set(Object.values(p).flat().map(v=>v.user_id));updateChatPresence()}).on("postgres_changes",{event:"*",schema:"public",table:"private_messages"},()=>{if(!$("page-chat").classList.contains("hidden")&&!$("chat-content").classList.contains("hidden"))loadSupportChat().catch(e=>message("chat-message",e.message,true))}).subscribe(async status=>{if(status==="SUBSCRIBED")await chatChannel.track({user_id:currentUser.id,online_at:new Date().toISOString()})})}
-function chatProfileMeta(p){const grade=p.account_type==="teacher"?"معلم":(p.school_grade||"پایه نامشخص");return grade+(p.school_class?" · کلاس "+p.school_class:"")}
+function chatProfileMeta(p){if(!p)return "پایه نامشخص";const grade=p.account_type==="teacher"?"معلم":(p.school_grade||"پایه نامشخص");return grade+(p.school_class?" · کلاس "+p.school_class:"")}
 function renderChatDirectory(){
  const list=$("chat-directory-list");if(!list)return;
- const users=(window.__chatProfiles||[]).filter(p=>p.id!==currentUser.id);
+ const users=(window.__chatProfiles||[]).filter(p=>p&&p.id!==currentUser.id);
  list.innerHTML=users.map(p=>{const avatar=p.avatar_path?'<img src="'+escapeHtml(db.storage.from("profile-avatars").getPublicUrl(p.avatar_path).data.publicUrl)+'" alt="">':"👤";return '<button type="button" class="chat-directory-user" data-directory-user="'+p.id+'"><span class="chat-directory-avatar">'+avatar+'</span><span><b>'+escapeHtml(p.display_name||"کاربر")+'</b><small>'+escapeHtml(chatProfileMeta(p))+'</small></span></button>'}).join("")||'<div class="empty">کاربر دیگری ثبت‌نام نکرده است.</div>';
 }
 function showChatDirectory(){
