@@ -657,3 +657,17 @@ body.light .stat-card,body.light .form-panel,body.light .settings-block,body.lig
 .chat-tabs{display:flex;gap:8px;margin:0 0 16px;padding:5px;border:1px solid var(--line);border-radius:16px;background:var(--panel2);width:max-content;max-width:100%}.chat-tab{border:0;border-radius:12px;padding:11px 20px;background:transparent;color:var(--muted);font-weight:800;cursor:pointer}.chat-tab.active{background:var(--accent);color:#fff;box-shadow:0 5px 14px color-mix(in srgb,var(--accent) 25%,transparent)}.chat-thread small{display:block;max-width:210px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.chat-thread.active{background:color-mix(in srgb,var(--accent) 12%,var(--panel));border-color:color-mix(in srgb,var(--accent) 40%,var(--line))}@media(max-width:560px){.chat-tabs{width:100%}.chat-tab{flex:1;padding:10px 8px}}
 
 .chat-file-link{display:inline-flex;align-items:center;gap:8px;padding:10px 13px;margin:6px 0;border-radius:12px;background:color-mix(in srgb,var(--accent) 12%,var(--panel));color:var(--accent);font-weight:800;text-decoration:none}.chat-bubble img,.chat-bubble video{display:block;margin:7px 0;object-fit:contain}.chat-compose .chat-attach{white-space:nowrap;cursor:pointer}
+
+/* Chat user directory and public profile */
+.chat-inbox-title{display:grid;gap:10px}.chat-inbox-title .primary{width:100%;padding:10px 12px;font-size:12px}
+.chat-directory-view,.chat-public-profile-view{grid-column:1/-1;padding:20px;min-width:0}
+.chat-directory-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;margin-top:16px}
+.chat-directory-user{display:flex;align-items:center;gap:12px;text-align:right;padding:14px;border:1px solid var(--line);border-radius:16px;background:var(--panel2);color:var(--text);cursor:pointer;min-width:0}
+.chat-directory-user:hover{border-color:var(--accent);transform:translateY(-1px)}
+.chat-directory-avatar,.chat-public-avatar{width:48px;height:48px;flex:0 0 48px;display:grid;place-items:center;border-radius:50%;background:color-mix(in srgb,var(--accent) 15%,var(--panel));font-size:22px;overflow:hidden}
+.chat-directory-avatar img,.chat-public-avatar img{width:100%;height:100%;object-fit:cover}
+.chat-directory-user span{display:grid;gap:5px;min-width:0}.chat-directory-user b,.chat-directory-user small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.chat-directory-user small{color:var(--muted);font-size:11px}
+.chat-public-profile-card{max-width:620px;margin:22px auto;padding:26px;border:1px solid var(--line);border-radius:22px;background:var(--panel);text-align:center}
+.chat-public-avatar{width:86px;height:86px;margin:0 auto 14px;font-size:34px}
+.chat-public-profile-card h3{margin:8px 0}.chat-public-profile-card p{color:var(--muted);line-height:1.9}.chat-public-profile-details{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:14px 0 20px}.chat-public-profile-details span{padding:7px 11px;border-radius:20px;background:var(--panel2);font-size:12px}
+@media(max-width:560px){.chat-directory-view,.chat-public-profile-view{padding:12px}.chat-directory-grid{grid-template-columns:1fr}.chat-public-profile-card{padding:20px}}
