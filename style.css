@@ -920,3 +920,34 @@ body.light .chat-compose button{
 .switch-dialog-actions{display:flex;gap:10px;justify-content:flex-end}
 #switch-account-btn{white-space:nowrap;align-self:center}
 @media(max-width:560px){.switch-dialog-card{padding:19px}.switch-dialog-actions button{flex:1}#switch-account-btn{font-size:11px;padding:9px 11px}}
+
+
+/* MMD weekly scheduler */
+.planner-availability-panel{margin-bottom:16px}
+.planner-hours-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.planner-hours-row{display:grid;grid-template-columns:65px 1fr 1fr;align-items:end;gap:8px;padding:10px;border:1px solid var(--line);border-radius:13px;background:var(--panel2)}
+.planner-hours-row>b{align-self:center}
+.planner-hours-row label{font-size:11px;color:var(--muted)}
+.planner-hours-row input{min-width:0;width:100%;margin-top:5px}
+.planner-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.planner-week-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.planner-day{min-width:0;padding:13px;border:1px solid var(--line);border-radius:16px;background:var(--panel);transition:border-color .15s,background .15s}
+.planner-day.drag-over{border:2px dashed var(--accent);background:color-mix(in srgb,var(--accent) 9%,var(--panel))}
+.planner-day>header{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.planner-day>header span,.planner-day>header small{font-size:11px;color:var(--muted)}
+.planner-day>header small{margin-right:auto}
+.planner-day-items{display:grid;gap:9px;padding-top:10px;min-height:48px}
+.planner-task{padding:11px;border-radius:12px;background:var(--panel2);border:1px solid var(--line);cursor:grab}
+.planner-task:active{cursor:grabbing}
+.planner-task.is-done{opacity:.65;border-style:dashed}
+.planner-task-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.planner-task-top b{font-size:13px}
+.planner-task-top span,.planner-task>small{font-size:11px;color:var(--muted);white-space:nowrap}
+.planner-task>small{display:block;margin-top:6px;white-space:normal}
+.planner-move-controls{display:flex;gap:6px;align-items:center;margin-top:10px}
+.planner-move-controls select,.planner-move-controls input{min-width:0;width:100%;height:35px;padding:4px 7px;font-size:11px}
+.planner-move-controls button{white-space:nowrap;padding:7px 9px;font-size:11px}
+.planner-empty{font-size:12px;color:var(--muted);text-align:center;padding:10px}
+.planner-unscheduled{margin-top:14px;padding:14px;border:1px solid var(--danger);border-radius:14px;background:color-mix(in srgb,var(--danger) 6%,var(--panel))}
+.planner-unscheduled p{margin:8px 0 0;font-size:12px}
+@media(max-width:700px){.planner-hours-grid,.planner-week-grid{grid-template-columns:1fr}.planner-hours-row{grid-template-columns:58px 1fr 1fr}.planner-actions>*{flex:1}.planner-task-top{flex-direction:column;gap:4px}.planner-move-controls{flex-wrap:wrap}.planner-move-controls select{flex:1}.planner-move-controls input{flex:1}.planner-move-controls button{flex:0 0 auto}}
