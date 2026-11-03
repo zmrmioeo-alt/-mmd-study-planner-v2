@@ -479,12 +479,52 @@ async function loadHumorFeed(){
  if(!q.data?.length)feed.textContent="هنوز مطلبی منتشر نشده است.";
 }
 async function openPublicProfile(id){
- const q=await db.from("profiles").select("id,display_name,bio,avatar_path,school_grade,school_class,account_type").eq("id",id).maybeSingle();if(q.error)throw q.error;if(!q.data)return;
- const p=q.data,posts=await db.from("humor_posts").select("title,body").eq("user_id",id).eq("status","approved").order("created_at",{ascending:false});if(posts.error)throw posts.error;
- const root=$("public-profile-content");root.innerHTML="";const h=document.createElement("h2");h.textContent=p.display_name||"کاربر";root.append(h);const bio=document.createElement("p");bio.textContent=p.bio||"توضیحی ثبت نشده است.";root.append(bio);const school=document.createElement("p");school.className="school-profile-badge";school.textContent=schoolProfileLabel(p)||"پایه یا کلاس ثبت نشده";root.append(school);
- if(p.avatar_path){const img=document.createElement("img");img.src=db.storage.from("profile-avatars").getPublicUrl(p.avatar_path).data.publicUrl;img.style.width="110px";img.style.borderRadius="50%";root.prepend(img)}
- const heading=document.createElement("h3");heading.textContent="مطالب منتشرشده";root.append(heading);for(const x of posts.data||[]){const card=document.createElement("article");card.className="form-panel";const t=document.createElement("h3");t.textContent=x.title;const b=document.createElement("p");b.textContent=x.body||"";card.append(t,b);root.append(card)}
- navigate("public-profile");
+ if(!id||id===currentUser?.id){navigate("profile");return}
+ const q=await db.from("profiles").select("id,display_name,bio,avatar_path,school_grade,school_class,account_type,profile_color,chat_enabled").eq("id",id).maybeSingle();
+ if(q.error)throw q.error;if(!q.data)return;
+ const p=q.data;
+ const posts=await db.from("humor_posts").select("id,title,body,media_path,media_type,created_at").eq("user_id",id).eq("status","approved").order("created_at",{ascending:false}).limit(8);
+ if(posts.error)throw posts.error;
+ const root=$("public-profile-content");root.innerHTML="";
+ const shell=document.createElement("div");shell.className="wa-profile";
+ const top=document.createElement("div");top.className="wa-profile-top";
+ const back=document.createElement("button");back.type="button";back.className="wa-profile-back";back.textContent="‹";back.setAttribute("aria-label","بازگشت");back.addEventListener("click",()=>navigate("humor"));
+ const topTitle=document.createElement("span");topTitle.textContent="اطلاعات کاربر";
+ top.append(back,topTitle);shell.append(top);
+ const hero=document.createElement("section");hero.className="wa-profile-hero";
+ const avatarWrap=document.createElement("div");avatarWrap.className="wa-profile-avatar";
+ if(p.avatar_path){const img=document.createElement("img");img.src=db.storage.from("profile-avatars").getPublicUrl(p.avatar_path).data.publicUrl+"?v="+Date.now();img.alt="تصویر پروفایل";avatarWrap.append(img)}else avatarWrap.textContent="👤";
+ const name=document.createElement("h2");name.textContent=p.display_name||"کاربر";
+ const type=document.createElement("p");type.className="wa-profile-type";type.textContent=p.account_type==="teacher"?"معلم":"دانش‌آموز";
+ hero.append(avatarWrap,name,type);shell.append(hero);
+ const actions=document.createElement("div");actions.className="wa-profile-actions";
+ const chat=document.createElement("button");chat.type="button";chat.className="primary";chat.textContent=p.chat_enabled===false?"چت غیرفعال است":"✉ پیام دادن";chat.disabled=p.chat_enabled===false;
+ chat.addEventListener("click",()=>{navigate("chat");startChatWithUser(id).catch(e=>toast(e.message))});
+ actions.append(chat);shell.append(actions);
+ const about=document.createElement("section");about.className="wa-profile-info-card";
+ const aboutLabel=document.createElement("small");aboutLabel.textContent="درباره";
+ const aboutText=document.createElement("p");aboutText.textContent=p.bio||"این کاربر هنوز توضیحی برای پروفایل خود ثبت نکرده است.";
+ about.append(aboutLabel,aboutText);shell.append(about);
+ const info=document.createElement("section");info.className="wa-profile-info-card";
+ const infoTitle=document.createElement("small");infoTitle.textContent="اطلاعات";
+ info.append(infoTitle);
+ const addInfo=(label,value)=>{const row=document.createElement("div");row.className="wa-profile-info-row";const k=document.createElement("span");k.textContent=label;const val=document.createElement("b");val.textContent=value||"ثبت نشده";row.append(k,val);info.append(row)};
+ addInfo("نوع حساب",p.account_type==="teacher"?"معلم":"دانش‌آموز");
+ addInfo("پایه",p.account_type==="teacher"?"—":(p.school_grade||"ثبت نشده"));
+ addInfo("کلاس",p.school_class||"ثبت نشده");
+ shell.append(info);
+ const postSection=document.createElement("section");postSection.className="wa-profile-posts";
+ const postHead=document.createElement("h3");postHead.textContent="مطالب منتشرشده";postSection.append(postHead);
+ if(!posts.data?.length){const empty=document.createElement("p");empty.className="wa-profile-empty";empty.textContent="هنوز مطلبی منتشر نکرده است.";postSection.append(empty)}
+ for(const post of posts.data||[]){
+  const card=document.createElement("article");card.className="wa-profile-post";
+  const title=document.createElement("h4");title.textContent=post.title||"بدون عنوان";
+  const body=document.createElement("p");body.textContent=post.body||"";
+  card.append(title,body);
+  if(post.media_path){const media=document.createElement("small");media.className="wa-profile-media-note";media.textContent=post.media_type?.startsWith("video/")?"🎬 ویدئو":"🖼 تصویر";card.append(media)}
+  const date=document.createElement("small");date.textContent=new Intl.DateTimeFormat("fa-IR",{dateStyle:"medium"}).format(new Date(post.created_at));card.append(date);postSection.append(card);
+ }
+ shell.append(postSection);root.append(shell);navigate("public-profile");
 }
 $("profile-photo").addEventListener("change",async e=>{const file=e.target.files?.[0];if(!file)return;const input=e.target;input.disabled=true;message("profile-message","در حال بارگذاری تصویر...");try{const compressed=await compressUploadFile(file,{image:{maxBytes:1048576,maxSide:1600}});if(!currentUser?.id)throw new Error("نشست کاربری معتبر نیست؛ دوباره وارد شوید.");const mime=({"image/jpeg":"jpg","image/png":"png","image/webp":"webp"})[file.type];if(!mime)throw new Error("فرمت عکس پشتیبانی نمی‌شود. فقط JPG، PNG یا WebP انتخاب کنید.");const path=currentUser.id+"/"+makeUUID()+".jpg";const up=await db.storage.from("profile-avatars").upload(path,compressed,{contentType:compressed.type,cacheControl:"3600",upsert:false});if(up.error)throw new Error("خطای فضای ذخیره‌سازی: "+up.error.message);const saved=await db.from("profiles").update({avatar_path:path}).eq("id",currentUser.id).select("id,avatar_path").maybeSingle();if(saved.error){await db.storage.from("profile-avatars").remove([path]);throw new Error("فایل بارگذاری شد، اما ثبت پروفایل ناموفق بود: "+saved.error.message)}if(!saved.data)throw new Error("پروفایل به‌روزرسانی نشد؛ دوباره وارد حساب شوید.");const oldPath=profile.avatar_path;profile.avatar_path=path;const url=db.storage.from("profile-avatars").getPublicUrl(path).data.publicUrl+"?v="+Date.now();$("profile-preview-avatar").innerHTML='<img src="'+url+'" alt="تصویر پروفایل">';$("user-avatar").innerHTML='<img src="'+url+'" alt="">';if(oldPath)db.storage.from("profile-avatars").remove([oldPath]).then(({error})=>{if(error)console.warn("Old avatar cleanup failed",error)});message("profile-message","تصویر پروفایل با موفقیت تغییر کرد.")}catch(err){console.error("Avatar upload failed",err);message("profile-message","بارگذاری تصویر ناموفق بود: "+(err.message||"خطای نامشخص"),true)}finally{input.value="";input.disabled=false}});
 $("remove-profile-photo").addEventListener("click",async()=>{if(!profile?.avatar_path){toast("تصویر جداگانه‌ای برای حذف وجود ندارد.");return}const btn=$("remove-profile-photo");btn.disabled=true;message("profile-message","در حال حذف تصویر...");try{const oldPath=profile.avatar_path;const {data,error}=await db.from("profiles").update({avatar_path:null}).eq("id",currentUser.id).select("id").maybeSingle();if(error)throw error;if(!data)throw new Error("حذف تصویر از پروفایل انجام نشد.");profile.avatar_path=null;$("profile-preview-avatar").textContent="👤";$("user-avatar").textContent="👤";const rm=await db.storage.from("profile-avatars").remove([oldPath]);if(rm.error)console.warn("Avatar file cleanup failed",rm.error);message("profile-message","تصویر پروفایل حذف شد.")}catch(err){console.error("Avatar removal failed",err);message("profile-message","حذف تصویر ناموفق بود: "+err.message,true)}finally{btn.disabled=false}});
