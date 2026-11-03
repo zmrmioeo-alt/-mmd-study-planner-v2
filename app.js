@@ -65,6 +65,7 @@ $("accept-terms").addEventListener("click",async()=>{
  catch(err){console.error(err);message("terms-message","ذخیره تأیید قوانین ممکن نشد. تنظیمات مرورگر را بررسی کنید.",true)}
 });
 async function boot(){
+ setupPersonalSwitcher();
  if("serviceWorker" in navigator){navigator.serviceWorker.register("./service-worker.js").catch(err=>console.warn("Service worker unavailable",err));}
  if(localStorage.getItem("mmd_terms_accepted")!=="mmd-terms-2026-11-v3"){show("terms-view",true);show("auth-view",false);show("app-view",false);return}
  db.auth.onAuthStateChange((event)=>{if(event==="SIGNED_OUT"){currentUser=null;profile=null;show("app-view",false);show("expired-subscription-view",false);show("banned-account-view",false);show("auth-view",true)}});
@@ -88,6 +89,76 @@ document.addEventListener("click",e=>{if(!e.target.closest(".sidebar")){const si
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){document.querySelector(".sidebar")?.classList.remove("menu-open");$("mobile-menu-toggle")?.classList.remove("is-open");$("mobile-menu-toggle")?.setAttribute("aria-expanded","false")}});
 $("main-nav").addEventListener("click",e=>{if(e.target.closest("[data-page],#logout-btn")){document.querySelector(".sidebar")?.classList.remove("menu-open");$("mobile-menu-toggle")?.classList.remove("is-open");$("mobile-menu-toggle")?.setAttribute("aria-expanded","false")}});
 $("logout-btn").addEventListener("click",async()=>{if(!confirm("مطمئنی می‌خواهی از حساب خارج شوی؟"))return;const {error}=await db.auth.signOut();if(error)toast("خروج انجام نشد: "+error.message);});
+// Personal account switcher: available only to the owner's admin account and the owner's second account.
+const PERSONAL_ADMIN_ID="d32c5ceb-ca91-46c8-978c-fb3d33c45eca";
+const PERSONAL_SECOND_ID="17b4aa61-7b56-4f05-a1b7-871eb5df40db";
+const PERSONAL_ADMIN_SLOT="mmd_personal_switch_admin_v1";
+const PERSONAL_SECOND_SLOT="mmd_personal_switch_second_v1";
+function personalSlotFor(id){return id===PERSONAL_ADMIN_ID?PERSONAL_ADMIN_SLOT:id===PERSONAL_SECOND_ID?PERSONAL_SECOND_SLOT:null}
+function readPersonalSession(slot){try{return JSON.parse(localStorage.getItem(slot)||"null")}catch(_){return null}}
+async function saveCurrentPersonalSession(){
+ const {data:{session}}=await db.auth.getSession();if(!session)return;
+ const slot=personalSlotFor(session.user.id);if(slot)localStorage.setItem(slot,JSON.stringify(session));
+}
+function addPersonalSwitchDialog(){
+ if($("personal-switch-dialog"))return $("personal-switch-dialog");
+ const wrap=document.createElement("div");wrap.id="personal-switch-dialog";wrap.className="switch-dialog hidden";
+ wrap.innerHTML='<form id="personal-switch-form" class="switch-dialog-card"><h3>افزودن حساب دوم</h3><p>شناسه ورود و رمز حساب «سید محمد امین ابطحی» را فقط یک‌بار در همین دستگاه وارد کن. رمز ذخیره نمی‌شود؛ فقط نشست ورود نگهداری می‌شود.</p><label>شناسه ورود<input id="personal-switch-identifier" autocomplete="username" required></label><label>رمز عبور<input id="personal-switch-password" type="password" autocomplete="current-password" required></label><div class="switch-dialog-actions"><button type="button" class="secondary" id="personal-switch-cancel">انصراف</button><button type="submit" class="primary" id="personal-switch-save">ذخیره و تعویض حساب</button></div><p id="personal-switch-message" class="message"></p></form>';
+ document.body.append(wrap);
+ wrap.addEventListener("click",e=>{if(e.target===wrap)wrap.classList.add("hidden")});
+ $("personal-switch-cancel").addEventListener("click",()=>wrap.classList.add("hidden"));
+ $("personal-switch-form").addEventListener("submit",async e=>{
+  e.preventDefault();const b=$("personal-switch-save");b.disabled=true;$("personal-switch-message").textContent="در حال بررسی حساب...";
+  try{
+   const {data:{session:primary}}=await db.auth.getSession();if(!primary||primary.user.id!==PERSONAL_ADMIN_ID)throw new Error("ابتدا باید با حساب مدیر اصلی وارد شوی.");
+   localStorage.setItem(PERSONAL_ADMIN_SLOT,JSON.stringify(primary));
+   const entered=await passwordLogin($("personal-switch-identifier").value.trim(),$("personal-switch-password").value);
+   if(entered.id!==PERSONAL_SECOND_ID)throw new Error("این شناسه متعلق به حساب «سید محمد امین ابطحی» نیست.");
+   const {data:{session:second}}=await db.auth.getSession();if(!second)throw new Error("نشست حساب دوم ساخته نشد.");
+   const {data:secondProfile,error:profileError}=await db.from("profiles").select("id,display_name").eq("id",PERSONAL_SECOND_ID).maybeSingle();
+   if(profileError)throw profileError;
+   if(!secondProfile||secondProfile.display_name!=="سید محمد امین ابطحی")throw new Error("مشخصات حساب دوم با نام اعلام‌شده مطابقت ندارد.");
+   localStorage.setItem(PERSONAL_SECOND_SLOT,JSON.stringify(second));
+   $("personal-switch-password").value="";wrap.classList.add("hidden");await enterApp(entered);
+  }catch(err){
+   const current=readPersonalSession(PERSONAL_ADMIN_SLOT);
+   if(current?.access_token&&current?.refresh_token)await db.auth.setSession({access_token:current.access_token,refresh_token:current.refresh_token}).catch(()=>{});
+   $("personal-switch-message").textContent=err.message||"افزودن حساب انجام نشد.";
+  }finally{b.disabled=false}
+ });
+ return wrap;
+}
+async function switchPersonalAccount(targetId){
+ const slot=personalSlotFor(targetId);if(!slot)return;
+ await saveCurrentPersonalSession();
+ const saved=readPersonalSession(slot);
+ if(!saved?.access_token||!saved?.refresh_token){
+  if(targetId===PERSONAL_SECOND_ID&&currentUser?.id===PERSONAL_ADMIN_ID){addPersonalSwitchDialog().classList.remove("hidden");$("personal-switch-identifier").focus();return}
+  toast("نشست این حساب روی دستگاه ذخیره نشده است.");return;
+ }
+ try{
+  const {data,error}=await db.auth.setSession({access_token:saved.access_token,refresh_token:saved.refresh_token});
+  if(error)throw error;
+  if(!data.user||data.user.id!==targetId)throw new Error("حساب ذخیره‌شده معتبر نیست.");
+  await enterApp(data.user);
+ }catch(err){toast("تعویض حساب انجام نشد: "+(err.message||"نشست منقضی شده است."))}
+}
+function setupPersonalSwitcher(){
+ const header=$("page-title")?.closest(".topbar");
+ if(header&&!$("switch-account-btn")){
+  const b=document.createElement("button");b.id="switch-account-btn";b.type="button";b.className="secondary hidden";b.textContent="تعویض حساب";
+  b.addEventListener("click",()=>switchPersonalAccount(currentUser?.id===PERSONAL_ADMIN_ID?PERSONAL_SECOND_ID:PERSONAL_ADMIN_ID));
+  header.append(b);
+ }
+ const pending=$("pending-logout");
+ if(pending&&!$("pending-switch-account-btn")){
+  const b=document.createElement("button");b.id="pending-switch-account-btn";b.type="button";b.className="secondary hidden";b.textContent="بازگشت به حساب مدیر";
+  b.addEventListener("click",()=>switchPersonalAccount(PERSONAL_ADMIN_ID));pending.insertAdjacentElement("beforebegin",b);
+ }
+ const savedAdmin=readPersonalSession(PERSONAL_ADMIN_SLOT);
+ if($("pending-switch-account-btn"))$("pending-switch-account-btn").classList.toggle("hidden",!savedAdmin);
+}
+
 if($("expired-logout-btn"))$("expired-logout-btn").addEventListener("click",async()=>{if(confirm("مطمئنی می‌خواهی از حساب خارج شوی؟"))await db.auth.signOut()});
 if($("banned-logout-btn"))$("banned-logout-btn").addEventListener("click",async()=>{if(confirm("مطمئنی می‌خواهی از حساب خارج شوی؟"))await db.auth.signOut()});
 $("show-signup").addEventListener("click",()=>{show("login-card",false);show("signup-card",true)});
@@ -154,7 +225,11 @@ async function waitForStartup(promise,label,ms=12000){let timer;try{return await
 async function enterApp(user){
  if(enteringUserId===user.id)return;enteringUserId=user.id;
  try{
-  currentUser=user;show("auth-view",false);show("expired-subscription-view",false);show("app-view",true);$("today-date").textContent=dateLabel();
+  currentUser=user;
+ if(user.id===PERSONAL_ADMIN_ID||user.id===PERSONAL_SECOND_ID)await saveCurrentPersonalSession();
+ setupPersonalSwitcher();
+ if($("switch-account-btn")){$("switch-account-btn").classList.toggle("hidden",user.id!==PERSONAL_ADMIN_ID&&user.id!==PERSONAL_SECOND_ID);$("switch-account-btn").textContent=user.id===PERSONAL_ADMIN_ID?"تعویض به حساب دوم":"بازگشت به حساب مدیر";}
+ show("auth-view",false);show("expired-subscription-view",false);show("app-view",true);$("today-date").textContent=dateLabel();
   await waitForStartup(loadProfile(),"اطلاعات حساب");if(!currentUser)return;
   await waitForStartup(loadFeatureFlags(),"تنظیمات سامانه");
   if(profile?.is_approved===false){show("app-view",false);show("auth-view",false);show("pending-approval-view",true);return;}
@@ -179,14 +254,23 @@ function applyFeatureFlags(){
  else {const f=$("humor-submit-form");if(f)f.classList.remove("hidden");}
 }
 $("feature-flags-form")?.addEventListener("submit",async e=>{
- e.preventDefault();const b=e.submitter;b.disabled=true;
+ e.preventDefault();const b=e.submitter;if(b)b.disabled=true;
  try{
-  const nextFlags={chat_enabled:$("feature-chat-toggle").checked,humor_enabled:$("feature-humor-toggle").checked,humor_requires_approval:$("feature-humor-approval-toggle").checked};
-  const {data:savedFlags,error}=await db.from("app_feature_flags").update(nextFlags).eq("id",1).select("id").maybeSingle();if(error)throw error;if(!savedFlags)throw new Error("تنظیمات ذخیره نشد؛ دسترسی مدیر برای تغییر تنظیمات تأیید نشد. یک‌بار خارج شو و دوباره وارد شو.");
-  if(!nextFlags.humor_requires_approval){const {error:publishError}=await db.from("humor_posts").update({status:"approved",reviewed_at:new Date().toISOString()}).eq("status","pending");if(publishError)throw publishError;}
-  featureFlags=nextFlags;applyFeatureFlags();await loadAdminHumor();await loadHumorFeed();toast("تنظیمات همتانه ذخیره شد.");
- }catch(x){$("feature-chat-toggle").checked=featureFlags.chat_enabled;$("feature-humor-toggle").checked=featureFlags.humor_enabled;$("feature-humor-approval-toggle").checked=featureFlags.humor_requires_approval;toast(x.message)}
- finally{b.disabled=false}
+  if(!isManagementAdmin())throw new Error("فقط حساب مدیر اصلی می‌تواند تنظیمات سامانه را تغییر دهد.");
+  const nextFlags={chat_enabled:$("feature-chat-toggle").checked,humor_enabled:$("feature-humor-toggle").checked,humor_requires_approval:$("feature-humor-approval-toggle").checked,updated_at:new Date().toISOString(),updated_by:currentUser.id};
+  const {data:savedFlags,error}=await db.from("app_feature_flags").update(nextFlags).eq("id",1).select("id,chat_enabled,humor_enabled,humor_requires_approval").maybeSingle();
+  if(error)throw error;
+  if(!savedFlags)throw new Error("هیچ ردیفی ذخیره نشد؛ دسترسی مدیر یا سیاست امنیتی پایگاه داده را بررسی کن.");
+  featureFlags={chat_enabled:savedFlags.chat_enabled!==false,humor_enabled:savedFlags.humor_enabled!==false,humor_requires_approval:savedFlags.humor_requires_approval!==false};
+  applyFeatureFlags();
+  await loadHumorFeed();
+  if(isManagementAdmin())await loadAdminHumor();
+  toast("تنظیمات ذخیره و از پایگاه داده تأیید شد. مطالب قبلیِ در انتظار بررسی، همچنان در صف مدیر می‌مانند.");
+ }catch(x){
+  try{await loadFeatureFlags()}catch(_){}
+  toast(x.message||"ذخیره تنظیمات ناموفق بود.");
+ }
+ finally{if(b)b.disabled=false}
 });
 
 async function loadProfile(){
