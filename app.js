@@ -65,10 +65,9 @@ $("accept-terms").addEventListener("click",async()=>{
  catch(err){console.error(err);message("terms-message","ذخیره تأیید قوانین ممکن نشد. تنظیمات مرورگر را بررسی کنید.",true)}
 });
 async function boot(){
- setupPersonalSwitcher();
  if("serviceWorker" in navigator){navigator.serviceWorker.register("./service-worker.js").catch(err=>console.warn("Service worker unavailable",err));}
  if(localStorage.getItem("mmd_terms_accepted")!=="mmd-terms-2026-11-v3"){show("terms-view",true);show("auth-view",false);show("app-view",false);return}
- db.auth.onAuthStateChange((event)=>{if(event==="SIGNED_OUT"){currentUser=null;profile=null;show("app-view",false);show("expired-subscription-view",false);show("banned-account-view",false);show("auth-view",true)}});
+ db.auth.onAuthStateChange((event)=>{if(event==="SIGNED_OUT"){currentUser=null;profile=null;setupPersonalSwitcher();show("app-view",false);show("expired-subscription-view",false);show("banned-account-view",false);show("auth-view",true)}});
  await continueAfterPolicy();
 }
 async function syntheticEmail(value){const bytes=new TextEncoder().encode(value.trim().toLowerCase());const digest=await crypto.subtle.digest("SHA-256",bytes);const hex=Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,"0")).join("").slice(0,32);return "mmd-"+hex+"@users.mmdplanner.com"}
@@ -144,19 +143,23 @@ async function switchPersonalAccount(targetId){
  }catch(err){toast("تعویض حساب انجام نشد: "+(err.message||"نشست منقضی شده است."))}
 }
 function setupPersonalSwitcher(){
+ const allowed=currentUser?.id===PERSONAL_ADMIN_ID||currentUser?.id===PERSONAL_SECOND_ID;
  const header=$("page-title")?.closest(".topbar");
- if(header&&!$("switch-account-btn")){
-  const b=document.createElement("button");b.id="switch-account-btn";b.type="button";b.className="secondary hidden";b.textContent="تعویض حساب";
-  b.addEventListener("click",()=>switchPersonalAccount(currentUser?.id===PERSONAL_ADMIN_ID?PERSONAL_SECOND_ID:PERSONAL_ADMIN_ID));
-  header.append(b);
+ let switchButton=$("switch-account-btn");
+ if(!allowed){switchButton?.remove();$("pending-switch-account-btn")?.remove();return}
+ if(header&&!switchButton){
+  switchButton=document.createElement("button");switchButton.id="switch-account-btn";switchButton.type="button";switchButton.className="secondary";switchButton.textContent="تعویض حساب";
+  switchButton.addEventListener("click",()=>switchPersonalAccount(currentUser?.id===PERSONAL_ADMIN_ID?PERSONAL_SECOND_ID:PERSONAL_ADMIN_ID));
+  header.append(switchButton);
  }
+ if(switchButton){switchButton.classList.remove("hidden");switchButton.textContent=currentUser.id===PERSONAL_ADMIN_ID?"تعویض به حساب دوم":"بازگشت به حساب مدیر"}
  const pending=$("pending-logout");
- if(pending&&!$("pending-switch-account-btn")){
-  const b=document.createElement("button");b.id="pending-switch-account-btn";b.type="button";b.className="secondary hidden";b.textContent="بازگشت به حساب مدیر";
+ if(currentUser.id===PERSONAL_SECOND_ID&&pending&&!$("pending-switch-account-btn")){
+  const b=document.createElement("button");b.id="pending-switch-account-btn";b.type="button";b.className="secondary";b.textContent="بازگشت به حساب مدیر";
   b.addEventListener("click",()=>switchPersonalAccount(PERSONAL_ADMIN_ID));pending.insertAdjacentElement("beforebegin",b);
  }
- const savedAdmin=readPersonalSession(PERSONAL_ADMIN_SLOT);
- if($("pending-switch-account-btn"))$("pending-switch-account-btn").classList.toggle("hidden",!savedAdmin);
+ const pendingButton=$("pending-switch-account-btn");
+ if(pendingButton)pendingButton.classList.toggle("hidden",currentUser.id!==PERSONAL_SECOND_ID||!readPersonalSession(PERSONAL_ADMIN_SLOT));
 }
 
 if($("expired-logout-btn"))$("expired-logout-btn").addEventListener("click",async()=>{if(confirm("مطمئنی می‌خواهی از حساب خارج شوی؟"))await db.auth.signOut()});
@@ -228,7 +231,6 @@ async function enterApp(user){
   currentUser=user;
  if(user.id===PERSONAL_ADMIN_ID||user.id===PERSONAL_SECOND_ID)await saveCurrentPersonalSession();
  setupPersonalSwitcher();
- if($("switch-account-btn")){$("switch-account-btn").classList.toggle("hidden",user.id!==PERSONAL_ADMIN_ID&&user.id!==PERSONAL_SECOND_ID);$("switch-account-btn").textContent=user.id===PERSONAL_ADMIN_ID?"تعویض به حساب دوم":"بازگشت به حساب مدیر";}
  show("auth-view",false);show("expired-subscription-view",false);show("app-view",true);$("today-date").textContent=dateLabel();
   await waitForStartup(loadProfile(),"اطلاعات حساب");if(!currentUser)return;
   await waitForStartup(loadFeatureFlags(),"تنظیمات سامانه");
