@@ -484,6 +484,7 @@ async function saveWeeklyAvailability(){
 function planTaskById(id){return tasks.find(t=>String(t.id)===String(id))}
 function planEntriesForDate(dateKey,exceptId=null){return weeklyPlan.filter(p=>p.date===dateKey&&String(p.task_id)!==String(exceptId)).map(p=>({...p,startDate:new Date(p.start),endDate:new Date(p.end)})).sort((a,b)=>a.startDate-b.startDate)}
 function plannerFindSlot(day,dateKey,duration,exceptId=null){
+ const todayKey=plannerDateKey(new Date());if(dateKey<todayKey)return null;
  const avail=weeklyAvailability[String(day)];if(!avail)return null;
  const dayStart=plannerLocalDateTime(dateKey,avail.start),dayEnd=plannerLocalDateTime(dateKey,avail.end);
  let cursor=new Date(dayStart);const now=new Date();
