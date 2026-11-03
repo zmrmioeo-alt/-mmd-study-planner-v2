@@ -172,7 +172,8 @@ function applyFeatureFlags(){
  $("chat-nav").classList.toggle("hidden",!featureFlags.chat_enabled&&!profile?.is_admin);
  document.querySelectorAll('[data-page="humor"]').forEach(b=>b.classList.toggle("hidden",!featureFlags.humor_enabled&&!profile?.is_admin));
  if($("feature-chat-toggle"))$("feature-chat-toggle").checked=featureFlags.chat_enabled;
- if($("feature-humor-toggle"))$("feature-humor-toggle").checked=featureFlags.humor_enabled;\n if($("feature-humor-approval-toggle"))$("feature-humor-approval-toggle").checked=featureFlags.humor_requires_approval;
+ if($("feature-humor-toggle"))$("feature-humor-toggle").checked=featureFlags.humor_enabled;
+ if($("feature-humor-approval-toggle"))$("feature-humor-approval-toggle").checked=featureFlags.humor_requires_approval;
  if(!featureFlags.chat_enabled&&!profile?.is_admin)stopChatRealtime();
  if(!featureFlags.humor_enabled&&!profile?.is_admin){$("humor-feed").textContent="این بخش موقتاً غیرفعال است.";const f=$("humor-submit-form");if(f)f.classList.add("hidden");}
  else {const f=$("humor-submit-form");if(f)f.classList.remove("hidden");}
