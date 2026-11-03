@@ -269,13 +269,44 @@ $("support-chat-search")?.addEventListener("input",e=>{const q=e.target.value.tr
 $("support-inbox-list")?.addEventListener("click",async e=>{const b=e.target.closest("[data-support-user]");if(!b)return;supportChatTargetUserId=b.dataset.supportUser;try{await loadAdminSupportChat()}catch(x){message("support-chat-message",x.message,true)}});
 $("support-chat-form")?.addEventListener("submit",async e=>{e.preventDefault();const body=$("support-chat-input").value.trim(),file=$("support-chat-file")?.files?.[0];if((!body&&!file)||!supportChatTargetUserId)return;try{let media_path=null,media_type=null;if(file){if(file.size>52428800)throw Error("حداکثر حجم فایل ۵۰ مگابایت است.");media_path=currentUser.id+"/"+crypto.randomUUID()+"-"+file.name.replace(/[^a-zA-Z0-9._-]/g,"_");const up=await db.storage.from("private-chat-media").upload(media_path,file,{contentType:file.type||"application/octet-stream"});if(up.error)throw up.error;media_type=file.type||"application/octet-stream"}const r=await db.from("support_messages").insert({user_id:supportChatTargetUserId,sender_id:currentUser.id,body,media_path,media_type});if(r.error)throw r.error;$("support-chat-input").value="";$("support-chat-file").value="";await loadAdminSupportChat()}catch(x){message("support-chat-message",x.message,true)}});
 document.querySelectorAll("[data-chat-tab]").forEach(b=>b.addEventListener("click",async()=>{activeChatTab=b.dataset.chatTab;document.querySelectorAll("[data-chat-tab]").forEach(x=>x.classList.toggle("active",x===b));show("support-chat-content",activeChatTab==="support");show("chat-content",activeChatTab==="users");try{if(activeChatTab==="support")await loadAdminSupportChat();else await loadSupportChat()}catch(x){message(activeChatTab==="support"?"support-chat-message":"chat-message",x.message,true)}}));
-async function loadSupportChat(){
+async function chatProfileMeta(p){const grade=p.account_type==="teacher"?"معلم":(p.school_grade||"پایه نامشخص");return grade+(p.school_class?" · کلاس "+p.school_class:"")}
+function renderChatDirectory(){
+ const list=$("chat-directory-list");if(!list)return;
+ const users=(window.__chatProfiles||[]).filter(p=>p.id!==currentUser.id);
+ list.innerHTML=users.map(p=>{const avatar=p.avatar_path?'<img src="'+escapeHtml(db.storage.from("profile-avatars").getPublicUrl(p.avatar_path).data.publicUrl)+'" alt="">':escapeHtml(p.avatar_emoji||"👤");return '<button type="button" class="chat-directory-user" data-directory-user="'+p.id+'"><span class="chat-directory-avatar">'+avatar+'</span><span><b>'+escapeHtml(p.display_name||"کاربر")+'</b><small>'+escapeHtml(chatProfileMeta(p))+'</small></span></button>'}).join("")||'<div class="empty">کاربر دیگری ثبت‌نام نکرده است.</div>';
+}
+function showChatDirectory(){
+ document.querySelectorAll("#chat-content > .chat-inbox,#chat-content > .chat-window").forEach(x=>x.classList.add("hidden"));
+ $("chat-public-profile-view").classList.add("hidden");$("chat-directory-view").classList.remove("hidden");
+ renderChatDirectory();$("chat-directory-search").value="";$("chat-directory-search").focus();
+}
+function showChatPublicProfile(userId){
+ const p=(window.__chatProfiles||[]).find(x=>x.id===userId);if(!p)return;
+ const avatar=p.avatar_path?'<img src="'+escapeHtml(db.storage.from("profile-avatars").getPublicUrl(p.avatar_path).data.publicUrl)+'" alt="">':escapeHtml(p.avatar_emoji||"👤");
+ const details=[chatProfileMeta(p),p.chat_enabled===false?"چت غیرفعال":"چت فعال"].map(x=>'<span>'+escapeHtml(x)+'</span>').join("");
+ $("chat-public-profile-card").innerHTML='<div class="chat-public-avatar">'+avatar+'</div><h3>'+escapeHtml(p.display_name||"کاربر")+'</h3><div class="chat-public-profile-details">'+details+'</div><p>'+escapeHtml(p.bio||"این کاربر هنوز توضیحی برای پروفایل خود ثبت نکرده است.")+'</p><button type="button" class="primary" id="chat-start-with-user" data-user-id="'+p.id+'" '+(p.chat_enabled===false?"disabled":"")+'>'+(p.chat_enabled===false?"چت این کاربر غیرفعال است":"چت با این کاربر")+'</button>';
+ $("chat-directory-view").classList.add("hidden");$("chat-public-profile-view").classList.remove("hidden");
+}
+async function startChatWithUser(userId){
+ const p=(window.__chatProfiles||[]).find(x=>x.id===userId);if(!p)return;
+ if(p.chat_enabled===false){toast("امکان چت با این کاربر غیرفعال است.");return}
+ if(profile?.is_admin){supportChatTargetUserId=userId;activeChatTab="support";document.querySelectorAll("[data-chat-tab]").forEach(x=>x.classList.toggle("active",x.dataset.chatTab==="support"));show("chat-content",false);show("support-chat-content",true);await loadAdminSupportChat();return}
+ chatTargetUserId=userId;$("chat-directory-view").classList.add("hidden");$("chat-public-profile-view").classList.add("hidden");document.querySelectorAll("#chat-content > .chat-inbox,#chat-content > .chat-window").forEach(x=>x.classList.remove("hidden"));await loadSupportChat();
+}
+$("chat-find-user")?.addEventListener("click",showChatDirectory);
+$("chat-directory-back")?.addEventListener("click",()=>{$("chat-directory-view").classList.add("hidden");document.querySelectorAll("#chat-content > .chat-inbox,#chat-content > .chat-window").forEach(x=>x.classList.remove("hidden"))});
+$("chat-profile-back")?.addEventListener("click",()=>{$("chat-public-profile-view").classList.add("hidden");$("chat-directory-view").classList.remove("hidden")});
+$("chat-directory-search")?.addEventListener("input",e=>{const q=e.target.value.trim().toLocaleLowerCase("fa");$("chat-directory-list").querySelectorAll("[data-directory-user]").forEach(x=>x.classList.toggle("hidden",!x.textContent.toLocaleLowerCase("fa").includes(q)))});
+$("chat-directory-list")?.addEventListener("click",e=>{const b=e.target.closest("[data-directory-user]");if(b)showChatPublicProfile(b.dataset.directoryUser)});
+$("chat-public-profile-card")?.addEventListener("click",e=>{const b=e.target.closest("#chat-start-with-user");if(b)startChatWithUser(b.dataset.userId).catch(x=>message("chat-message",x.message,true))});
+function loadSupportChat(){
  if(!currentUser)return;
  if(profile?.chat_enabled===false&&!profile?.is_admin){show("chat-content",false);$("chat-status").textContent="دسترسی چت غیرفعال است.";return}
  show("chat-content",true);
  const {data:convs,error}=await db.from("private_conversations").select("*").order("created_at",{ascending:false});if(error)throw error;
  const {data:profiles,error:pe}=await db.from("profiles").select("id,display_name,chat_enabled,school_grade,school_class,account_type,avatar_emoji,avatar_path,bio").eq("is_approved",true);if(pe)throw pe;
  const names=new Map((profiles||[]).map(p=>[p.id,p.display_name||"کاربر"]));
+ window.__chatProfiles=profiles||[];
  const list=$("chat-inbox-list");
  if(profile?.is_admin){list.innerHTML=(convs||[]).map(c=>'<button class="chat-thread" data-conv="'+c.id+'"><b>'+escapeHtml(names.get(c.user_one)||"کاربر")+" ↔ "+escapeHtml(names.get(c.user_two)||"کاربر")+'</b></button>').join("")||'<div class="empty">گفت‌وگویی نیست.</div>'}
  else {list.innerHTML=(profiles||[]).filter(p=>p.id!==currentUser.id&&p.chat_enabled!==false).map(p=>{const grade=p.account_type==="teacher"?"معلم":(p.school_grade||"پایه نامشخص");const cls=p.school_class?" · کلاس "+p.school_class:"";return '<button class="chat-thread" data-person="'+p.id+'"><b>'+escapeHtml(p.display_name||"کاربر")+'</b><small>'+escapeHtml(grade+cls)+'</small></button>'}).join("")||'<div class="empty">کاربر دیگری در دسترس نیست.</div>'}
