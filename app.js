@@ -67,19 +67,24 @@ if($("expired-logout-btn"))$("expired-logout-btn").addEventListener("click",asyn
 if($("banned-logout-btn"))$("banned-logout-btn").addEventListener("click",async()=>{if(confirm("مطمئنی می‌خواهی از حساب خارج شوی؟"))await db.auth.signOut()});
 $("show-signup").addEventListener("click",()=>{show("login-card",false);show("signup-card",true)});
 $("show-login").addEventListener("click",()=>{show("signup-card",false);show("login-card",true)});
+const SIGNUP_CLASSES={"هفتم":["هدف","مسئولیت"],"هشتم":["تلاش","کوشش"],"نهم":["اراده","استقامت"]};
+$("signup-account-type").addEventListener("change",()=>{const teacher=$("signup-account-type").value==="teacher";$("signup-school-fields").classList.toggle("hidden",teacher);$("signup-grade").required=!teacher;$("signup-class").required=!teacher});
+$("signup-grade").addEventListener("change",()=>{const sel=$("signup-class");sel.innerHTML="";sel.disabled=!$("signup-grade").value;const first=document.createElement("option");first.value="";first.textContent="انتخاب کلاس";sel.append(first);(SIGNUP_CLASSES[$("signup-grade").value]||[]).forEach(v=>{const o=document.createElement("option");o.value=v;o.textContent=v;sel.append(o)})});
 $("signup-form").addEventListener("submit",async e=>{
  e.preventDefault();
  const username=$("signup-username").value.trim().toLowerCase();
  const displayName=$("signup-name").value.trim();
  const password=$("signup-password").value;
+ const schoolGrade=$("signup-grade").value,schoolClass=$("signup-class").value;
  const accountType=$("signup-account-type").value==="teacher"?"teacher":"student";
  if(!/^[\p{L}\p{N}_.-]{3,30}$/u.test(username)){message("signup-message","نام کاربری باید ۳ تا ۳۰ نویسه و شامل حروف، عدد، نقطه، خط تیره یا زیرخط باشد.",true);return;}
+ if(accountType==="student"&&(!schoolGrade||!schoolClass)){message("signup-message","پایه و نام کلاس اجباری است.",true);return;}
  if(password.length<8){message("signup-message","رمز عبور باید حداقل ۸ نویسه باشد.",true);return;}
  const submit=e.submitter; if(submit)submit.disabled=true;
  message("signup-message","در حال ساخت حساب...");
  try{
   const email=await syntheticEmail(username);
-  const {data,error}=await db.auth.signUp({email,password,options:{data:{display_name:displayName,login_id:username,account_type:accountType}}});
+  const {data,error}=await db.auth.signUp({email,password,options:{data:{display_name:displayName,login_id:username,account_type:accountType,school_grade:accountType==="teacher"?"معلم":schoolGrade,school_class:accountType==="teacher"?null:schoolClass}}});
   if(error)throw error;
   if(data.session){show("signup-card",false);await enterApp(data.user);}
   else message("signup-message","حساب ساخته شد؛ برای ورود بدون ایمیل، مدیر باید گزینه «Confirm email» را در تنظیمات Supabase خاموش کند. سپس می‌توانی با نام کاربری و رمز وارد شوی.");
@@ -127,7 +132,7 @@ async function enterApp(user){
   await loadProfile();if(!currentUser)return;
   await loadFeatureFlags();
   if(profile?.is_approved===false){show("app-view",false);show("auth-view",false);show("pending-approval-view",true);return;}
-  await Promise.all([loadTasks(),loadRoutines(),loadSettings(),loadAnnouncements(),loadHumorFeed()]);renderAll();syncSmartPlanner();startAnnouncementRealtime();startMessageRealtime();checkAppUpdateNotice();startUpdateMonitor();
+  await Promise.all([loadTasks(),loadRoutines(),loadSettings(),loadAnnouncements(),loadHumorFeed()]);renderAll();syncSmartPlanner();startAnnouncementRealtime();startMessageRealtime();startChatRealtime();checkAppUpdateNotice();startUpdateMonitor();
  }catch(err){console.error("App loading failed:",err);show("app-view",false);show("auth-view",true);show("login-card",true);message("auth-message","خطا در ورود: "+(err.message||"خطای نامشخص"),true);throw err}
  finally{enteringUserId=null}
 }
@@ -172,7 +177,7 @@ async function loadProfile(){
 async function loadTasks(){const {data,error}=await db.from("study_tasks").select("*").eq("user_id",currentUser.id).order("position").order("created_at",{ascending:false});if(error)throw error;tasks=data||[]}
 async function loadRoutines(){const {data,error}=await db.from("routines").select("*").eq("user_id",currentUser.id).order("weekday").order("scheduled_time");if(error)throw error;routines=data||[]}
 async function loadSettings(){const {data,error}=await db.from("planner_settings").select("*").eq("user_id",currentUser.id).maybeSingle();if(error)throw error;settings=data||{}}
-function renderAll(){if(!currentUser)return;renderAnnouncements();renderTasks();renderRoutines();renderReports();syncProfileForm();$("welcome-title").textContent="سلام "+(profile.display_name||"")+", برنامه امروزت آماده است."; $("display-name").value=profile.display_name||"";$("sleep-hours").value=settings.sleep_hours??"";$("wake-time").value=settings.wake_time?.slice(0,5)||"";$("accent-theme").value=settings.accent_theme||"emerald";$("appearance").value=settings.appearance||settings.theme||"dark";$("humor-enabled").checked=!!settings.humor_enabled;applyTheme(settings.accent_theme||"emerald",settings.appearance||settings.theme||"dark");updateHumor()}
+function renderAll(){if(!currentUser)return;renderAnnouncements();renderTasks();renderRoutines();renderReports();syncProfileForm();$("welcome-title").textContent="سلام "+(profile.display_name||"")+", برنامه امروزت آماده است."; $("display-name").value=profile.display_name||"";$("sleep-hours").value=settings.sleep_hours??"";$("wake-time").value=settings.wake_time?.slice(0,5)||"";$("accent-theme").value=settings.accent_theme||"emerald";$("appearance").value=settings.appearance||settings.theme||"light";$("season-theme").value=settings.season_theme||"auto";$("humor-enabled").checked=!!settings.humor_enabled;applyTheme(settings.accent_theme||"emerald",settings.appearance||settings.theme||"light",settings.season_theme||"auto");updateHumor()}
 function taskMarkup(t){const done=t.status==="done";const due=t.due_at?jalaliDate(t.due_at,true):"بدون مهلت";return '<article class="task-item '+(done?'done':'')+'"><input class="task-check" type="checkbox" data-task-check="'+t.id+'" '+(done?'checked':'')+' aria-label="تغییر وضعیت"><div class="task-main"><h3>'+escapeHtml(t.title)+'</h3><p>'+escapeHtml(t.description||"")+' · '+due+'</p></div><span class="priority '+(t.priority==="high"?"high":"")+'">'+(t.priority==="high"?"زیاد":t.priority==="low"?"کم":"معمولی")+'</span><div class="task-actions"><button class="icon-btn" data-task-delete="'+t.id+'">حذف</button></div></article>'}
 function renderTodayWork(){
  const today=tasks.filter(t=>isToday(t.due_at)||(!t.due_at&&t.status==="pending"));
@@ -291,13 +296,14 @@ async function startChatWithUser(userId){
  const p=(window.__chatProfiles||[]).find(x=>x.id===userId);if(!p)return;
  if(p.chat_enabled===false){toast("امکان چت با این کاربر غیرفعال است.");return}
  if(profile?.is_admin){supportChatTargetUserId=userId;activeChatTab="support";document.querySelectorAll("[data-chat-tab]").forEach(x=>x.classList.toggle("active",x.dataset.chatTab==="support"));show("chat-content",false);show("support-chat-content",true);await loadAdminSupportChat();return}
- chatTargetUserId=userId;$("chat-directory-view").classList.add("hidden");$("chat-public-profile-view").classList.add("hidden");document.querySelectorAll("#chat-content > .chat-inbox,#chat-content > .chat-window").forEach(x=>x.classList.remove("hidden"));await loadSupportChat();
+ chatTargetUserId=userId;$("chat-directory-view").classList.add("hidden");$("chat-public-profile-view").classList.add("hidden");document.querySelectorAll("#chat-content > .chat-inbox").forEach(x=>x.classList.add("hidden"));document.querySelectorAll("#chat-content > .chat-window").forEach(x=>x.classList.remove("hidden"));await loadSupportChat();
 }
+$("chat-back-to-list")?.addEventListener("click",()=>{chatTargetUserId=null;$("chat-back-to-list").classList.add("hidden");document.querySelectorAll("#chat-content > .chat-inbox").forEach(x=>x.classList.remove("hidden"));document.querySelectorAll("#chat-content > .chat-window").forEach(x=>x.classList.remove("hidden"));$("chat-heading-title").textContent="یک کاربر را انتخاب کنید";$("chat-peer-name").textContent="یک کاربر را انتخاب کنید";$("chat-messages").innerHTML="برای شروع یک گفت‌وگو، یکی از کاربران را انتخاب کنید."});
 $("chat-find-user")?.addEventListener("click",showChatDirectory);
 $("chat-directory-back")?.addEventListener("click",()=>{$("chat-directory-view").classList.add("hidden");document.querySelectorAll("#chat-content > .chat-inbox,#chat-content > .chat-window").forEach(x=>x.classList.remove("hidden"))});
 $("chat-profile-back")?.addEventListener("click",()=>{$("chat-public-profile-view").classList.add("hidden");$("chat-directory-view").classList.remove("hidden")});
 $("chat-directory-search")?.addEventListener("input",e=>{const q=e.target.value.trim().toLocaleLowerCase("fa");$("chat-directory-list").querySelectorAll("[data-directory-user]").forEach(x=>x.classList.toggle("hidden",!x.textContent.toLocaleLowerCase("fa").includes(q)))});
-$("chat-directory-list")?.addEventListener("click",e=>{const b=e.target.closest("[data-directory-user]");if(b)showChatPublicProfile(b.dataset.directoryUser)});
+$("chat-directory-list")?.addEventListener("click",e=>{const b=e.target.closest("[data-directory-user]");if(b)startChatWithUser(b.dataset.directoryUser).catch(x=>message("chat-message",x.message,true))});
 $("chat-public-profile-card")?.addEventListener("click",e=>{const b=e.target.closest("#chat-start-with-user");if(b)startChatWithUser(b.dataset.userId).catch(x=>message("chat-message",x.message,true))});
 async function loadSupportChat(){
  if(!currentUser)return;
@@ -314,7 +320,7 @@ async function loadSupportChat(){
  let conv=(convs||[]).find(c=>c.id===chatTargetUserId);
  if(!conv&&!profile?.is_admin&&chatTargetUserId){const pair=currentUser.id<chatTargetUserId?[currentUser.id,chatTargetUserId]:[chatTargetUserId,currentUser.id];const q=await db.from("private_conversations").select("*").eq("user_one",pair[0]).eq("user_two",pair[1]).maybeSingle();if(q.error)throw q.error;conv=q.data;if(!conv){const r=await db.from("private_conversations").insert({user_one:pair[0],user_two:pair[1]}).select().single();if(r.error)throw r.error;conv=r.data}}
  if(!conv){$("chat-heading-title").textContent="یک کاربر را انتخاب کنید";$("chat-messages").innerHTML="برای شروع یک کاربر را انتخاب کنید.";return}
- chatTargetUserId=conv.id;const other=conv.user_one===currentUser.id?conv.user_two:conv.user_one;chatPeerId=other;const peer=(profiles||[]).find(p=>p.id===other);$("chat-heading-title").textContent=names.get(other)||"گفت‌وگو";$("chat-peer-name").textContent=peer?.display_name||"کاربر";$("chat-peer-meta").textContent=(peer?.account_type==="teacher"?"معلم":(peer?.school_grade||"پایه نامشخص"))+(peer?.school_class?" · کلاس "+peer.school_class:"")+(peer?.bio?" · "+peer.bio:"");$("chat-peer-status").textContent=chatOnlineUsers.has(other)?"آنلاین":"آفلاین";const av=$("chat-peer-avatar");if(peer?.avatar_path)av.innerHTML='<img src="'+db.storage.from("profile-avatars").getPublicUrl(peer.avatar_path).data.publicUrl+'" alt="">';else av.textContent=peer?.avatar_emoji||"👤";
+ chatTargetUserId=conv.id;$("chat-back-to-list")?.classList.remove("hidden");const other=conv.user_one===currentUser.id?conv.user_two:conv.user_one;chatPeerId=other;const peer=(profiles||[]).find(p=>p.id===other);$("chat-heading-title").textContent=names.get(other)||"گفت‌وگو";$("chat-peer-name").textContent=peer?.display_name||"کاربر";$("chat-peer-meta").textContent=(peer?.account_type==="teacher"?"معلم":(peer?.school_grade||"پایه نامشخص"))+(peer?.school_class?" · کلاس "+peer.school_class:"")+(peer?.bio?" · "+peer.bio:"");$("chat-peer-status").textContent=chatOnlineUsers.has(other)?"آنلاین":"آفلاین";const av=$("chat-peer-avatar");if(peer?.avatar_path)av.innerHTML='<img src="'+db.storage.from("profile-avatars").getPublicUrl(peer.avatar_path).data.publicUrl+'" alt="">';else av.textContent=peer?.avatar_emoji||"👤";
  const {data:msgs,error:me}=await db.from("private_messages").select("*").eq("conversation_id",conv.id).order("created_at");if(me)throw me;
  const unread=(msgs||[]).filter(m=>m.sender_id!==currentUser.id&&!m.read_at&&!m.deleted_at);
  if(unread.length){const readAt=new Date().toISOString();const {error:readError}=await db.from("private_messages").update({read_at:readAt}).in("id",unread.map(m=>m.id)).eq("conversation_id",conv.id).neq("sender_id",currentUser.id);if(readError)throw readError;unread.forEach(m=>m.read_at=readAt)}
@@ -323,7 +329,7 @@ async function loadSupportChat(){
 }
 document.querySelector(".chat-peer-card")?.addEventListener("click",()=>{const p=(window.__chatProfiles||[]).find(x=>x.id===chatPeerId);if(!p)return;const grade=p.account_type==="teacher"?"معلم":(p.school_grade||"پایه نامشخص");const cls=p.school_class?" · کلاس "+p.school_class:"";alert((p.display_name||"کاربر")+"\n"+grade+cls+"\n"+(p.bio||"معرفی‌ای ثبت نشده است."))});
 $("chat-search")?.addEventListener("input",e=>{const q=e.target.value.trim().toLocaleLowerCase("fa");$("chat-inbox-list").querySelectorAll(".chat-thread").forEach(x=>x.classList.toggle("hidden",!x.textContent.toLocaleLowerCase("fa").includes(q)))});
-$("chat-inbox-list").addEventListener("click",async e=>{const p=e.target.closest("[data-person]"),c=e.target.closest("[data-conv]");if(p)chatTargetUserId=p.dataset.person;else if(c)chatTargetUserId=c.dataset.conv;else return;try{await loadSupportChat()}catch(x){message("chat-message",x.message,true)}});
+$("chat-inbox-list").addEventListener("click",async e=>{const p=e.target.closest("[data-person]"),c=e.target.closest("[data-conv]");if(p)chatTargetUserId=p.dataset.person;else if(c)chatTargetUserId=c.dataset.conv;else return;document.querySelectorAll("#chat-content > .chat-inbox").forEach(x=>x.classList.add("hidden"));document.querySelectorAll("#chat-content > .chat-window").forEach(x=>x.classList.remove("hidden"));try{await loadSupportChat()}catch(x){message("chat-message",x.message,true)}});
 $("chat-form").addEventListener("submit",async e=>{e.preventDefault();if(!chatTargetUserId)return;const body=$("chat-input").value.trim(),file=$("chat-file").files[0];if(!body&&!file)return;try{let path=null,type=null;if(file){if(file.size>52428800)throw Error("حداکثر حجم فایل ۵۰ مگابایت است.");path=currentUser.id+"/"+crypto.randomUUID()+"-"+file.name.replace(/[^a-zA-Z0-9._-]/g,"_");const up=await db.storage.from("private-chat-media").upload(path,file,{contentType:file.type});if(up.error)throw up.error;type=file.type}const messageId=crypto.randomUUID();const r=await db.from("private_messages").insert({id:messageId,conversation_id:chatTargetUserId,sender_id:currentUser.id,body,media_path:path,media_type:type});if(r.error)throw r.error;db.functions.invoke("push-notify",{body:{action:"send",conversation_id:chatTargetUserId,message_id:messageId}}).then(({error})=>{if(error)console.warn("Push send skipped",error)});$("chat-input").value="";$("chat-file").value="";await loadSupportChat()}catch(x){message("chat-message",x.message,true)}});
 $("chat-messages").addEventListener("click",async e=>{const b=e.target.closest("[data-delete-msg]");if(!b||!confirm("پیام حذف شود؟"))return;const r=await db.from("private_messages").update({deleted_at:new Date().toISOString(),body:"",media_path:null,media_type:null}).eq("id",b.dataset.deleteMsg).eq("sender_id",currentUser.id);if(r.error)message("chat-message",r.error.message,true);else loadSupportChat()});
 
@@ -340,8 +346,8 @@ function buildSmartPlan(){
 }
 $("smart-generate").addEventListener("click",()=>{if(!smartEnabled()){toast("ابتدا این قابلیت را در تنظیمات فعال کنید.");return;}buildSmartPlan()});
 $("smart-clear").addEventListener("click",()=>{$("smart-plan-output").innerHTML='<div class="empty">پیشنهاد پاک شد.</div>'});
-$("settings-form").addEventListener("submit",async e=>{e.preventDefault();const row={user_id:currentUser.id,sleep_hours:$("sleep-hours").value?Number($("sleep-hours").value):null,wake_time:$("wake-time").value||null,theme:$("appearance").value,accent_theme:$("accent-theme").value,appearance:$("appearance").value,humor_enabled:$("humor-enabled").checked};const {error}=await db.from("planner_settings").upsert(row,{onConflict:"user_id"});if(error){toast(error.message);return}settings=row;profile.display_name=$("display-name").value.trim()||"کاربر";const {error:pe}=await db.from("profiles").update({display_name:profile.display_name}).eq("id",currentUser.id);if(pe){toast(pe.message);return} $("user-name").textContent=profile.display_name;$("user-avatar").textContent=profile.display_name.slice(0,1);applyTheme(row.accent_theme,row.appearance);updateHumor();toast("تنظیمات ذخیره شد.")});
-function applyTheme(accent="emerald",appearance="dark"){document.body.dataset.theme=accent;document.body.dataset.appearance=appearance;document.body.classList.toggle("light",appearance==="light"||(appearance==="system"&&matchMedia("(prefers-color-scheme: light)").matches));document.documentElement.dataset.font="vazirmatn"}
+$("settings-form").addEventListener("submit",async e=>{e.preventDefault();const row={user_id:currentUser.id,sleep_hours:$("sleep-hours").value?Number($("sleep-hours").value):null,wake_time:$("wake-time").value||null,theme:$("appearance").value,accent_theme:$("accent-theme").value,appearance:$("appearance").value,season_theme:$("season-theme").value,humor_enabled:$("humor-enabled").checked};const {error}=await db.from("planner_settings").upsert(row,{onConflict:"user_id"});if(error){toast(error.message);return}settings=row;profile.display_name=$("display-name").value.trim()||"کاربر";const {error:pe}=await db.from("profiles").update({display_name:profile.display_name}).eq("id",currentUser.id);if(pe){toast(pe.message);return} $("user-name").textContent=profile.display_name;$("user-avatar").textContent=profile.display_name.slice(0,1);applyTheme(row.accent_theme,row.appearance,row.season_theme);updateHumor();toast("تنظیمات ذخیره شد.")});
+function applyTheme(accent="emerald",appearance="light",season="auto"){const m=new Date().getMonth()+1;const detected=m>=3&&m<=5?"spring":m>=6&&m<=8?"summer":m>=9&&m<=11?"autumn":"winter";document.body.dataset.theme=accent;document.body.dataset.appearance=appearance;document.body.dataset.season=season==="auto"?detected:season;document.body.classList.toggle("light",appearance==="light"||(appearance==="system"&&matchMedia("(prefers-color-scheme: light)").matches));document.documentElement.dataset.font="vazirmatn"}
 const humorLines=["اگر تکلیف‌ها خودشان انجام می‌شدند، احتمالاً الان اینجا نبودیم!","یک قدم کوچک هم از صفر کیلومتر جلوتر است.","مغزت را روشن کن؛ حالت پرواز برای بعد از درس!","امروز با خودت رقابت کن، نه با کل دنیا.","استراحت کوتاه مجاز است؛ ناپدید شدن سه‌ساعته نه!","هر تیک، یک پیروزی کوچک است."];
 function updateHumor(){const enabled=!!settings.humor_enabled;$("welcome-mood").textContent=enabled?humorLines[Math.floor(Math.random()*humorLines.length)]:"کارها را انجام بده و پیشرفتت را ثبت کن."}
 
@@ -368,21 +374,28 @@ function syncProfileForm(){if(profile?.avatar_path){const u=db.storage.from("pro
 }
 function updateProfilePreview(){
  const name=$("profile-name").value.trim()||"کاربر MMD",bio=$("profile-bio").value.trim()||"اینجا معرفی کوتاهی از خودت بنویس.",avatar=$("profile-avatar").value,color=$("profile-color").value;
- $("profile-preview-name").textContent=name;$("profile-preview-bio").textContent=bio;$("profile-preview-avatar").textContent=avatar;
+ $("profile-preview-name").textContent=name;$("profile-preview-bio").textContent=bio;if(!profile?.avatar_path)$("profile-preview-avatar").textContent=avatar;
  $("profile-preview").dataset.color=color;
  const badge=schoolProfileLabel({school_grade:$("profile-grade").value,school_class:$("profile-class").value});$("profile-school-badge").textContent=badge||"پایه و کلاس را انتخاب کنید";
 }
 ["profile-name","profile-bio","profile-avatar","profile-color"].forEach(id=>$(id).addEventListener("input",updateProfilePreview));
 $("profile-grade").addEventListener("change",()=>{syncSchoolClassOptions();updateProfilePreview()});$("profile-class").addEventListener("change",updateProfilePreview);
 $("profile-form").addEventListener("submit",async e=>{
- e.preventDefault();const btn=e.submitter;btn.disabled=true;message("profile-message","در حال ذخیره...");
- const display_name=$("profile-name").value.trim()||"کاربر",bio=$("profile-bio").value.trim(),avatar_emoji=$("profile-avatar").value,profile_color=$("profile-color").value,school_grade=profile.account_type==="teacher"?"معلم":$("profile-grade").value,school_class=school_grade==="معلم"?null:$("profile-class").value;
- if(!school_grade||(school_grade!=="معلم"&&!school_class)){message("profile-message","پایه و نام کلاس را انتخاب کنید.",true);btn.disabled=false;return}
- const {error}=await db.from("profiles").update({display_name,bio,avatar_emoji,profile_color,school_grade,school_class}).eq("id",currentUser.id);
- if(error){message("profile-message",error.message,true);btn.disabled=false;return}
- profile={...profile,display_name,bio,avatar_emoji,profile_color,school_grade,school_class};$("profile-grade").disabled=profile.account_type==="teacher";
- $("user-name").textContent=display_name;$("user-avatar").textContent=avatar_emoji;$("school-grade-chip").textContent=schoolProfileLabel(profile);updateProfilePreview();document.body.dataset.profileColor=profile_color;$("welcome-title").textContent="سلام "+display_name+", برنامه امروزت آماده است.";
- document.body.dataset.profileColor=profile_color;message("profile-message","پروفایل ذخیره شد.");btn.disabled=false;
+ e.preventDefault();const btn=e.submitter||e.target.querySelector('[type="submit"]');btn.disabled=true;message("profile-message","در حال ذخیره...");
+ try{
+  const display_name=$("profile-name").value.trim(),bio=$("profile-bio").value.trim(),avatar_emoji=$("profile-avatar").value,profile_color=$("profile-color").value,school_grade=profile.account_type==="teacher"?"معلم":$("profile-grade").value,school_class=school_grade==="معلم"?null:$("profile-class").value;
+  if(!display_name)throw new Error("نام نمایشی را وارد کنید.");
+  if(!school_grade||(school_grade!=="معلم"&&!school_class))throw new Error("پایه و نام کلاس را انتخاب کنید.");
+  const payload={display_name,bio,avatar_emoji,profile_color,school_grade,school_class};
+  const {data,error}=await db.from("profiles").update(payload).eq("id",currentUser.id).select("*").single();
+  if(error)throw error;if(!data)throw new Error("اطلاعات پروفایل ذخیره نشد.");
+  profile={...profile,...data};$("profile-grade").disabled=profile.account_type==="teacher";
+  $("user-name").textContent=display_name;$("user-avatar").textContent=avatar_emoji;$("school-grade-chip").textContent=schoolProfileLabel(profile);
+  if(profile.avatar_path){const u=db.storage.from("profile-avatars").getPublicUrl(profile.avatar_path).data.publicUrl;$("user-avatar").innerHTML='<img src="'+u+'" alt="">'}
+  updateProfilePreview();document.body.dataset.profileColor=profile_color;$("welcome-title").textContent="سلام "+display_name+", برنامه امروزت آماده است.";
+  message("profile-message","پروفایل با موفقیت ذخیره شد.");
+ }catch(err){console.error("Profile save failed",err);message("profile-message",err.message||"ذخیره پروفایل انجام نشد.",true)}
+ finally{btn.disabled=false}
 });
 function renderAnnouncements(){const rows=window.__announcements||[];$("announcement-list").innerHTML=rows.length?rows.map(a=>'<article class="form-panel"><div class="section-head"><h3>'+escapeHtml(a.title)+'</h3><small class="muted">'+jalaliDate(a.created_at)+'</small></div><p style="white-space:pre-wrap;line-height:2">'+escapeHtml(a.body)+'</p>'+(profile?.is_admin?'<button class="icon-btn" data-delete-announcement="'+a.id+'">حذف اطلاعیه</button>':"")+'</article>').join(""):'<div class="empty">در حال حاضر اطلاعیه‌ای منتشر نشده است.</div>'}
 $("announcement-admin-form").addEventListener("submit",async e=>{e.preventDefault();const row={title:$("announcement-title").value.trim(),body:$("announcement-body").value.trim(),created_by:currentUser.id,published:true};const {error}=await db.from("announcements").insert(row);if(error){message("announcement-message",error.message,true);return}e.target.reset();await loadAnnouncements();renderAnnouncements();message("announcement-message","اطلاعیه منتشر شد.")});
