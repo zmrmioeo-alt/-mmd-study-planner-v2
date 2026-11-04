@@ -80,18 +80,48 @@
     });
   }
 
+
+  async function editAvailability(day){
+    const current=weeklyAvailability[String(day)]||{};
+    const form=openEditor('<h2 style="margin:0">ویرایش ساعت آزاد · '+dayNames[day]+'</h2>'+field("از ساعت","mmd-a-start",current.start||"","time")+field("تا ساعت","mmd-a-end",current.end||"","time")+'<p class="muted">برای غیرفعال‌کردن این روز، هر دو ساعت را خالی بگذار.</p>');
+    form.addEventListener("submit",async e=>{
+      e.preventDefault();const btn=$("mmd-edit-submit");btn.disabled=true;
+      try{
+        const start=$("mmd-a-start").value,end=$("mmd-a-end").value;
+        if((start&&!end)||(!start&&end)||(start&&end&&start>=end))throw new Error("ساعت شروع و پایان را درست وارد کن.");
+        const next={...weeklyAvailability};if(!start)delete next[String(day)];else next[String(day)]={start,end};
+        weeklyAvailability=next;await savePlannerData();await generateWeeklyPlan(true);renderProgramsHub();closeEditor();toast("ساعت آزاد به‌روزرسانی شد و برنامه دوباره چیده شد.");
+      }catch(err){$("mmd-edit-message").textContent=err.message||"ذخیره انجام نشد.";btn.disabled=false}
+    });
+  }
+  async function editSleepSchedule(){
+    const form=openEditor('<h2 style="margin:0">ویرایش خواب و بیداری</h2>'+field("مدت خواب شبانه (ساعت)","mmd-sleep-hours",settings.sleep_hours??"","number",'min="0" max="24" step=".5"')+field("ساعت بیداری","mmd-wake-time",(settings.wake_time||"").slice(0,5),"time"));
+    form.addEventListener("submit",async e=>{
+      e.preventDefault();const btn=$("mmd-edit-submit");btn.disabled=true;
+      try{
+        const raw=$("mmd-sleep-hours").value;const hours=raw===""?null:Number(raw);
+        if(hours!==null&&(!Number.isFinite(hours)||hours<0||hours>24))throw new Error("مدت خواب باید بین صفر تا ۲۴ ساعت باشد.");
+        settings={...settings,sleep_hours:hours,wake_time:$("mmd-wake-time").value||null};
+        await savePlannerData();$("sleep-hours").value=hours??"";$("wake-time").value=settings.wake_time||"";
+        renderProgramsHub();closeEditor();toast("برنامه خواب و بیداری ذخیره شد.");
+      }catch(err){$("mmd-edit-message").textContent=err.message||"ذخیره انجام نشد.";btn.disabled=false}
+    });
+  }
+
   const dayNames=["یکشنبه","دوشنبه","سه‌شنبه","چهارشنبه","پنجشنبه","جمعه","شنبه"];
+
   function renderProgramsHub(){
     const host=$("programs-hub-list");if(!host)return;
     const taskCards=tasks.map(t=>'<article class="task-item"><div class="task-main"><h3>'+esc(t.title)+'</h3><p>وظیفه و تکلیف · مهلت: '+esc(t.due_at?jalaliDate(t.due_at,true):"بدون مهلت")+' · مدت: '+esc(t.estimated_minutes||"—")+' دقیقه</p></div><span class="priority">'+(t.status==="done"?"انجام‌شده":t.status==="cancelled"?"لغوشده":"در انتظار")+'</span><div class="task-actions"><button class="secondary" type="button" data-task-edit="'+esc(t.id)+'">ویرایش</button></div></article>').join("");
     const routineCards=routines.map(r=>'<article class="routine-card"><b>'+esc(r.title)+'</b><small>برنامه ثابت · '+esc(dayNames[Number(r.weekday)]||"")+' · '+esc((r.scheduled_time||"").slice(0,5)||"بدون ساعت")+'</small><p class="muted">'+esc(r.details||"")+'</p><button class="secondary" type="button" data-routine-edit="'+esc(r.id)+'">ویرایش</button></article>').join("");
+    const availabilityCards=[6,0,1,2,3,4,5].map(day=>{const v=weeklyAvailability[String(day)]||{};return '<article class="routine-card"><b>'+dayNames[day]+'</b><small>زمان آزاد: '+esc(v.start||"تنظیم نشده")+' تا '+esc(v.end||"تنظیم نشده")+'</small><button class="secondary" type="button" data-availability-edit="'+day+'">ویرایش ساعت آزاد</button></article>'}).join("");
     const planCards=weeklyPlan.map(p=>{
       const t=tasks.find(x=>String(x.id)===String(p.task_id));if(!t)return "";
-      const start=new Date(p.start);
-      const time=Number.isNaN(start.getTime())?"":String(start.getHours()).padStart(2,"0")+":"+String(start.getMinutes()).padStart(2,"0");
-      return '<article class="task-item"><div class="task-main"><h3>'+esc(t.title)+'</h3><p>زمان‌بندی هفتگی · '+esc(p.date)+' · '+esc(time)+' · '+esc(p.duration)+' دقیقه</p></div><div class="task-actions"><button class="secondary" type="button" data-plan-edit="'+esc(p.id||p.task_id)+'" data-plan-date="'+esc(p.date)+'" data-plan-time="'+esc(time)+'">ویرایش زمان</button><button class="secondary" type="button" data-task-edit="'+esc(t.id)+'">ویرایش تکلیف</button></div></article>';
+      const start=new Date(p.start);const time=Number.isNaN(start.getTime())?"":String(start.getHours()).padStart(2,"0")+":"+String(start.getMinutes()).padStart(2,"0");
+      return '<article class="task-item"><div class="task-main"><h3>'+esc(t.title)+'</h3><p>زمان‌بندی هفتگی · '+esc(p.date)+' · '+esc(time)+' · '+esc(p.duration)+' دقیقه'+(p.locked?" · زمان‌بندی دستی":" · زمان‌بندی خودکار")+'</p></div><div class="task-actions"><button class="secondary" type="button" data-plan-edit="'+esc(p.id||p.task_id)+'" data-plan-date="'+esc(p.date)+'" data-plan-time="'+esc(time)+'">ویرایش زمان</button><button class="secondary" type="button" data-task-edit="'+esc(t.id)+'">ویرایش تکلیف</button></div></article>';
     }).join("");
-    host.innerHTML='<section class="form-panel"><div class="section-head"><div><h3>وظایف و تکالیف</h3><p class="muted">ویرایش عنوان، توضیحات، مهلت، اولویت، وضعیت و مدت‌زمان</p></div><b>'+fa(tasks.length)+'</b></div>'+ (taskCards||'<p class="empty">تکلیفی ثبت نشده است.</p>')+'</section><section class="form-panel"><div class="section-head"><div><h3>برنامه‌های ثابت</h3><p class="muted">ویرایش روز، ساعت و توضیحات برنامه</p></div><b>'+fa(routines.length)+'</b></div>'+ (routineCards||'<p class="empty">برنامه ثابتی ثبت نشده است.</p>')+'</section><section class="form-panel"><div class="section-head"><div><h3>زمان‌بندی هفتگی</h3><p class="muted">ویرایش ساعت یا روز هر بخش؛ پس از ذخیره، تداخل‌ها بررسی می‌شوند.</p></div><b>'+fa(weeklyPlan.length)+'</b></div>'+ (planCards||'<p class="empty">هنوز برنامه هفتگی ساخته نشده است.</p>')+'</section>';
+    const sleepCard='<article class="routine-card"><b>خواب و بیداری</b><small>مدت خواب: '+esc(settings.sleep_hours??"تنظیم نشده")+' ساعت · ساعت بیداری: '+esc((settings.wake_time||"").slice(0,5)||"تنظیم نشده")+'</small><button class="secondary" type="button" data-sleep-edit>ویرایش برنامه خواب</button></article>';
+    host.innerHTML='<section class="form-panel"><div class="section-head"><div><h3>وظایف و تکالیف</h3><p class="muted">عنوان، توضیحات، مهلت، اولویت، وضعیت و مدت‌زمان</p></div><b>'+fa(tasks.length)+'</b></div>'+(taskCards||'<p class="empty">تکلیفی ثبت نشده است.</p>')+'</section><section class="form-panel"><div class="section-head"><div><h3>برنامه‌های ثابت</h3><p class="muted">برنامه‌های تکرارشونده در روزهای هفته</p></div><b>'+fa(routines.length)+'</b></div>'+(routineCards||'<p class="empty">برنامه ثابتی ثبت نشده است.</p>')+'</section><section class="form-panel"><div class="section-head"><div><h3>ساعت‌های آزاد هفتگی</h3><p class="muted">ظرفیت زمانی که برنامه‌ریز برای چیدن کارها استفاده می‌کند</p></div></div>'+availabilityCards+'</section><section class="form-panel"><div class="section-head"><div><h3>خواب و بیداری</h3><p class="muted">تنظیمات پایه برنامه روزانه</p></div></div>'+sleepCard+'</section><section class="form-panel"><div class="section-head"><div><h3>زمان‌بندی هفتگی</h3><p class="muted">تمام بخش‌های برنامه‌ریزی‌شده؛ زمان هر بخش قابل ویرایش است.</p></div><b>'+fa(weeklyPlan.length)+'</b></div>'+(planCards||'<p class="empty">هنوز برنامه هفتگی ساخته نشده است.</p>')+'</section>';
   }
   async function editPlanTime(id,date,time){
     const form=openEditor('<h2 style="margin:0">ویرایش زمان‌بندی</h2>'+field("تاریخ","mmd-p-date",date,"date",'required')+field("ساعت شروع","mmd-p-time",time,"time",'required'));
@@ -107,6 +137,8 @@
   }
 
   document.addEventListener("click",e=>{
+    const av=e.target.closest("[data-availability-edit]");if(av){editAvailability(Number(av.dataset.availabilityEdit));return}
+    if(e.target.closest("[data-sleep-edit]")){editSleepSchedule();return}
     const p=e.target.closest("[data-plan-edit]");if(p){editPlanTime(p.dataset.planEdit,p.dataset.planDate,p.dataset.planTime);return}
     const t=e.target.closest("[data-task-edit]");if(t){editTask(t.dataset.taskEdit);return}
     const r=e.target.closest("[data-routine-edit]");if(r){editRoutine(r.dataset.routineEdit);return}
