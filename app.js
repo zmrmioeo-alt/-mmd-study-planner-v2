@@ -11,6 +11,19 @@ if(window.jalaliDatepicker){window.jalaliDatepicker.startWatch({persianDigits:tr
 const fa = (n) => new Intl.NumberFormat("fa-IR").format(n);
 const weekdays = ["یکشنبه","دوشنبه","سه‌شنبه","چهارشنبه","پنجشنبه","جمعه","شنبه"];
 let currentUser = null, profile = null, tasks = [], routines = [], settings = {}, taskFilter = "all";
+let approvalMonitorTimer=null;
+function watchApprovalStatus(){
+ if(approvalMonitorTimer)clearInterval(approvalMonitorTimer);
+ const watchedUserId=currentUser?.id;if(!watchedUserId)return;
+ approvalMonitorTimer=setInterval(async()=>{
+  if(!currentUser||currentUser.id!==watchedUserId){clearInterval(approvalMonitorTimer);approvalMonitorTimer=null;return;}
+  try{
+   const {data,error}=await db.from("profiles").select("is_approved,is_banned").eq("id",watchedUserId).maybeSingle();
+   if(error||!data)return;
+   if(data.is_approved!==false||data.is_banned===true){clearInterval(approvalMonitorTimer);approvalMonitorTimer=null;location.reload();}
+  }catch(e){console.warn("Approval status check failed",e)}
+ },7000);
+}
 let weeklyAvailability = {}, weeklyPlan = [];
 let featureFlags={chat_enabled:true,humor_enabled:true};
 const smartKey=()=> "mmd_smart_planner_"+(currentUser?.id||"guest");
@@ -233,7 +246,8 @@ async function enterApp(user){
  show("auth-view",false);show("expired-subscription-view",false);show("app-view",true);$("today-date").textContent=dateLabel();loadInAppNotifications();syncPushStatus().catch(()=>{});
   await waitForStartup(loadProfile(),"اطلاعات حساب");if(!currentUser)return;
   if(profile?.is_banned){show("app-view",false);show("auth-view",false);show("expired-subscription-view",false);show("pending-approval-view",false);show("banned-account-view",true);$("banned-user-name").textContent=profile.display_name||"کاربر";return;}
-  if(profile?.is_approved===false){show("app-view",false);show("auth-view",false);show("pending-approval-view",true);return;}
+  if(profile?.is_approved===false){show("app-view",false);show("auth-view",false);show("pending-approval-view",true);watchApprovalStatus();return;}
+  if(approvalMonitorTimer){clearInterval(approvalMonitorTimer);approvalMonitorTimer=null;}
   await waitForStartup(loadFeatureFlags(),"تنظیمات سامانه");
   const startupResults=await Promise.allSettled([waitForStartup(loadTasks(),"وظایف"),waitForStartup(loadRoutines(),"برنامه ثابت"),waitForStartup(loadSettings(),"تنظیمات شخصی"),waitForStartup(loadAnnouncements(),"اطلاعیه‌ها"),waitForStartup(loadHumorFeed(),"بخش همتانه",7000)]);const startupNames=["وظایف","برنامه ثابت","تنظیمات","اطلاعیه‌ها","بخش همتانه"];const startupErrors=startupResults.map((r,i)=>r.status==="rejected"?startupNames[i]+": "+(r.reason?.message||"خطای دریافت اطلاعات"):null).filter(Boolean);if(startupResults[0].status==="rejected")tasks=[];if(startupResults[1].status==="rejected")routines=[];if(startupResults[2].status==="rejected")settings={};if(startupResults[3].status==="rejected")window.__announcements=[];renderAll();syncSmartPlanner();try{startAnnouncementRealtime()}catch(e){console.warn("Announcement realtime unavailable",e)}startMessageRealtime().catch(e=>console.warn("Message realtime unavailable",e));try{startChatRealtime()}catch(e){console.warn("Chat realtime unavailable",e)}try{startCommunityRealtime()}catch(e){console.warn("Community realtime unavailable",e)}checkAppUpdateNotice();notifyUnreadMessagesOnEntry().catch(e=>console.warn("Unread message check unavailable",e));startUpdateMonitor();const notificationParams=new URLSearchParams(location.search);if(notificationParams.get("page")==="chat"){const target=notificationParams.get("chatTarget");if(target)navigate("chat",target);else navigate("chat")}if(startupErrors.length){console.error("Some startup data failed:",startupErrors);toast("برنامه باز شد، اما دریافت بعضی اطلاعات ناموفق بود: "+startupErrors.join(" | "))}
  }catch(err){console.error("App loading failed:",err);show("app-view",false);show("auth-view",true);show("login-card",true);message("auth-message","خطا در ورود: "+(err.message||"خطای نامشخص"),true);throw err}
