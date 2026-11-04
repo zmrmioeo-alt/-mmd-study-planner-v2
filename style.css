@@ -1095,3 +1095,6 @@ body.light .chat-compose button{
 .topbar-actions .notification-panel{top:calc(100% + 12px);left:0;right:auto;z-index:1300;width:min(360px,calc(100vw - 30px));}
 .topbar-actions .notification-count{top:-5px;right:-5px;}
 @media(max-width:850px){.topbar-actions{gap:9px}.topbar-actions .notification-panel{position:fixed;top:calc(76px + env(safe-area-inset-top));left:14px;right:auto;width:min(360px,calc(100vw - 28px));}}
+
+/* Hemtane reactions */
+.post-reactions{display:flex;flex-wrap:wrap;gap:9px;margin:12px 0 15px;padding:10px 0;border-bottom:1px solid var(--line)}.post-reaction{display:inline-flex;align-items:center;gap:7px;padding:8px 13px;border:1px solid var(--line);border-radius:999px;background:var(--panel2);color:var(--text);font:inherit;font-size:12px;font-weight:700;cursor:pointer;transition:background .18s,border-color .18s,transform .18s}.post-reaction:active{transform:scale(.96)}.post-reaction.active{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 15%,var(--panel2));color:var(--accent)}.post-reaction:disabled{opacity:.55;cursor:wait}.post-reaction span:first-child{font-size:17px;line-height:1}.post-reaction b{font-size:11px;font-variant-numeric:tabular-nums}
