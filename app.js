@@ -327,7 +327,7 @@ document.addEventListener("click",async e=>{
 });
 
 let chatChannel=null,chatTargetUserId=null,messageNoticeChannel=null;
-const PUSH_PUBLIC_KEY="BA18A8ln4zGToMNrHhAT5Q72Vbp-PXFWKTxHqCXDlH_p3xXpqJgha3kvMxY_VYCQuDLHf15xpmOLeG-6w-7aW8E";
+const PUSH_PUBLIC_KEY="BPPolgzAQDFy5o_PgkzN6LlCXXwrQ9NMQ_HkXxm-TFCStq8bpapsHEEvI0xOmIggd_E0cj2a_BMIZXTrR9L9SJ0";
 function base64UrlToBytes(value){const padding="=".repeat((4-value.length%4)%4);const raw=atob((value+padding).replace(/-/g,"+").replace(/_/g,"/"));return Uint8Array.from([...raw].map(c=>c.charCodeAt(0)))}
 let notificationAudioContext=null;
 function playShortNotificationTone(){
