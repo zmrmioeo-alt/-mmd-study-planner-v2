@@ -59,7 +59,7 @@
         await savePlannerData();
         await refreshTasks();
         await generateWeeklyPlan(true);
-        closeEditor();toast("وظیفه ویرایش شد و برنامه بر اساس تغییرات دوباره چیده شد.");
+        renderProgramsHub();closeEditor();toast("وظیفه ویرایش شد و برنامه بر اساس تغییرات دوباره چیده شد.");
       }catch(err){$("mmd-edit-message").textContent=err.message||"ذخیره انجام نشد.";btn.disabled=false}
     });
   }
@@ -75,7 +75,7 @@
         const {error}=await db.from("routines").update(patch).eq("id",item.id).eq("user_id",currentUser.id);
         if(error)throw error;
         Object.assign(item,patch);await loadRoutines();renderRoutines();renderTodayWork();await generateWeeklyPlan(true);
-        closeEditor();toast("برنامه ثابت ویرایش شد و برنامه هفتگی دوباره بررسی شد.");
+        renderProgramsHub();closeEditor();toast("برنامه ثابت ویرایش شد و برنامه هفتگی دوباره بررسی شد.");
       }catch(err){$("mmd-edit-message").textContent=err.message||"ذخیره انجام نشد.";btn.disabled=false}
     });
   }
