@@ -1035,7 +1035,7 @@ body.light .chat-compose button{
 /* MMD in-app notification center */
 .topbar-actions{display:flex;align-items:center;gap:12px;position:relative}
 .notification-center{position:relative;z-index:40}
-.notification-toggle{position:relative;width:43px;height:43px;border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--text);font-size:25px;cursor:pointer;display:grid;place-items:center}
+.notification-toggle{position:relative;width:43px;height:43px;border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--text);cursor:pointer;display:grid;place-items:center;transition:background .18s,border-color .18s,transform .18s}.notification-toggle:hover{background:var(--panel2);border-color:var(--accent)}.notification-toggle:active{transform:scale(.94)}.notification-bell-icon{width:21px;height:21px;display:block;stroke:currentColor}
 .notification-count{position:absolute;top:-6px;right:-6px;min-width:19px;height:19px;padding:0 4px;border-radius:20px;background:var(--danger);color:#fff;font-size:10px;font-weight:800;display:grid;place-items:center;border:2px solid var(--panel)}
 .notification-count.hidden{display:none}
 .notification-panel{position:absolute;top:calc(100% + 10px);left:0;width:min(360px,calc(100vw - 28px));max-height:min(470px,70dvh);overflow:hidden;background:var(--panel);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);display:flex;flex-direction:column}
@@ -1054,4 +1054,4 @@ body.light .chat-compose button{
 .notification-item-copy small{font-size:11px;color:var(--muted);line-height:1.7;white-space:normal}
 .notification-item-copy time{font-size:10px;color:var(--muted)}
 .notification-empty{padding:24px 12px;text-align:center;color:var(--muted);font-size:12px}
-@media(max-width:560px){.topbar-actions{gap:7px}.notification-panel{position:fixed;top:calc(76px + env(safe-area-inset-top));left:12px;right:12px;width:auto;max-height:65dvh}.notification-toggle{width:39px;height:39px}}
+@media(max-width:560px){.topbar-actions{gap:7px}.notification-panel{position:fixed;top:calc(76px + env(safe-area-inset-top));left:12px;right:12px;width:auto;max-height:65dvh}.notification-toggle{width:39px;height:39px}.notification-bell-icon{width:20px;height:20px}}
