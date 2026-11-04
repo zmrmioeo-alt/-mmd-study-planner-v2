@@ -386,10 +386,10 @@ async function enablePushNotifications(){
 $("enable-push")?.addEventListener("click",enablePushNotifications);
 async function testPushNotification(){addInAppNotification("اعلان آزمایشی","سامانه اعلان داخل سایت درست کار می‌کند.","mmd-test-"+Date.now(),"settings");toast("اعلان آزمایشی به فهرست اعلان‌ها اضافه شد.");}
 $("test-push")?.addEventListener("click",testPushNotification);
-$("notification-toggle")?.addEventListener("click",()=>{$("notification-panel")?.classList.toggle("hidden");if(!$("notification-panel")?.classList.contains("hidden"))markAllNotificationsRead()});
-$("notification-mark-read")?.addEventListener("click",markAllNotificationsRead);
+$("notification-toggle")?.addEventListener("click",e=>{e.preventDefault();e.stopPropagation();const panel=$("notification-panel"),button=$("notification-toggle");if(!panel)return;const opening=panel.classList.contains("hidden");panel.classList.toggle("hidden",!opening);button?.setAttribute("aria-expanded",String(opening));});
+$("notification-mark-read")?.addEventListener("click",()=>{markAllNotificationsRead();toast("همه اعلان‌ها خوانده شدند.")});
 $("notification-list")?.addEventListener("click",e=>{const item=e.target.closest("[data-notification-page]");if(!item)return;const n=inAppNotifications.find(x=>x.id===item.dataset.notificationId);if(n){n.read=true;saveInAppNotifications()}renderNotificationCenter();$("notification-panel")?.classList.add("hidden");navigate(item.dataset.notificationPage,n?.chatTargetId||null)});
-document.addEventListener("click",e=>{if(!e.target.closest(".notification-center"))$("notification-panel")?.classList.add("hidden")});
+document.addEventListener("click",e=>{if(!e.target.closest(".notification-center")){const panel=$("notification-panel");panel?.classList.add("hidden");$("notification-toggle")?.setAttribute("aria-expanded","false")}});$("notification-panel")?.addEventListener("click",e=>e.stopPropagation());
 async function startMessageRealtime(){
  if(messageNoticeChannel){await db.removeChannel(messageNoticeChannel);messageNoticeChannel=null}
  if(!currentUser)return;
