@@ -1064,3 +1064,25 @@ body.light .chat-compose button{
 .topbar-title-row .notification-toggle:hover{background:color-mix(in srgb,var(--accent) 12%,transparent);border-color:var(--accent)}
 .topbar-actions{margin-inline-start:auto;justify-content:flex-end}
 @media(max-width:560px){.topbar-title-row{gap:9px}.topbar-title-row .notification-toggle{width:37px;height:37px}}
+
+/* Notification controls grouped with the floating menu */
+.sidebar-quick-actions{display:flex;align-items:center;gap:9px;position:relative;z-index:1002;width:max-content;pointer-events:auto;margin-bottom:12px}
+.sidebar-quick-actions .notification-toggle{width:58px;height:58px;border-radius:19px;background:linear-gradient(145deg,#202c40,#111b2b);border:1px solid #c6a66b88;color:#f2d7a1;box-shadow:0 10px 28px #0007}
+.sidebar-quick-actions .notification-bell-icon{display:none}
+.sidebar-quick-actions .notification-toggle:before{content:"🔔";font-size:25px;line-height:1}
+.sidebar-quick-actions .notification-count{top:-5px;right:-5px}
+.menu-notification-count{position:absolute;top:-6px;right:-7px;min-width:21px;height:21px;padding:0 5px;display:grid;place-items:center;border-radius:20px;background:#e84d5b;color:#fff;border:2px solid #f0d9a8;font-size:10px;font-weight:900;box-shadow:0 3px 10px #0005}
+.menu-notification-count.hidden{display:none}
+.notification-popup{position:fixed;inset:0;z-index:3000;display:grid;place-items:center;padding:20px;background:#050914b8;backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}
+.notification-popup.hidden{display:none}
+.notification-popup-card{position:relative;width:min(100%,370px);padding:27px 22px 20px;text-align:center;border:1px solid color-mix(in srgb,var(--accent) 48%,var(--line));border-radius:25px;background:linear-gradient(145deg,var(--panel2),var(--panel));box-shadow:0 25px 90px #0009;animation:notificationPopupIn .22s ease-out}
+.notification-popup-icon{font-size:37px;margin-bottom:10px;filter:drop-shadow(0 5px 12px #e8b85a55)}
+.notification-popup-close{position:absolute;top:9px;left:11px;width:32px;height:32px;border:0;border-radius:50%;background:var(--panel);color:var(--muted);font-size:23px}
+.notification-popup-card>small{color:var(--accent);font-size:11px;font-weight:800}
+.notification-popup-card h3{margin:8px 0;font-size:18px;color:var(--text)}
+.notification-popup-card p{margin:0;color:var(--muted);font-size:13px;line-height:1.9;overflow-wrap:anywhere}
+.notification-popup-actions{display:flex;gap:9px;margin-top:20px}
+.notification-popup-actions button{flex:1}
+@keyframes notificationPopupIn{from{opacity:0;transform:translateY(12px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media(max-width:850px){.sidebar-quick-actions{margin:0;gap:8px}.sidebar-quick-actions .mobile-menu-toggle,.sidebar-quick-actions .notification-toggle{width:56px;height:56px}.sidebar-quick-actions .notification-toggle{border-radius:18px}.sidebar-quick-actions .notification-panel{position:absolute;top:calc(100% + 10px);left:0;right:auto;width:min(350px,calc(100vw - 28px));max-height:65dvh}.sidebar-quick-actions .notification-center{position:relative;z-index:1003}}
+@media(max-width:560px){.sidebar-quick-actions{gap:7px}.sidebar-quick-actions .mobile-menu-toggle,.sidebar-quick-actions .notification-toggle{width:54px;height:54px}.sidebar-quick-actions .notification-toggle:before{font-size:24px}}
