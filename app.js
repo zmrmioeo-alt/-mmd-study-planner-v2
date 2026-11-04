@@ -62,12 +62,12 @@ async function continueAfterPolicy(){
 $("terms-checkbox").addEventListener("change",e=>{$("accept-terms").disabled=!e.target.checked});
 $("accept-terms").addEventListener("click",async()=>{
  if(!$("terms-checkbox").checked)return;
- try{localStorage.setItem("mmd_terms_accepted","mmd-terms-2026-11-v3");await continueAfterPolicy()}
+ try{localStorage.setItem("mmd_terms_accepted","mmd-terms-2026-11-v4");await continueAfterPolicy()}
  catch(err){console.error(err);message("terms-message","ذخیره تأیید قوانین ممکن نشد. تنظیمات مرورگر را بررسی کنید.",true)}
 });
 async function boot(){
  if("serviceWorker" in navigator){navigator.serviceWorker.register("./service-worker.js").catch(err=>console.warn("Service worker unavailable",err));}
- if(localStorage.getItem("mmd_terms_accepted")!=="mmd-terms-2026-11-v3"){show("terms-view",true);show("auth-view",false);show("app-view",false);return}
+ if(localStorage.getItem("mmd_terms_accepted")!=="mmd-terms-2026-11-v4"){show("terms-view",true);show("auth-view",false);show("app-view",false);return}
  db.auth.onAuthStateChange((event)=>{if(event==="SIGNED_OUT"){currentUser=null;profile=null;setupPersonalSwitcher();show("app-view",false);show("expired-subscription-view",false);show("banned-account-view",false);show("auth-view",true)}});
  await continueAfterPolicy();
 }
