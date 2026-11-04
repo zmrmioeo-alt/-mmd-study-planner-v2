@@ -17,7 +17,7 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script defer src="https://unpkg.com/@majidh1/jalalidatepicker@1.0.0/dist/jalalidatepicker.min.js"></script>
   <script>window.addEventListener("error",function(e){if(e.target&&e.target.src&&e.target.src.includes("xlsx.full.min.js")&&!window.XLSX){var s=document.createElement("script");s.src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js";document.head.appendChild(s)}},true);</script>
-  <script defer src="app.js?v=privacy-push-v2"></script>
+  <script defer src="app.js?v=1.2.8-inapp"></script>
 </head>
 <body>
   <div id="terms-view" class="auth-wrap hidden">
@@ -98,7 +98,7 @@
     </aside>
 
     <main class="main">
-      <header class="topbar"><div><p class="eyebrow">MMD / PERSONAL WORKSPACE</p><h1 id="page-title">امروز</h1></div><div class="date-pill" id="today-date"></div></header>
+      <header class="topbar"><div><p class="eyebrow">MMD / PERSONAL WORKSPACE</p><h1 id="page-title">امروز</h1></div><div class="topbar-actions"><div class="notification-center"><button id="notification-toggle" class="notification-toggle" type="button" aria-label="اعلان‌ها">♢<span id="notification-count" class="notification-count hidden">۰</span></button><section id="notification-panel" class="notification-panel hidden"><div class="notification-panel-head"><b>اعلان‌ها</b><button id="notification-mark-read" type="button">خواندن همه</button></div><div id="notification-list" class="notification-list"><p class="notification-empty">هنوز اعلانی دریافت نکرده‌ای.</p></div></section></div><div class="date-pill" id="today-date"></div></div></header>
       <section id="page-today" class="page">
         <div class="welcome-panel"><div><p class="eyebrow">YOUR DAY, YOUR PACE</p><h2 id="welcome-title">برنامه امروزت آماده است.</h2><p id="welcome-mood">کارها را انجام بده و پیشرفتت را ثبت کن.</p></div><div class="progress-ring" id="today-ring"><strong id="today-percent">0٪</strong><small>انجام‌شده</small></div></div>
         <div class="stats-grid"><article class="stat-card"><span>کل وظایف</span><b id="stat-total">۰</b></article><article class="stat-card"><span>انجام‌شده</span><b id="stat-done">۰</b></article><article class="stat-card"><span>باقی‌مانده</span><b id="stat-pending">۰</b></article></div>
@@ -208,7 +208,7 @@
           <label>مدت خواب شبانه (ساعت)<input id="sleep-hours" type="number" min="0" max="24" step=".5"></label>
           <label>ساعت بیداری<input id="wake-time" type="time"></label>
           <div class="settings-block"><div><h3>رنگ و ظاهر برنامه</h3><p class="muted">فضای برنامه را مطابق سلیقه‌ات انتخاب کن.</p></div><label>رنگ‌بندی<select id="accent-theme"><option value="emerald">سبز نئونی</option><option value="ocean">اقیانوسی</option><option value="violet">بنفش کهکشانی</option><option value="rose">صورتی یخی</option><option value="sunset">غروب آفتاب</option><option value="gold">طلایی لوکس</option><option value="mint">نعنایی</option><option value="graphite">خاکستری مینیمال</option></select></label><label>حالت نمایش<select id="appearance"><option value="light" selected>روشن</option><option value="dark">تیره</option><option value="system">مطابق دستگاه</option></select></label><label>تم فصلی<select id="season-theme"><option value="auto">خودکار بر اساس فصل</option><option value="spring">بهار · سبز و شکوفه‌ای</option><option value="summer">تابستان · آبی و آفتابی</option><option value="autumn">پاییز · نارنجی و گرم</option><option value="winter">زمستان · یخی و آبی</option></select></label><div class="palette-preview" aria-label="پیش‌نمایش رنگ‌ها"><i></i><i></i><i></i><i></i><i></i></div></div><div class="settings-block"><div><h3>برنامه‌ریز هوشمند هفتگی</h3><p class="muted">برنامه‌ریز هفتگی برای همه حساب‌ها فعال است و زمان‌بندی‌ها در حساب کاربر ذخیره می‌شوند.</p></div><label class="switch-row"><input id="smart-planner-toggle" type="checkbox" checked disabled><span>برنامه‌ریز هفتگی فعال است</span></label></div><div class="settings-block humor-setting"><div><h3>لحن طنز و شوخی</h3><p class="muted">در صورت فعال‌سازی، پیام‌های کوتاه و شوخ‌طبعانه در بخش‌های برنامه نمایش داده می‌شوند.</p></div><label class="switch-row"><input id="humor-enabled" type="checkbox"><span>فعال‌سازی لحن طنز</span></label></div>
-          <div class="settings-block"><div><h3>اعلان پیام‌ها</h3><p class="muted">با فعال‌سازی، هنگام دریافت پیام چت، اطلاعیه جدید یا مطلب تازه همتانه، حتی در حالت بسته بودن برنامه اعلان گوشی دریافت می‌کنی.</p><p id="push-status" class="message" role="status">وضعیت اعلان در حال بررسی...</p></div><button id="enable-push" class="secondary" type="button">فعال‌سازی اعلان‌های گوشی</button><button id="test-push" class="secondary" type="button">ارسال اعلان آزمایشی</button></div>
+          <div class="settings-block"><div><h3>اعلان پیام‌ها</h3><p class="muted">اعلان پیام‌ها، اطلاعیه‌ها و مطالب تازه در فهرست اعلان‌های سایت ثبت می‌شود. برای دریافت زنده باید سایت باز باشد؛ اعلان گوشی در پس‌زمینه فقط تا زمانی ممکن است که صفحه فعال بماند.</p><p id="push-status" class="message" role="status">وضعیت اعلان در حال بررسی...</p></div><button id="enable-push" class="secondary" type="button">فعال‌سازی اعلان‌های گوشی</button><button id="test-push" class="secondary" type="button">ارسال اعلان آزمایشی</button></div>
            <button class="primary" type="submit">ذخیره تنظیمات</button>
         </form>
       </section>
