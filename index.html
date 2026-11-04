@@ -78,7 +78,7 @@
   <div id="app-view" class="app-shell hidden">
     <aside class="sidebar" id="sidebar">
       <div class="brand"><span class="brand-mark small">MMD</span><div><b>Study Planner</b><small>پنل برنامه‌ریزی</small></div></div>
-      <button id="mobile-menu-toggle" class="mobile-menu-toggle" type="button" aria-label="باز کردن فهرست" aria-expanded="false"><span></span><span></span><span></span><b>منو</b></button>
+      <div class="sidebar-quick-actions"><button id="mobile-menu-toggle" class="mobile-menu-toggle" type="button" aria-label="باز کردن فهرست" aria-expanded="false"><span></span><span></span><span></span><b>منو</b><span id="menu-notification-count" class="menu-notification-count hidden">۰</span></button><div class="notification-center"><button id="notification-toggle" class="notification-toggle" type="button" aria-label="اعلان‌ها"><svg class="notification-bell-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg><span id="notification-count" class="notification-count hidden">۰</span></button><section id="notification-panel" class="notification-panel hidden"><div class="notification-panel-head"><b>اعلان‌ها</b><button id="notification-mark-read" type="button">خواندن همه</button></div><div id="notification-list" class="notification-list"><p class="notification-empty">هنوز اعلانی دریافت نکرده‌ای.</p></div></section></div></div>
       <nav id="main-nav">
         <button class="nav-link active" data-page="today">◷ <span>امروز</span></button>
         <button class="nav-link" data-page="today-work">☑ <span>کارهای امروز</span></button>
@@ -98,7 +98,7 @@
     </aside>
 
     <main class="main">
-      <header class="topbar"><div class="topbar-title"><p class="eyebrow">MMD / PERSONAL WORKSPACE</p><div class="topbar-title-row"><h1 id="page-title">امروز</h1></div></div><div class="topbar-actions"><div class="notification-center"><button id="notification-toggle" class="notification-toggle" type="button" aria-label="اعلان‌ها"><svg class="notification-bell-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg><span id="notification-count" class="notification-count hidden">۰</span></button><section id="notification-panel" class="notification-panel hidden"><div class="notification-panel-head"><b>اعلان‌ها</b><button id="notification-mark-read" type="button">خواندن همه</button></div><div id="notification-list" class="notification-list"><p class="notification-empty">هنوز اعلانی دریافت نکرده‌ای.</p></div></section></div><div class="date-pill" id="today-date"></div></div></header>
+      <header class="topbar"><div class="topbar-title"><p class="eyebrow">MMD / PERSONAL WORKSPACE</p><div class="topbar-title-row"><h1 id="page-title">امروز</h1></div></div><div class="topbar-actions"><div class="date-pill" id="today-date"></div></div></header>
       <section id="page-today" class="page">
         <div class="welcome-panel"><div><p class="eyebrow">YOUR DAY, YOUR PACE</p><h2 id="welcome-title">برنامه امروزت آماده است.</h2><p id="welcome-mood">کارها را انجام بده و پیشرفتت را ثبت کن.</p></div><div class="progress-ring" id="today-ring"><strong id="today-percent">0٪</strong><small>انجام‌شده</small></div></div>
         <div class="stats-grid"><article class="stat-card"><span>کل وظایف</span><b id="stat-total">۰</b></article><article class="stat-card"><span>انجام‌شده</span><b id="stat-done">۰</b></article><article class="stat-card"><span>باقی‌مانده</span><b id="stat-pending">۰</b></article></div>
@@ -242,6 +242,6 @@
       <footer> MMD STUDY PLANNER <span>نسخه ۱.۱</span> <a href="install.html" style="color:var(--accent)">نصب اپلیکیشن</a></footer>
     </main>
   </div>
-  <div id="toast" class="toast" role="status"></div>
+  <div id="notification-popup" class="notification-popup hidden" role="alertdialog" aria-modal="true" aria-labelledby="notification-popup-title"><div class="notification-popup-card"><div class="notification-popup-icon">🔔</div><button id="notification-popup-close" class="notification-popup-close" type="button" aria-label="بستن">×</button><small>اعلان جدید</small><h3 id="notification-popup-title">اعلان</h3><p id="notification-popup-body"></p><div class="notification-popup-actions"><button id="notification-popup-open" class="primary" type="button">مشاهده</button><button id="notification-popup-dismiss" class="secondary" type="button">بستن</button></div></div></div><div id="toast" class="toast" role="status"></div>
 </body>
 </html>
