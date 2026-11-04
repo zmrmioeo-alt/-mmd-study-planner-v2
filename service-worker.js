@@ -1,5 +1,5 @@
-const CACHE_NAME="mmd-shell-v53";
-const CORE=["./","./index.html","./install.html","./app.js","./style.css","./assets/icon.svg","./assets/icon-192.svg","./manifest.webmanifest","./version.json"];
+const CACHE_NAME="mmd-shell-v54";
+const CORE=["./","./index.html","./install.html","./app.js","./planner-edit.js","./style.css","./assets/icon.svg","./assets/icon-192.svg","./manifest.webmanifest","./version.json"];
 self.addEventListener("message",event=>{if(event.data?.type==="SKIP_WAITING")self.skipWaiting()});
 self.addEventListener("install",event=>{event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting()))});
 self.addEventListener("activate",event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE_NAME).map(key=>caches.delete(key)))).then(()=>self.clients.claim()))});
