@@ -410,13 +410,13 @@ function stopMessageRealtime(){if(messageNoticeChannel){db.removeChannel(message
 
 async function notifyUnreadMessagesOnEntry(){
  if(!currentUser)return;
- const {data:conversations,error:conversationError}=await db.from("private_conversations").select("id").or("user_one.eq."+currentUser.id+",user_two.eq."+currentUser.id);
+ const {data:conversations,error:conversationError}=await db.from("private_conversations").select("id,user_one,user_two").or("user_one.eq."+currentUser.id+",user_two.eq."+currentUser.id);
  if(conversationError)throw conversationError;
  const ids=(conversations||[]).map(c=>c.id);if(!ids.length)return;
  const {data:unread,error}=await db.from("private_messages").select("id,conversation_id,sender_id").in("conversation_id",ids).neq("sender_id",currentUser.id).is("read_at",null).is("deleted_at",null);
  if(error)throw error;
  const count=unread?.length||0;
- if(count){addInAppNotification("پیام‌های خوانده‌نشده",fa(count)+" پیام جدید هنگام نبودنت دریافت شده است.","mmd-unread-entry-"+currentUser.id+"-"+new Date().toDateString(),"chat");toast("هنگام نبودنت "+fa(count)+" پیام جدید دریافت کردی. برای دیدن پیام‌ها وارد بخش چت شو.");const nav=$("chat-nav");if(nav){nav.dataset.unreadCount=String(count);nav.setAttribute("aria-label","چت؛ "+count+" پیام خوانده‌نشده");}}
+ if(count){const firstUnread=unread[0],conversation=conversations.find(c=>c.id===firstUnread.conversation_id);const peerId=conversation?(conversation.user_one===currentUser.id?conversation.user_two:conversation.user_one):null;const chatTargetId=conversation?(profile?.is_admin?conversation.id:peerId):null;addInAppNotification("پیام‌های خوانده‌نشده",fa(count)+" پیام جدید هنگام نبودنت دریافت شده است.","mmd-unread-entry-"+currentUser.id+"-"+new Date().toDateString(),"chat",chatTargetId);toast("هنگام نبودنت "+fa(count)+" پیام جدید دریافت کردی. برای دیدن پیام‌ها وارد بخش چت شو.");const nav=$("chat-nav");if(nav){nav.dataset.unreadCount=String(count);nav.setAttribute("aria-label","چت؛ "+count+" پیام خوانده‌نشده");}}
 }
 
 function stopChatRealtime(){if(chatChannel){db.removeChannel(chatChannel);chatChannel=null}}
