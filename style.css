@@ -1031,3 +1031,27 @@ body.light .chat-compose button{
     margin-top:12px;
   }
 }
+
+/* MMD in-app notification center */
+.topbar-actions{display:flex;align-items:center;gap:12px;position:relative}
+.notification-center{position:relative;z-index:40}
+.notification-toggle{position:relative;width:43px;height:43px;border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--text);font-size:25px;cursor:pointer;display:grid;place-items:center}
+.notification-count{position:absolute;top:-6px;right:-6px;min-width:19px;height:19px;padding:0 4px;border-radius:20px;background:var(--danger);color:#fff;font-size:10px;font-weight:800;display:grid;place-items:center;border:2px solid var(--panel)}
+.notification-count.hidden{display:none}
+.notification-panel{position:absolute;top:calc(100% + 10px);left:0;width:min(360px,calc(100vw - 28px));max-height:min(470px,70dvh);overflow:hidden;background:var(--panel);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);display:flex;flex-direction:column}
+.notification-panel.hidden{display:none}
+.notification-panel-head{display:flex;align-items:center;justify-content:space-between;padding:14px 15px;border-bottom:1px solid var(--line)}
+.notification-panel-head b{font-size:14px}
+.notification-panel-head button{border:0;background:transparent;color:var(--accent);font:inherit;font-size:11px;cursor:pointer}
+.notification-list{overflow:auto;padding:7px;display:grid;gap:5px}
+.notification-item{display:flex;align-items:flex-start;gap:10px;width:100%;text-align:right;padding:11px;border:0;border-radius:12px;background:transparent;color:var(--text);cursor:pointer}
+.notification-item:hover{background:var(--panel2)}
+.notification-item.is-unread{background:color-mix(in srgb,var(--accent) 8%,var(--panel))}
+.notification-item-dot{flex:0 0 8px;width:8px;height:8px;margin-top:6px;border-radius:50%;background:var(--accent)}
+.notification-item.is-read .notification-item-dot{background:var(--line)}
+.notification-item-copy{min-width:0;display:grid;gap:4px}
+.notification-item-copy b{font-size:12px}
+.notification-item-copy small{font-size:11px;color:var(--muted);line-height:1.7;white-space:normal}
+.notification-item-copy time{font-size:10px;color:var(--muted)}
+.notification-empty{padding:24px 12px;text-align:center;color:var(--muted);font-size:12px}
+@media(max-width:560px){.topbar-actions{gap:7px}.notification-panel{position:fixed;top:calc(76px + env(safe-area-inset-top));left:12px;right:12px;width:auto;max-height:65dvh}.notification-toggle{width:39px;height:39px}}
