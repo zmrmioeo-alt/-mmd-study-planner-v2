@@ -18,8 +18,11 @@ function watchApprovalStatus(){
  approvalMonitorTimer=setInterval(async()=>{
   if(!currentUser||currentUser.id!==watchedUserId){clearInterval(approvalMonitorTimer);approvalMonitorTimer=null;return;}
   try{
-   const {data,error}=await db.from("profiles").select("is_approved,is_banned").eq("id",watchedUserId).maybeSingle();
-   if(error||!data)return;
+   const {data:{session}}=await db.auth.getSession();
+   if(!session)return;
+   const response=await fetch(ADMIN_FUNCTION,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+session.access_token,"apikey":SUPABASE_KEY},body:JSON.stringify({action:"check_own_approval"})});
+   if(!response.ok)return;
+   const data=await response.json();
    if(data.is_approved!==false||data.is_banned===true){clearInterval(approvalMonitorTimer);approvalMonitorTimer=null;location.reload();}
   }catch(e){console.warn("Approval status check failed",e)}
  },7000);
