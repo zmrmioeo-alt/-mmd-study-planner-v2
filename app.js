@@ -359,6 +359,8 @@ async function syncPushStatus(){
 async function enablePushNotifications(){
  const btn=$("enable-push");btn.disabled=true;
  try{
+  const AudioContextCtor=window.AudioContext||window.webkitAudioContext;
+  if(AudioContextCtor){if(!notificationAudioContext)notificationAudioContext=new AudioContextCtor();if(notificationAudioContext.state==="suspended")notificationAudioContext.resume().catch(()=>{})}
   if(!("Notification"in window)||!window.isSecureContext||!("serviceWorker"in navigator))throw new Error("مرورگر یا اتصال امن از اعلان پشتیبانی نمی‌کند.");
   const permission=await Notification.requestPermission();if(permission!=="granted")throw new Error("اجازه اعلان داده نشد. از تنظیمات مرورگر، اعلان‌ها را فعال کن.");
   const reg=await navigator.serviceWorker.register("./service-worker.js");let sub=await reg.pushManager.getSubscription();
