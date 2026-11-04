@@ -79,9 +79,38 @@
       }catch(err){$("mmd-edit-message").textContent=err.message||"ذخیره انجام نشد.";btn.disabled=false}
     });
   }
+
+  const dayNames=["یکشنبه","دوشنبه","سه‌شنبه","چهارشنبه","پنجشنبه","جمعه","شنبه"];
+  function renderProgramsHub(){
+    const host=$("programs-hub-list");if(!host)return;
+    const taskCards=tasks.map(t=>'<article class="task-item"><div class="task-main"><h3>'+esc(t.title)+'</h3><p>وظیفه و تکلیف · مهلت: '+esc(t.due_at?jalaliDate(t.due_at,true):"بدون مهلت")+' · مدت: '+esc(t.estimated_minutes||"—")+' دقیقه</p></div><span class="priority">'+(t.status==="done"?"انجام‌شده":t.status==="cancelled"?"لغوشده":"در انتظار")+'</span><div class="task-actions"><button class="secondary" type="button" data-task-edit="'+esc(t.id)+'">ویرایش</button></div></article>').join("");
+    const routineCards=routines.map(r=>'<article class="routine-card"><b>'+esc(r.title)+'</b><small>برنامه ثابت · '+esc(dayNames[Number(r.weekday)]||"")+' · '+esc((r.scheduled_time||"").slice(0,5)||"بدون ساعت")+'</small><p class="muted">'+esc(r.details||"")+'</p><button class="secondary" type="button" data-routine-edit="'+esc(r.id)+'">ویرایش</button></article>').join("");
+    const planCards=weeklyPlan.map(p=>{
+      const t=tasks.find(x=>String(x.id)===String(p.task_id));if(!t)return "";
+      const start=new Date(p.start);
+      const time=Number.isNaN(start.getTime())?"":String(start.getHours()).padStart(2,"0")+":"+String(start.getMinutes()).padStart(2,"0");
+      return '<article class="task-item"><div class="task-main"><h3>'+esc(t.title)+'</h3><p>زمان‌بندی هفتگی · '+esc(p.date)+' · '+esc(time)+' · '+esc(p.duration)+' دقیقه</p></div><div class="task-actions"><button class="secondary" type="button" data-plan-edit="'+esc(p.id||p.task_id)+'" data-plan-date="'+esc(p.date)+'" data-plan-time="'+esc(time)+'">ویرایش زمان</button><button class="secondary" type="button" data-task-edit="'+esc(t.id)+'">ویرایش تکلیف</button></div></article>';
+    }).join("");
+    host.innerHTML='<section class="form-panel"><div class="section-head"><div><h3>وظایف و تکالیف</h3><p class="muted">ویرایش عنوان، توضیحات، مهلت، اولویت، وضعیت و مدت‌زمان</p></div><b>'+fa(tasks.length)+'</b></div>'+ (taskCards||'<p class="empty">تکلیفی ثبت نشده است.</p>')+'</section><section class="form-panel"><div class="section-head"><div><h3>برنامه‌های ثابت</h3><p class="muted">ویرایش روز، ساعت و توضیحات برنامه</p></div><b>'+fa(routines.length)+'</b></div>'+ (routineCards||'<p class="empty">برنامه ثابتی ثبت نشده است.</p>')+'</section><section class="form-panel"><div class="section-head"><div><h3>زمان‌بندی هفتگی</h3><p class="muted">ویرایش ساعت یا روز هر بخش؛ پس از ذخیره، تداخل‌ها بررسی می‌شوند.</p></div><b>'+fa(weeklyPlan.length)+'</b></div>'+ (planCards||'<p class="empty">هنوز برنامه هفتگی ساخته نشده است.</p>')+'</section>';
+  }
+  async function editPlanTime(id,date,time){
+    const form=openEditor('<h2 style="margin:0">ویرایش زمان‌بندی</h2>'+field("تاریخ","mmd-p-date",date,"date",'required')+field("ساعت شروع","mmd-p-time",time,"time",'required'));
+    form.addEventListener("submit",async e=>{
+      e.preventDefault();const btn=$("mmd-edit-submit");btn.disabled=true;
+      try{
+        const d=$("mmd-p-date").value,tm=$("mmd-p-time").value;
+        if(!d||!tm)throw new Error("تاریخ و ساعت را کامل وارد کن.");
+        await movePlannerTask(id,d,tm);
+        renderProgramsHub();closeEditor();
+      }catch(err){$("mmd-edit-message").textContent=err.message||"تغییر زمان انجام نشد.";btn.disabled=false}
+    });
+  }
+
   document.addEventListener("click",e=>{
+    const p=e.target.closest("[data-plan-edit]");if(p){editPlanTime(p.dataset.planEdit,p.dataset.planDate,p.dataset.planTime);return}
     const t=e.target.closest("[data-task-edit]");if(t){editTask(t.dataset.taskEdit);return}
     const r=e.target.closest("[data-routine-edit]");if(r){editRoutine(r.dataset.routineEdit);return}
   });
+  document.addEventListener("click",e=>{if(e.target.closest('[data-page="programs"]'))renderProgramsHub();if(e.target.closest("#programs-refresh"))renderProgramsHub();});
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",start,{once:true});else start();
 })();
