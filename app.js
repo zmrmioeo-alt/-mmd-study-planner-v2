@@ -344,11 +344,13 @@ function playShortNotificationTone(){
  }catch(e){console.debug("Notification tone unavailable",e)}
 }
 async function notifyLiveEvent(title,body,tag,url){
- if(!("Notification"in window)||Notification.permission!=="granted")return;
- const reg=await navigator.serviceWorker?.getRegistration();
- if(reg)await reg.showNotification(title,{body,icon:"./assets/icon.svg",badge:"./assets/icon-192.svg",tag,renotify:true,vibrate:[100,50,100],data:{url}});
- else new Notification(title,{body,tag});
  if(document.visibilityState==="visible"){playShortNotificationTone();toast(body)}
+ if(!("Notification"in window)||Notification.permission!=="granted")return;
+ try{
+  const reg=await navigator.serviceWorker?.getRegistration();
+  if(reg)await reg.showNotification(title,{body,icon:"./assets/icon.svg",badge:"./assets/icon-192.svg",tag,renotify:true,vibrate:[100,50,100],data:{url}});
+  else new Notification(title,{body,tag});
+ }catch(err){console.debug("Browser notification unavailable; in-page notice was shown",err)}
 }
 async function syncPushStatus(){
  const el=$("push-status");if(!el)return;
@@ -371,6 +373,17 @@ async function enablePushNotifications(){
  finally{btn.disabled=false}
 }
 $("enable-push")?.addEventListener("click",enablePushNotifications);
+async function testPushNotification(){
+ const btn=$("test-push");if(btn)btn.disabled=true;
+ try{
+  const {data,error}=await db.functions.invoke("push-notify",{body:{action:"test"}});
+  if(error)throw error;
+  if(!data?.ok)throw new Error(data?.error||"ارسال اعلان آزمایشی ناموفق بود.");
+  toast("اعلان آزمایشی ارسال شد؛ اعلان‌های مرورگر را بررسی کن.");
+ }catch(err){console.error("Push test failed",err);toast(err.message||"ارسال اعلان آزمایشی ناموفق بود.")}
+ finally{if(btn)btn.disabled=false}
+}
+$("test-push")?.addEventListener("click",testPushNotification);
 async function startMessageRealtime(){
  if(messageNoticeChannel){await db.removeChannel(messageNoticeChannel);messageNoticeChannel=null}
  if(!currentUser)return;
