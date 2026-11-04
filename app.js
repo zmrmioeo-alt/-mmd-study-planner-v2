@@ -349,6 +349,7 @@ function playShortNotificationTone(){
  try{const Ctx=window.AudioContext||window.webkitAudioContext;if(!Ctx)return;if(!notificationAudioContext)notificationAudioContext=new Ctx();if(notificationAudioContext.state==="suspended")notificationAudioContext.resume();const osc=notificationAudioContext.createOscillator(),gain=notificationAudioContext.createGain(),now=notificationAudioContext.currentTime;osc.type="sine";osc.frequency.setValueAtTime(880,now);osc.frequency.exponentialRampToValueAtTime(660,now+.16);gain.gain.setValueAtTime(.0001,now);gain.gain.exponentialRampToValueAtTime(.12,now+.015);gain.gain.exponentialRampToValueAtTime(.0001,now+.19);osc.connect(gain);gain.connect(notificationAudioContext.destination);osc.start(now);osc.stop(now+.2)}catch(e){console.debug("Notification tone unavailable",e)}
 }
 async function notifyLiveEvent(title,body,tag,page){
+ if(localStorage.getItem("mmd_inapp_notifications")==="off")return;
  addInAppNotification(title,body,tag,page);
  if(document.visibilityState==="visible"){playShortNotificationTone();toast(body)}
  if(localStorage.getItem("mmd_browser_notifications")==="on"&&"Notification"in window&&Notification.permission==="granted"){
