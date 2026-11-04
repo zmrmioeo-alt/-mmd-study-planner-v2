@@ -110,7 +110,9 @@ const PERSONAL_SWITCH_ACCOUNTS={
  "d32c5ceb-ca91-46c8-978c-fb3d33c45eca":{name:"ادمین",targetId:"17b4aa61-7b56-4f05-a1b7-871eb5df40db",targetName:"سید محمد امین ابطحی",slot:"mmd_admin_session_v1"},
  "17b4aa61-7b56-4f05-a1b7-871eb5df40db":{name:"سید محمد امین ابطحی",targetId:"d32c5ceb-ca91-46c8-978c-fb3d33c45eca",targetName:"ادمین",slot:"mmd_mohammad_amin_session_v1"},
  "397bef6c-9fb3-4ab2-9a45-723b014c38f4":{name:"ادمین جانشین",targetId:"77e3c92d-6ae9-4248-8541-dbb16ed495b3",targetName:"کیان سعیدی",slot:"mmd_deputy_admin_session_v1"},
- "77e3c92d-6ae9-4248-8541-dbb16ed495b3":{name:"کیان سعیدی",targetId:"397bef6c-9fb3-4ab2-9a45-723b014c38f4",targetName:"ادمین جانشین",slot:"mmd_kian_session_v1"}
+ "77e3c92d-6ae9-4248-8541-dbb16ed495b3":{name:"کیان سعیدی",targetId:"397bef6c-9fb3-4ab2-9a45-723b014c38f4",targetName:"ادمین جانشین",slot:"mmd_kian_session_v1"},
+  "f6e434ad-3940-437a-82cf-777eecfbd512":{name:"ادمین 2",targetId:"6365ee1f-0c27-40bf-885c-85a7b6d6b5a6",targetName:"علی میرشمشیرگران",slot:"mmd_admin2_session_v1"},
+  "6365ee1f-0c27-40bf-885c-85a7b6d6b5a6":{name:"علی میرشمشیرگران",targetId:"f6e434ad-3940-437a-82cf-777eecfbd512",targetName:"ادمین 2",slot:"mmd_ali_mirshamshirgaran_session_v1"}
 };
 function personalSlotFor(id){return PERSONAL_SWITCH_ACCOUNTS[id]?.slot||null}
 function readPersonalSession(slot){try{return JSON.parse(localStorage.getItem(slot)||"null")}catch(_){return null}}
