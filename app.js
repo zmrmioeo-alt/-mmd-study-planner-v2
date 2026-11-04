@@ -386,7 +386,7 @@ async function startMessageRealtime(){
  if(!currentUser)return;
  messageNoticeChannel=db.channel("mmd-message-notices").on("postgres_changes",{event:"INSERT",schema:"public",table:"private_messages"},async payload=>{
   const msg=payload.new;if(!msg||msg.sender_id===currentUser.id)return;
-  try{const {data:conv,error}=await db.from("private_conversations").select("user_one,user_two").eq("id",msg.conversation_id).maybeSingle();if(error||!conv||![conv.user_one,conv.user_two].includes(currentUser.id))return;await notifyLiveEvent("پیام جدید در چت", "یک پیام جدید دریافت کردی.", "mmd-live-chat-"+msg.id, "./?page=chat");}
+  try{const {data:conv,error}=await db.from("private_conversations").select("user_one,user_two").eq("id",msg.conversation_id).maybeSingle();if(error||!conv||![conv.user_one,conv.user_two].includes(currentUser.id))return;await notifyLiveEvent("پیام جدید در چت", "یک پیام جدید دریافت کردی.", "mmd-live-chat-"+msg.id, "chat");}
   catch(err){console.debug("Message notice skipped",err)}
  }).subscribe();
  syncPushStatus().catch(()=>{});
@@ -416,10 +416,10 @@ function startCommunityRealtime(){
   const post=payload.new;
   if(post?.status==="approved"&&post.user_id!==currentUser?.id&&!seenCommunityNotices.has(post.id)){
    seenCommunityNotices.add(post.id);
-   notifyLiveEvent("مطلب تازه در همتانه",post.title||"یک مطلب تازه منتشر شد.","mmd-live-community-"+post.id,"./?page=humor").catch(()=>{});
+   notifyLiveEvent("مطلب تازه در همتانه",post.title||"یک مطلب تازه منتشر شد.","mmd-live-community-"+post.id,"humor").catch(()=>{});
   }
  })
- .on("postgres_changes",{event:"*",schema:"public",table:"humor_post_comments"},async payload=>{const c=payload.new;if(c?.user_id!==currentUser?.id){try{const {data:post}=await db.from("humor_posts").select("user_id").eq("id",c.post_id).maybeSingle();if(post?.user_id===currentUser.id)await notifyLiveEvent("دیدگاه تازه در همتانه",String(c.body||"یک دیدگاه تازه ثبت شد.").slice(0,120),"mmd-live-comment-"+c.id,"./?page=humor")}catch(err){console.debug("Comment notice skipped",err)}}if(!$("page-humor").classList.contains("hidden"))loadHumorFeed().catch(e=>toast(e.message))})
+ .on("postgres_changes",{event:"*",schema:"public",table:"humor_post_comments"},async payload=>{const c=payload.new;if(c?.user_id!==currentUser?.id){try{const {data:post}=await db.from("humor_posts").select("user_id").eq("id",c.post_id).maybeSingle();if(post?.user_id===currentUser.id)await notifyLiveEvent("دیدگاه تازه در همتانه",String(c.body||"یک دیدگاه تازه ثبت شد.").slice(0,120),"mmd-live-comment-"+c.id,"humor")}catch(err){console.debug("Comment notice skipped",err)}}if(!$("page-humor").classList.contains("hidden"))loadHumorFeed().catch(e=>toast(e.message))})
  .on("postgres_changes",{event:"*",schema:"public",table:"humor_post_likes"},()=>{if(!$("page-humor").classList.contains("hidden"))loadHumorFeed().catch(e=>toast(e.message))})
  .subscribe()
 }
@@ -736,7 +736,7 @@ function startAnnouncementRealtime(){
  stopAnnouncementRealtime();
  announcementChannel=db.channel("mmd-announcements").on("postgres_changes",{event:"INSERT",schema:"public",table:"announcements"},payload=>{
   const item=payload.new;if(!item?.published||item.created_by===currentUser?.id)return;
-  if(!window.__announcements?.some(x=>x.id===item.id)){window.__announcements=[item,...(window.__announcements||[])];renderAnnouncements();notifyLiveEvent("اطلاعیه جدید در MMD",item.title||item.body||"یک اطلاعیه تازه منتشر شد.","mmd-live-announcement-"+item.id,"./?page=announcements").catch(()=>{});}
+  if(!window.__announcements?.some(x=>x.id===item.id)){window.__announcements=[item,...(window.__announcements||[])];renderAnnouncements();notifyLiveEvent("اطلاعیه جدید در MMD",item.title||item.body||"یک اطلاعیه تازه منتشر شد.","mmd-live-announcement-"+item.id,"announcements").catch(()=>{});}
  }).subscribe();
 }
 const SCHOOL_CLASSES={"هفتم":["هدف","مسئولیت"],"هشتم":["تلاش","کوشش"],"نهم":["اراده","استقامت"],"معلم":[]};
