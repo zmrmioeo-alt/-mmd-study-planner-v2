@@ -456,7 +456,7 @@ async function loadSupportChat(){
  if(profile?.chat_enabled===false&&!profile?.is_admin){show("chat-content",false);$("chat-status").textContent="دسترسی چت غیرفعال است.";return}
  show("chat-content",true);
  const {data:convs,error}=await db.from("private_conversations").select("*").order("created_at",{ascending:false});if(error)throw error;
- const {data:profiles,error:pe}=await db.from("profiles").select("id,display_name,chat_enabled,school_grade,school_class,account_type,avatar_path,bio").eq("is_approved",true);if(pe)throw pe;
+ const {data:profiles,error:pe}=await db.from("public_profiles").select("id,display_name,chat_enabled,school_grade,school_class,account_type,avatar_path,bio");if(pe)throw pe;
  const names=new Map((profiles||[]).map(p=>[p.id,p.display_name||"کاربر"]));
  window.__chatProfiles=profiles||[];
  const list=$("chat-inbox-list");
@@ -798,10 +798,10 @@ async function loadHumorFeed(){
  if(!featureFlags.humor_enabled&&!profile?.is_admin){$("humor-feed").textContent="این بخش موقتاً غیرفعال است.";return}
  const q=await db.from("humor_posts").select("id,user_id,title,body,media_path,media_type,status,created_at").or("status.eq.approved,user_id.eq."+currentUser.id).order("created_at",{ascending:false});if(q.error)throw q.error;
  const ids=[...new Set((q.data||[]).map(p=>p.user_id))];
- const pr=ids.length?await db.from("profiles").select("id,display_name,bio,avatar_path").in("id",ids):{data:[],error:null};if(pr.error)throw pr.error;
+ const pr=ids.length?await db.from("public_profiles").select("id,display_name,bio,avatar_path").in("id",ids):{data:[],error:null};if(pr.error)throw pr.error;
  const likes=await db.from("humor_post_likes").select("post_id,user_id");if(likes.error)throw likes.error;
  const comments=await db.from("humor_post_comments").select("id,post_id,user_id,body,created_at").order("created_at");if(comments.error)throw comments.error;
- const commentIds=[...new Set((comments.data||[]).map(x=>x.user_id))];const cp=commentIds.length?await db.from("profiles").select("id,display_name").in("id",commentIds):{data:[],error:null};if(cp.error)throw cp.error;const commentPeople=new Map((cp.data||[]).map(p=>[p.id,p]));const people=new Map((pr.data||[]).map(p=>[p.id,p]));const feed=$("humor-feed");feed.innerHTML="";
+ const commentIds=[...new Set((comments.data||[]).map(x=>x.user_id))];const cp=commentIds.length?await db.from("public_profiles").select("id,display_name").in("id",commentIds):{data:[],error:null};if(cp.error)throw cp.error;const commentPeople=new Map((cp.data||[]).map(p=>[p.id,p]));const people=new Map((pr.data||[]).map(p=>[p.id,p]));const feed=$("humor-feed");feed.innerHTML="";
  for(const p of q.data||[]){
   const u=people.get(p.user_id)||{};const card=document.createElement("article");card.className="post-card community-post";
   const author=document.createElement("button");author.className="post-author-link";author.type="button";
@@ -810,7 +810,7 @@ async function loadHumorFeed(){
   const name=document.createElement("b");name.textContent=u.display_name||"کاربر";author.append(name);author.addEventListener("click",()=>openPublicProfile(p.user_id).catch(x=>toast(x.message)));card.append(author);
   const meta=document.createElement("small");meta.className="post-time";meta.textContent=new Intl.DateTimeFormat("fa-IR",{dateStyle:"medium",timeStyle:"short"}).format(new Date(p.created_at))+(p.status==="pending"?" · در انتظار تأیید مدیر":"");card.append(meta);if(p.status==="pending"){const pending=document.createElement("p");pending.className="hint";pending.textContent="این مطلب فقط برای شما نمایش داده می‌شود و پس از تأیید مدیر برای همه منتشر خواهد شد.";card.append(pending)}const title=document.createElement("h3");title.textContent=p.title;card.append(title);
   const body=document.createElement("p");body.className="post-body";body.textContent=p.body||"";card.append(body);if(profile?.is_admin){const del=document.createElement("button");del.type="button";del.className="danger";del.textContent="حذف مطلب";del.addEventListener("click",async()=>{if(!confirm("این مطلب و فایل پیوست آن حذف شود؟"))return;if(p.media_path){const rm=await db.storage.from("humor-media").remove([p.media_path]);if(rm.error){toast(rm.error.message);return}}const r=await db.from("humor_posts").delete().eq("id",p.id);if(r.error){toast(r.error.message);return}toast("مطلب حذف شد.");await loadHumorFeed()});card.append(del)}
-  if(p.media_path){const z=await db.storage.from("humor-media").createSignedUrl(p.media_path,3600);if(z.data?.signedUrl){if(p.media_type==="video"){const video=document.createElement("video");video.controls=true;video.playsInline=true;video.controlsList="nodownload";video.disablePictureInPicture=true;video.src=z.data.signedUrl;card.append(video);const dl=document.createElement("button");dl.className="secondary download-request";dl.textContent="⬇ درخواست دانلود";dl.addEventListener("click",async()=>{const x=await db.from("profiles").select("login_id,phone").eq("is_admin",true).not("login_id","is",null).limit(1).maybeSingle();if(x.error){toast(x.error.message);return}alert("برای دانلود ویدئو باید اشتراک دانلود را از ادمین بخرید.\nشناسه مدیر: "+(x.data?.login_id||x.data?.phone||"از بخش ارتباط با مدیر"))});card.append(dl)}else{const img=document.createElement("img");img.src=z.data.signedUrl;img.alt="";img.style.maxWidth="100%";card.append(img)}}}
+  if(p.media_path){const z=await db.storage.from("humor-media").createSignedUrl(p.media_path,3600);if(z.data?.signedUrl){if(p.media_type==="video"){const video=document.createElement("video");video.controls=true;video.playsInline=true;video.controlsList="nodownload";video.disablePictureInPicture=true;video.src=z.data.signedUrl;card.append(video);const dl=document.createElement("button");dl.className="secondary download-request";dl.textContent="⬇ درخواست دانلود";dl.addEventListener("click",async()=>{alert("برای درخواست مجوز دانلود، از بخش «ارتباط با ادمین» پیام بفرست.")});card.append(dl)}else{const img=document.createElement("img");img.src=z.data.signedUrl;img.alt="";img.style.maxWidth="100%";card.append(img)}}}
   const pl=(likes.data||[]).filter(x=>x.post_id===p.id),liked=pl.some(x=>x.user_id===currentUser.id);
   const like=document.createElement("button");like.className="secondary";like.textContent=(liked?"♥ ":"♡ ")+fa(pl.length)+" پسند";like.addEventListener("click",async()=>{const old=await db.from("humor_post_likes").select("id").eq("post_id",p.id).eq("user_id",currentUser.id).maybeSingle();if(old.error){toast(old.error.message);return}const res=old.data?await db.from("humor_post_likes").delete().eq("id",old.data.id):await db.from("humor_post_likes").insert({post_id:p.id,user_id:currentUser.id});if(res.error){toast(res.error.message);return}await loadHumorFeed()});card.append(like);
   const postComments=(comments.data||[]).filter(x=>x.post_id===p.id);
@@ -821,7 +821,7 @@ async function loadHumorFeed(){
 }
 async function openPublicProfile(id){
  if(!id||id===currentUser?.id){navigate("profile");return}
- const q=await db.from("profiles").select("id,display_name,bio,avatar_path,school_grade,school_class,account_type,profile_color,chat_enabled").eq("id",id).maybeSingle();
+ const q=await db.from("public_profiles").select("id,display_name,bio,avatar_path,school_grade,school_class,account_type,profile_color,chat_enabled").eq("id",id).maybeSingle();
  if(q.error)throw q.error;if(!q.data)return;
  const p=q.data;
  const posts=await db.from("humor_posts").select("id,title,body,media_path,media_type,created_at").eq("user_id",id).eq("status","approved").order("created_at",{ascending:false}).limit(8);
