@@ -338,7 +338,7 @@ function renderNotificationCenter(){
  list.innerHTML=inAppNotifications.length?inAppNotifications.map(n=>'<button type="button" class="notification-item '+(n.read?"is-read":"is-unread")+'" data-notification-page="'+escapeHtml(n.page||"today")+'" data-notification-id="'+escapeHtml(n.id)+'"><span class="notification-item-dot"></span><span class="notification-item-copy"><b>'+escapeHtml(n.title)+'</b><small>'+escapeHtml(n.body)+'</small><time>'+escapeHtml(n.timeLabel||"")+'</time></span></button>').join(""):'<p class="notification-empty">هنوز اعلانی دریافت نکرده‌ای.</p>';
 }
 function addInAppNotification(title,body,tag,page="today"){
- if(!currentUser)return;
+ if(!currentUser||localStorage.getItem("mmd_inapp_notifications")==="off")return;
  if(tag&&inAppNotifications.some(n=>n.id===tag))return;
  const now=new Date();
  inAppNotifications.unshift({id:tag||makeUUID(),title:String(title||"اعلان جدید").slice(0,120),body:String(body||"").slice(0,240),page,createdAt:now.toISOString(),timeLabel:new Intl.DateTimeFormat("fa-IR",{dateStyle:"short",timeStyle:"short"}).format(now),read:false});
