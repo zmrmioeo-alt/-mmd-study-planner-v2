@@ -1055,3 +1055,12 @@ body.light .chat-compose button{
 .notification-item-copy time{font-size:10px;color:var(--muted)}
 .notification-empty{padding:24px 12px;text-align:center;color:var(--muted);font-size:12px}
 @media(max-width:560px){.topbar-actions{gap:7px}.notification-panel{position:fixed;top:calc(76px + env(safe-area-inset-top));left:12px;right:12px;width:auto;max-height:65dvh}.notification-toggle{width:39px;height:39px}.notification-bell-icon{width:20px;height:20px}}
+
+/* Notification bell aligned beside the page title */
+.topbar-title{min-width:0;display:flex;flex-direction:column;gap:3px}
+.topbar-title-row{display:flex;align-items:center;gap:13px}
+.topbar-title-row .notification-center{flex:0 0 auto}
+.topbar-title-row .notification-toggle{width:40px;height:40px;border-radius:50%;background:transparent;border:1px solid color-mix(in srgb,var(--accent) 35%,var(--line));color:var(--accent)}
+.topbar-title-row .notification-toggle:hover{background:color-mix(in srgb,var(--accent) 12%,transparent);border-color:var(--accent)}
+.topbar-actions{margin-inline-start:auto;justify-content:flex-end}
+@media(max-width:560px){.topbar-title-row{gap:9px}.topbar-title-row .notification-toggle{width:37px;height:37px}}
