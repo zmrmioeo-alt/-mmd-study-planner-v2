@@ -2,7 +2,7 @@
 const SUPABASE_URL = "https://tbmxbtbayqgfvdlmeuaz.supabase.co";
 const SUPABASE_KEY = "sb_publishable_n89FjocOtomNmAReFaP-vg_PMFbVow3";
 const ADMIN_FUNCTION = SUPABASE_URL + "/functions/v1/admin-manage";
-const MANAGEMENT_ADMIN_IDS = new Set(["d32c5ceb-ca91-46c8-978c-fb3d33c45eca","9abd24a9-9fc4-48f9-8046-c45b27a52ec0"]);
+const MANAGEMENT_ADMIN_IDS = new Set(["d32c5ceb-ca91-46c8-978c-fb3d33c45eca","9abd24a9-9fc4-48f9-8046-c45b27a52ec0","397bef6c-9fb3-4ab2-9a45-723b014c38f4"]);
 const isManagementAdmin = () => !!currentUser && MANAGEMENT_ADMIN_IDS.has(currentUser.id);
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -89,15 +89,14 @@ document.addEventListener("click",e=>{if(!e.target.closest(".sidebar")){const si
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){document.querySelector(".sidebar")?.classList.remove("menu-open");$("mobile-menu-toggle")?.classList.remove("is-open");$("mobile-menu-toggle")?.setAttribute("aria-expanded","false")}});
 $("main-nav").addEventListener("click",e=>{if(e.target.closest("[data-page],#logout-btn")){document.querySelector(".sidebar")?.classList.remove("menu-open");$("mobile-menu-toggle")?.classList.remove("is-open");$("mobile-menu-toggle")?.setAttribute("aria-expanded","false")}});
 $("logout-btn").addEventListener("click",async()=>{if(!confirm("مطمئنی می‌خواهی از حساب خارج شوی؟"))return;const {error}=await db.auth.signOut();if(error)toast("خروج انجام نشد: "+error.message);});
-// Private account switcher: only the deputy-admin and Kian accounts can see it.
-const PERSONAL_ADMIN_ID="397bef6c-9fb3-4ab2-9a45-723b014c38f4";
-const PERSONAL_SECOND_ID="77e3c92d-6ae9-4248-8541-dbb16ed495b3";
-const PERSONAL_ADMIN_NAME="ادمین جانشین";
-const PERSONAL_SECOND_NAME="کیان سعیدی";
-const PERSONAL_ADMIN_SLOT="mmd_deputy_admin_session_v1";
-const PERSONAL_SECOND_SLOT="mmd_kian_session_v1";
-function personalSlotFor(id){return id===PERSONAL_ADMIN_ID?PERSONAL_ADMIN_SLOT:id===PERSONAL_SECOND_ID?PERSONAL_SECOND_SLOT:null}
-function personalNameFor(id){return id===PERSONAL_ADMIN_ID?PERSONAL_ADMIN_NAME:id===PERSONAL_SECOND_ID?PERSONAL_SECOND_NAME:""}
+// Private account switchers: two independent pairs, visible only to their four accounts.
+const PERSONAL_SWITCH_ACCOUNTS={
+ "d32c5ceb-ca91-46c8-978c-fb3d33c45eca":{name:"ادمین",targetId:"17b4aa61-7b56-4f05-a1b7-871eb5df40db",targetName:"سید محمد امین ابطحی",slot:"mmd_admin_session_v1"},
+ "17b4aa61-7b56-4f05-a1b7-871eb5df40db":{name:"سید محمد امین ابطحی",targetId:"d32c5ceb-ca91-46c8-978c-fb3d33c45eca",targetName:"ادمین",slot:"mmd_mohammad_amin_session_v1"},
+ "397bef6c-9fb3-4ab2-9a45-723b014c38f4":{name:"ادمین جانشین",targetId:"77e3c92d-6ae9-4248-8541-dbb16ed495b3",targetName:"کیان سعیدی",slot:"mmd_deputy_admin_session_v1"},
+ "77e3c92d-6ae9-4248-8541-dbb16ed495b3":{name:"کیان سعیدی",targetId:"397bef6c-9fb3-4ab2-9a45-723b014c38f4",targetName:"ادمین جانشین",slot:"mmd_kian_session_v1"}
+};
+function personalSlotFor(id){return PERSONAL_SWITCH_ACCOUNTS[id]?.slot||null}
 function readPersonalSession(slot){try{return JSON.parse(localStorage.getItem(slot)||"null")}catch(_){return null}}
 async function saveCurrentPersonalSession(){
  const {data:{session}}=await db.auth.getSession();if(!session)return;
@@ -105,7 +104,7 @@ async function saveCurrentPersonalSession(){
 }
 function addPersonalSwitchDialog(targetId){
  if($("personal-switch-dialog"))$("personal-switch-dialog").remove();
- const targetName=personalNameFor(targetId);
+ const targetName=PERSONAL_SWITCH_ACCOUNTS[targetId]?.name||"حساب مقصد";
  const wrap=document.createElement("div");wrap.id="personal-switch-dialog";wrap.className="switch-dialog";
  wrap.innerHTML='<form id="personal-switch-form" class="switch-dialog-card"><h3>تعویض حساب</h3><p>برای ورود به حساب «'+escapeHtml(targetName)+'»، شناسه و رمز همان حساب را وارد کن. رمز ذخیره نمی‌شود؛ فقط نشست ورود روی همین دستگاه نگهداری می‌شود.</p><label>شناسه ورود<input id="personal-switch-identifier" autocomplete="username" required></label><label>رمز عبور<input id="personal-switch-password" type="password" autocomplete="current-password" required></label><div class="switch-dialog-actions"><button type="button" class="secondary" id="personal-switch-cancel">انصراف</button><button type="submit" class="primary" id="personal-switch-save">ذخیره و تعویض حساب</button></div><p id="personal-switch-message" class="message"></p></form>';
  document.body.append(wrap);
@@ -118,11 +117,11 @@ function addPersonalSwitchDialog(targetId){
   try{
    if(currentSession&&currentSlot)localStorage.setItem(currentSlot,JSON.stringify(currentSession));
    const entered=await passwordLogin($("personal-switch-identifier").value.trim(),$("personal-switch-password").value);
-   if(entered.id!==targetId)throw new Error("این اطلاعات متعلق به حساب «"+targetName+"» نیست.");
+   if(entered.id!==targetId)throw new Error("اطلاعات واردشده متعلق به حساب مقصد نیست.");
    const {data:{session:targetSession}}=await db.auth.getSession();if(!targetSession)throw new Error("نشست حساب مقصد ساخته نشد.");
-   const {data:targetProfile,error:profileError}=await db.from("profiles").select("id,display_name").eq("id",targetId).maybeSingle();
+   const {data:targetProfile,error:profileError}=await db.from("profiles").select("id").eq("id",targetId).maybeSingle();
    if(profileError)throw profileError;
-   if(!targetProfile||targetProfile.display_name!==targetName)throw new Error("مشخصات حساب مقصد مطابقت ندارد.");
+   if(!targetProfile)throw new Error("حساب مقصد در سامانه پیدا نشد.");
    localStorage.setItem(personalSlotFor(targetId),JSON.stringify(targetSession));
    $("personal-switch-password").value="";wrap.remove();await enterApp(entered);
   }catch(err){
@@ -146,22 +145,20 @@ async function switchPersonalAccount(targetId){
  }catch(err){toast("تعویض حساب انجام نشد: "+(err.message||"نشست منقضی شده است."))}
 }
 function setupPersonalSwitcher(){
- const allowed=currentUser?.id===PERSONAL_ADMIN_ID||currentUser?.id===PERSONAL_SECOND_ID;
+ const account=PERSONAL_SWITCH_ACCOUNTS[currentUser?.id];
  const header=$("page-title")?.closest(".topbar");
  let switchButton=$("switch-account-btn");
- if(!allowed){switchButton?.remove();$("pending-switch-account-btn")?.remove();return}
- const targetId=currentUser.id===PERSONAL_ADMIN_ID?PERSONAL_SECOND_ID:PERSONAL_ADMIN_ID;
- const targetName=personalNameFor(targetId);
+ if(!account){switchButton?.remove();$("pending-switch-account-btn")?.remove();return}
  if(header&&!switchButton){
   switchButton=document.createElement("button");switchButton.id="switch-account-btn";switchButton.type="button";switchButton.className="secondary";
-  switchButton.addEventListener("click",()=>switchPersonalAccount(currentUser?.id===PERSONAL_ADMIN_ID?PERSONAL_SECOND_ID:PERSONAL_ADMIN_ID));
+  switchButton.addEventListener("click",()=>switchPersonalAccount(PERSONAL_SWITCH_ACCOUNTS[currentUser?.id]?.targetId));
   header.append(switchButton);
  }
- if(switchButton){switchButton.classList.remove("hidden");switchButton.textContent="تعویض به "+targetName}
+ if(switchButton){switchButton.classList.remove("hidden");switchButton.textContent="تعویض به "+account.targetName}
  const pending=$("pending-logout");
  if(pending&&!$("pending-switch-account-btn")){
-  const b=document.createElement("button");b.id="pending-switch-account-btn";b.type="button";b.className="secondary";b.textContent="تعویض به "+targetName;
-  b.addEventListener("click",()=>switchPersonalAccount(targetId));pending.insertAdjacentElement("beforebegin",b);
+  const b=document.createElement("button");b.id="pending-switch-account-btn";b.type="button";b.className="secondary";b.textContent="تعویض به "+account.targetName;
+  b.addEventListener("click",()=>switchPersonalAccount(PERSONAL_SWITCH_ACCOUNTS[currentUser?.id]?.targetId));pending.insertAdjacentElement("beforebegin",b);
  }
 }
 if($("expired-logout-btn"))$("expired-logout-btn").addEventListener("click",async()=>{if(confirm("مطمئنی می‌خواهی از حساب خارج شوی؟"))await db.auth.signOut()});
@@ -231,7 +228,7 @@ async function enterApp(user){
  if(enteringUserId===user.id)return;enteringUserId=user.id;
  try{
   currentUser=user;
- if(user.id===PERSONAL_ADMIN_ID||user.id===PERSONAL_SECOND_ID)await saveCurrentPersonalSession();
+ if(personalSlotFor(user.id))await saveCurrentPersonalSession();
  setupPersonalSwitcher();
  show("auth-view",false);show("expired-subscription-view",false);show("app-view",true);$("today-date").textContent=dateLabel();
   await waitForStartup(loadProfile(),"اطلاعات حساب");if(!currentUser)return;
