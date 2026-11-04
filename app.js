@@ -277,7 +277,7 @@ $("feature-flags-form")?.addEventListener("submit",async e=>{
 });
 
 async function loadProfile(){
- const {data,error}=await db.from("profiles").select("*").eq("id",currentUser.id).maybeSingle();
+ const {data,error}=await db.from("profiles").select("id,display_name,is_admin,is_approved,is_banned,account_type,avatar_path,avatar_emoji,chat_enabled,bio,profile_color,school_grade,school_class").eq("id",currentUser.id).maybeSingle();
  if(error)throw error;profile=data||{display_name:"کاربر",is_admin:false,is_banned:false,account_type:"student",school_grade:null,school_class:null,avatar_path:null};if(!profile.account_type)profile.account_type="student";
  if(profile.is_approved===false){show("app-view",false);show("auth-view",false);show("pending-approval-view",true);return;}
  if(profile.is_banned){show("app-view",false);show("auth-view",false);show("expired-subscription-view",false);show("banned-account-view",true);$("banned-user-name").textContent=profile.display_name||"کاربر";return}
