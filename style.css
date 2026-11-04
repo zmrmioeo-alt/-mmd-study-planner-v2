@@ -959,3 +959,37 @@ body.light .chat-compose button{
 
 .planner-task.planner-rest{border:1px dashed var(--border-color,#aab2c0);background:var(--surface-muted,rgba(128,128,128,.08));opacity:.9}
 .planner-task.planner-rest .planner-task-top b{font-weight:700}
+
+
+/* MMD navigation scroll fix — keep every menu item reachable */
+.sidebar nav{
+  flex:1 1 auto;
+  min-height:0;
+  overflow-y:auto;
+  overflow-x:hidden;
+  overscroll-behavior-y:contain;
+  scrollbar-width:thin;
+}
+.sidebar-bottom{flex-shrink:0}
+
+@media(max-width:850px){
+  .sidebar nav{
+    position:fixed!important;
+    top:calc(82px + env(safe-area-inset-top))!important;
+    right:14px!important;
+    bottom:auto!important;
+    left:auto!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:calc(100vh - 96px - env(safe-area-inset-top))!important;
+    max-height:calc(100dvh - 96px - env(safe-area-inset-top))!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    -webkit-overflow-scrolling:touch;
+    overscroll-behavior-y:contain;
+    touch-action:pan-y;
+    align-content:start;
+    scrollbar-width:thin;
+    scrollbar-color:#c6a66b88 transparent;
+  }
+}
