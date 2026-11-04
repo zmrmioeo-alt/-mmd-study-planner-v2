@@ -794,7 +794,7 @@ $("profile-form").addEventListener("submit",async e=>{
 function renderAnnouncements(){const rows=window.__announcements||[];$("announcement-list").innerHTML=rows.length?rows.map(a=>'<article class="form-panel"><div class="section-head"><h3>'+escapeHtml(a.title)+'</h3><small class="muted">'+jalaliDate(a.created_at)+'</small></div><p style="white-space:pre-wrap;line-height:2">'+escapeHtml(a.body)+'</p>'+(profile?.is_admin?'<button class="icon-btn" data-delete-announcement="'+a.id+'">حذف اطلاعیه</button>':"")+'</article>').join(""):'<div class="empty">در حال حاضر اطلاعیه‌ای منتشر نشده است.</div>'}
 $("announcement-admin-form").addEventListener("submit",async e=>{e.preventDefault();const row={title:$("announcement-title").value.trim(),body:$("announcement-body").value.trim(),created_by:currentUser.id,published:true};const {data:savedAnnouncement,error}=await db.from("announcements").insert(row).select("id").single();if(error){message("announcement-message",error.message,true);return}e.target.reset();await loadAnnouncements();renderAnnouncements();message("announcement-message","اطلاعیه منتشر شد و اعلان آن ارسال شد.")});
 document.addEventListener("click",async e=>{
- const notice=e.target.closest("[data-delete-announcement]");if(notice){if(!confirm("این اطلاعیه حذف شود؟"))return;const {error}=await db.from("announcements").delete().eq("id",notice.dataset.deleteAnnouncement);if(error)toast(error.message);else{await loadAnnouncements();renderAnnouncements()}return}
+ const notice=e.target.closest("[data-delete-announcement]");if(notice){if(!profile?.is_admin){toast("دسترسی حذف اطلاعیه ندارید.");return}if(!confirm("این اطلاعیه حذف شود؟"))return;notice.disabled=true;try{const result=await db.from("announcements").delete().eq("id",notice.dataset.deleteAnnouncement).select("id");if(result.error)throw result.error;if(!result.data?.length)throw new Error("اطلاعیه حذف نشد؛ دسترسی پایگاه داده اجازه حذف نداد.");await loadAnnouncements();renderAnnouncements();toast("اطلاعیه حذف شد.")}catch(err){toast("حذف اطلاعیه ناموفق بود: "+err.message);notice.disabled=false}return}
  const renew=e.target.closest("[data-renew-user]");
  if(renew){
   const u=(window.__adminUsers||[]).find(x=>x.id===renew.dataset.renewUser);if(!u)return;
@@ -818,8 +818,38 @@ $("admin-create-form").addEventListener("submit",async e=>{e.preventDefault();me
 $("refresh-users").addEventListener("click",()=>loadAdminUsers().catch(e=>message("admin-message",e.message,true)));
 async function loadPendingUsers(){if(!profile?.is_admin)return;const r=await callAdmin("list_users");const a=(r.users||[]).filter(u=>u.is_approved===false);$("pending-users").innerHTML=a.map(u=>'<article class="task-item"><b>'+escapeHtml(u.display_name||"بدون نام")+'</b><button class="primary" data-approve="'+u.id+'">تأیید</button></article>').join("")||"درخواستی وجود ندارد."}
 $("pending-users").addEventListener("click",async e=>{const b=e.target.closest("[data-approve]");if(!b)return;try{await callAdmin("set_approval",{user_id:b.dataset.approve,approved:true});await loadPendingUsers();await loadAdminUsers()}catch(x){toast(x.message)}});
-async function loadAdminHumor(){if(!profile?.is_admin)return;const r=await callAdmin("list_humor_posts");$("admin-humor-list").innerHTML=(r.posts||[]).filter(p=>p.status==="pending").map(p=>'<article class="form-panel"><h3>'+escapeHtml(p.title)+'</h3><p>'+escapeHtml(p.body)+'</p><button class="primary" data-publish="'+p.id+'">تأیید و انتشار</button><button class="danger" data-decline="'+p.id+'">رد</button></article>').join("")||"مطلبی برای بررسی نیست."}
-$("admin-humor-list").addEventListener("click",async e=>{const b=e.target.closest("[data-publish],[data-decline]");if(!b)return;try{await callAdmin("review_humor_post",{post_id:b.dataset.publish||b.dataset.decline,status:b.dataset.publish?"approved":"rejected"});if(b.dataset.publish)await loadAdminHumor()}catch(x){toast(x.message)}});
+async function deleteHumorPostAsAdmin(postId,mediaPath=null){
+ if(!profile?.is_admin)throw new Error("فقط مدیر سامانه اجازه حذف مطلب را دارد.");
+ const result=await db.from("humor_posts").delete().eq("id",postId).select("id");
+ if(result.error)throw result.error;
+ if(!result.data?.length)throw new Error("مطلب حذف نشد؛ دسترسی پایگاه داده اجازه حذف نداد یا مطلب قبلاً حذف شده است.");
+ let mediaWarning="";
+ if(mediaPath){
+  const removed=await db.storage.from("humor-media").remove([mediaPath]);
+  if(removed.error)mediaWarning=" متن مطلب حذف شد، اما فایل پیوست پاک نشد: "+removed.error.message;
+ }
+ await Promise.all([loadHumorFeed(),loadAdminHumor()]);
+ return mediaWarning;
+}
+async function loadAdminHumor(){
+ if(!profile?.is_admin)return;
+ const r=await callAdmin("list_humor_posts");
+ $("admin-humor-list").innerHTML=(r.posts||[]).filter(p=>p.status==="pending").map(p=>'<article class="form-panel" data-admin-post="'+p.id+'"><h3>'+escapeHtml(p.title)+'</h3><p>'+escapeHtml(p.body)+'</p><button class="primary" data-publish="'+p.id+'">تأیید و انتشار</button><button class="secondary" data-decline="'+p.id+'">رد</button><button class="danger" data-admin-delete-post="'+p.id+'" data-media-path="'+escapeHtml(p.media_path||"")+'">حذف دائمی</button></article>').join("")||"مطلبی برای بررسی نیست.";
+}
+$("admin-humor-list").addEventListener("click",async e=>{
+ const del=e.target.closest("[data-admin-delete-post]");
+ if(del){
+  if(!confirm("این مطلب و اطلاعات وابسته به آن برای همیشه حذف شود؟"))return;
+  del.disabled=true;
+  try{const warning=await deleteHumorPostAsAdmin(del.dataset.adminDeletePost,del.dataset.mediaPath||null);toast(warning?"حذف مطلب انجام شد."+warning:"مطلب و فایل پیوست حذف شدند.");}
+  catch(x){toast("حذف مطلب ناموفق بود: "+(x.message||"خطای نامشخص"));del.disabled=false;}
+  return;
+ }
+ const b=e.target.closest("[data-publish],[data-decline]");
+ if(!b)return;
+ try{await callAdmin("review_humor_post",{post_id:b.dataset.publish||b.dataset.decline,status:b.dataset.publish?"approved":"rejected"});await loadAdminHumor();await loadHumorFeed();toast(b.dataset.publish?"مطلب منتشر شد.":"مطلب رد شد.");}
+ catch(x){toast(x.message)}
+});
 async function loadHumorFeed(){
  if(!currentUser)return;
  if(!featureFlags.humor_enabled&&!profile?.is_admin){$("humor-feed").textContent="این بخش موقتاً غیرفعال است.";return}
@@ -836,7 +866,7 @@ async function loadHumorFeed(){
   if(av){const img=document.createElement("img");img.src=av;img.alt="";author.append(img)}else{const span=document.createElement("span");span.className="post-avatar";span.textContent="👤";author.append(span)}
   const name=document.createElement("b");name.textContent=u.display_name||"کاربر";author.append(name);author.addEventListener("click",()=>openPublicProfile(p.user_id).catch(x=>toast(x.message)));card.append(author);
   const meta=document.createElement("small");meta.className="post-time";meta.textContent=new Intl.DateTimeFormat("fa-IR",{dateStyle:"medium",timeStyle:"short"}).format(new Date(p.created_at))+(p.status==="pending"?" · در انتظار تأیید مدیر":"");card.append(meta);if(p.status==="pending"){const pending=document.createElement("p");pending.className="hint";pending.textContent="این مطلب فقط برای شما نمایش داده می‌شود و پس از تأیید مدیر برای همه منتشر خواهد شد.";card.append(pending)}const title=document.createElement("h3");title.textContent=p.title;card.append(title);
-  const body=document.createElement("p");body.className="post-body";body.textContent=p.body||"";card.append(body);if(profile?.is_admin){const del=document.createElement("button");del.type="button";del.className="danger";del.textContent="حذف مطلب";del.addEventListener("click",async()=>{if(!confirm("این مطلب و فایل پیوست آن حذف شود؟"))return;if(p.media_path){const rm=await db.storage.from("humor-media").remove([p.media_path]);if(rm.error){toast(rm.error.message);return}}const r=await db.from("humor_posts").delete().eq("id",p.id);if(r.error){toast(r.error.message);return}toast("مطلب حذف شد.");await loadHumorFeed()});card.append(del)}
+  const body=document.createElement("p");body.className="post-body";body.textContent=p.body||"";card.append(body);if(profile?.is_admin){const del=document.createElement("button");del.type="button";del.className="danger";del.textContent="حذف مطلب";del.addEventListener("click",async()=>{if(!confirm("این مطلب و فایل پیوست آن حذف شود؟"))return;del.disabled=true;try{const warning=await deleteHumorPostAsAdmin(p.id,p.media_path);toast(warning?"مطلب حذف شد."+warning:"مطلب و فایل پیوست حذف شدند.")}catch(err){toast("حذف مطلب ناموفق بود: "+(err.message||"خطای نامشخص"));del.disabled=false}});card.append(del)}
   if(p.media_path){const z=await db.storage.from("humor-media").createSignedUrl(p.media_path,3600);if(z.data?.signedUrl){if(p.media_type==="video"){const video=document.createElement("video");video.controls=true;video.playsInline=true;video.controlsList="nodownload";video.disablePictureInPicture=true;video.src=z.data.signedUrl;card.append(video);const dl=document.createElement("button");dl.className="secondary download-request";dl.textContent="⬇ درخواست دانلود";dl.addEventListener("click",async()=>{alert("برای درخواست مجوز دانلود، از بخش «ارتباط با ادمین» پیام بفرست.")});card.append(dl)}else{const img=document.createElement("img");img.src=z.data.signedUrl;img.alt="";img.style.maxWidth="100%";card.append(img)}}}
   const pl=(likes.data||[]).filter(x=>x.post_id===p.id),liked=pl.some(x=>x.user_id===currentUser.id);
   const like=document.createElement("button");like.className="secondary";like.textContent=(liked?"♥ ":"♡ ")+fa(pl.length)+" پسند";like.addEventListener("click",async()=>{const old=await db.from("humor_post_likes").select("id").eq("post_id",p.id).eq("user_id",currentUser.id).maybeSingle();if(old.error){toast(old.error.message);return}const res=old.data?await db.from("humor_post_likes").delete().eq("id",old.data.id):await db.from("humor_post_likes").insert({post_id:p.id,user_id:currentUser.id});if(res.error){toast(res.error.message);return}await loadHumorFeed()});card.append(like);
