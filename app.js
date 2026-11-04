@@ -332,9 +332,10 @@ const notificationKey=()=> "mmd_inapp_notifications_"+(currentUser?.id||"guest")
 function loadInAppNotifications(){try{const saved=JSON.parse(localStorage.getItem(notificationKey())||"[]");inAppNotifications=Array.isArray(saved)?saved.slice(0,40):[]}catch(_){inAppNotifications=[]}renderNotificationCenter()}
 function saveInAppNotifications(){try{localStorage.setItem(notificationKey(),JSON.stringify(inAppNotifications.slice(0,40)))}catch(e){console.warn("Notification history could not be saved",e)}}
 function renderNotificationCenter(){
- const badge=$("notification-count"),list=$("notification-list");if(!badge||!list)return;
- const unread=inAppNotifications.filter(n=>!n.read).length;
- badge.textContent=unread>99?"۹۹+":fa(unread);badge.classList.toggle("hidden",!unread);
+ const badge=$("notification-count"),menuBadge=$("menu-notification-count"),list=$("notification-list");
+ const unread=inAppNotifications.filter(n=>!n.read).length,shown=unread>99?"۹۹+":fa(unread);
+ [badge,menuBadge].forEach(el=>{if(!el)return;el.textContent=shown;el.classList.toggle("hidden",!unread)});
+ if(!list)return;
  list.innerHTML=inAppNotifications.length?inAppNotifications.map(n=>'<button type="button" class="notification-item '+(n.read?"is-read":"is-unread")+'" data-notification-page="'+escapeHtml(n.page||"today")+'" data-notification-id="'+escapeHtml(n.id)+'"><span class="notification-item-dot"></span><span class="notification-item-copy"><b>'+escapeHtml(n.title)+'</b><small>'+escapeHtml(n.body)+'</small><time>'+escapeHtml(n.timeLabel||"")+'</time></span></button>').join(""):'<p class="notification-empty">هنوز اعلانی دریافت نکرده‌ای.</p>';
 }
 function addInAppNotification(title,body,tag,page="today"){
@@ -348,10 +349,17 @@ function markAllNotificationsRead(){inAppNotifications=inAppNotifications.map(n=
 function playShortNotificationTone(){
  try{const Ctx=window.AudioContext||window.webkitAudioContext;if(!Ctx)return;if(!notificationAudioContext)notificationAudioContext=new Ctx();if(notificationAudioContext.state==="suspended")notificationAudioContext.resume();const osc=notificationAudioContext.createOscillator(),gain=notificationAudioContext.createGain(),now=notificationAudioContext.currentTime;osc.type="sine";osc.frequency.setValueAtTime(880,now);osc.frequency.exponentialRampToValueAtTime(660,now+.16);gain.gain.setValueAtTime(.0001,now);gain.gain.exponentialRampToValueAtTime(.12,now+.015);gain.gain.exponentialRampToValueAtTime(.0001,now+.19);osc.connect(gain);gain.connect(notificationAudioContext.destination);osc.start(now);osc.stop(now+.2)}catch(e){console.debug("Notification tone unavailable",e)}
 }
+let activeNotificationPopupPage="today";
+function showNotificationPopup(title,body,page){const box=$("notification-popup");if(!box)return;activeNotificationPopupPage=page||"today";$("notification-popup-title").textContent=String(title||"اعلان جدید");$("notification-popup-body").textContent=String(body||"");box.classList.remove("hidden");}
+function closeNotificationPopup(){ $("notification-popup")?.classList.add("hidden"); }
+$("notification-popup-close")?.addEventListener("click",closeNotificationPopup);
+$("notification-popup-dismiss")?.addEventListener("click",closeNotificationPopup);
+$("notification-popup-open")?.addEventListener("click",()=>{closeNotificationPopup();navigate(activeNotificationPopupPage)});
 async function notifyLiveEvent(title,body,tag,page){
  if(localStorage.getItem("mmd_inapp_notifications")==="off")return;
+ const isNew=!(tag&&inAppNotifications.some(n=>n.id===tag));
  addInAppNotification(title,body,tag,page);
- if(document.visibilityState==="visible"){playShortNotificationTone();toast(body)}
+ if(isNew&&document.visibilityState==="visible"){playShortNotificationTone();showNotificationPopup(title,body,page)}
  if(localStorage.getItem("mmd_browser_notifications")==="on"&&"Notification"in window&&Notification.permission==="granted"){
   try{const reg=await navigator.serviceWorker?.getRegistration();if(reg)await reg.showNotification(title,{body,icon:"./assets/icon.svg",badge:"./assets/icon-192.svg",tag,renotify:true,data:{url:"./?page="+encodeURIComponent(page||"today")}});else new Notification(title,{body,tag})}catch(err){console.debug("Browser notification unavailable",err)}
  }
