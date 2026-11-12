@@ -213,7 +213,7 @@ $("signup-form").addEventListener("submit",async e=>{
 $("pending-logout").addEventListener("click",()=>db.auth.signOut());
 const isNativeUplandApp=()=>!!(window.Capacitor?.isNativePlatform?.());
 const uplandVersionFeed=()=>isNativeUplandApp()?"https://zmrmioeo-alt.github.io/-mmd-study-planner-v2/version.json":"./version.json";
-const uplandLatestApkUrl="https://github.com/zmrmioeo-alt/-mmd-study-planner-v2/releases/latest";
+const uplandLatestApkUrl="https://github.com/zmrmioeo-alt/-mmd-study-planner-v2/releases/latest/download/UPLAND-latest.apk";
 async function checkAppUpdateNotice(){
  try{
   const r=await fetch(uplandVersionFeed()+"?notice="+Date.now(),{cache:"no-store"});if(!r.ok)return;
