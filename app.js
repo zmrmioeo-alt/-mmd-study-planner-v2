@@ -219,7 +219,7 @@ async function checkAppUpdateNotice(){
   const title="نسخه جدید برنامه منتشر شد · "+v.version,body=v.release_notes||"برای دریافت امکانات تازه، برنامه را به‌روزرسانی کنید.";
   if(localStorage.getItem("mmd_update_notifications")==="on"&&"Notification"in window&&Notification.permission==="granted"){
    const reg=await navigator.serviceWorker?.getRegistration();
-   if(reg)await reg.showNotification(title,{body,icon:"./assets/icon.svg",badge:"./assets/icon.svg",tag:"mmd-update",data:{url:"./install.html"}});
+   if(reg)await reg.showNotification(title,{body,icon:"./assets/upland-logo-original.svg",badge:"./assets/upland-logo-original.svg",tag:"mmd-update",data:{url:"./install.html"}});
    else new Notification(title,{body});
   }
   const wrap=document.createElement("section");wrap.className="form-panel";wrap.style.cssText="margin:0 0 18px;border:1px solid var(--accent);";
@@ -389,7 +389,7 @@ async function notifyLiveEvent(title,body,tag,page,chatTargetId=null){
  addInAppNotification(title,body,tag,page,chatTargetId);
  if(isNew&&document.visibilityState==="visible"){playShortNotificationTone();showNotificationPopup(title,body,page,chatTargetId)}
  if(localStorage.getItem("mmd_browser_notifications")==="on"&&"Notification"in window&&Notification.permission==="granted"){
-  try{const reg=await navigator.serviceWorker?.getRegistration();const targetUrl=page==="chat"&&chatTargetId?"./?page=chat&chatTarget="+encodeURIComponent(chatTargetId):"./?page="+encodeURIComponent(page||"today");if(reg)await reg.showNotification(title,{body,icon:"./assets/icon.svg",badge:"./assets/icon-192.svg",tag,renotify:true,data:{url:targetUrl}});else new Notification(title,{body,tag})}catch(err){console.debug("Browser notification unavailable",err)}
+  try{const reg=await navigator.serviceWorker?.getRegistration();const targetUrl=page==="chat"&&chatTargetId?"./?page=chat&chatTarget="+encodeURIComponent(chatTargetId):"./?page="+encodeURIComponent(page||"today");if(reg)await reg.showNotification(title,{body,icon:"./assets/upland-logo-original.svg",badge:"./assets/icon-192.svg",tag,renotify:true,data:{url:targetUrl}});else new Notification(title,{body,tag})}catch(err){console.debug("Browser notification unavailable",err)}
  }
 }
 async function pushApi(action,extra={}){
@@ -1335,7 +1335,7 @@ async function checkMmdRelease(showNotice=true){
   if(seen&&seen!==version&&showNotice){
    const text="نسخه "+version+" منتشر شد. "+(info.release_notes||"برای دریافت نسخه تازه، برنامه را به‌روزرسانی کنید.");
    if(typeof toast==="function")toast(text);
-   if("Notification" in window&&Notification.permission==="granted")new Notification("به‌روزرسانی MMD",{body:text,icon:"./assets/icon.svg"});
+   if("Notification" in window&&Notification.permission==="granted")new Notification("به‌روزرسانی MMD",{body:text,icon:"./assets/upland-logo-original.svg"});
   }
   localStorage.setItem("mmd_seen_release",version);
   if("serviceWorker" in navigator){const reg=await navigator.serviceWorker.getRegistration();if(reg)await reg.update().catch(()=>{});}
