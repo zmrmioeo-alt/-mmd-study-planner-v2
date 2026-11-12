@@ -1,6 +1,6 @@
 {
-  "name": "UP LAND",
-  "short_name": "UP LAND",
+  "name": "UPLAND",
+  "short_name": "UPLAND",
   "description": "فضای هوشمند برنامه‌ریزی و یادگیری",
   "lang": "fa",
   "dir": "rtl",
@@ -9,7 +9,7 @@
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#f3f6fc",
-  "theme_color": "#17264a",
+  "theme_color": "#f4f6fb",
   "icons": [
     {
       "src": "./assets/upland-icon-192.svg",
