@@ -1363,9 +1363,6 @@ async function checkMmdRelease(showNotice=true){
 
 checkMmdRelease().catch(()=>{});setInterval(()=>checkMmdRelease(),180000);
 boot().catch(err=>{console.error(err);show("app-view",false);show("auth-view",true);message("auth-message","خطا در راه‌اندازی: "+err.message,true)});
-// In the messenger, Enter inserts a new line; sending is only done with the send button.
-$("chat-input").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();const t=e.currentTarget,start=t.selectionStart,end=t.selectionEnd;t.setRangeText("\n",start,end,"end");t.dispatchEvent(new Event("input",{bubbles:true}))}});
-
 
 /* Hamkelasi export bridge: local parsing, consent-gated import, no passwords. */
 (()=>{
