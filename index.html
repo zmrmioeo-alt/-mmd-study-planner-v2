@@ -3,28 +3,28 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#17264a">
-  <meta name="description" content="UP LAND؛ فضای هوشمند برنامه‌ریزی، یادگیری و ارتباط دانش‌آموزان">
-  <title>UP LAND | فضای هوشمند یادگیری</title>
+  <meta name="theme-color" content="#f4f6fb">
+  <meta name="description" content="UPLAND؛ فضای هوشمند برنامه‌ریزی، یادگیری و ارتباط دانش‌آموزان">
+  <title>UPLAND | فضای هوشمند یادگیری</title>
   <link rel="icon" href="assets/upland-icon.svg" type="image/svg+xml"><link rel="icon" href="assets/upland-icon-192.svg" type="image/svg+xml" sizes="192x192">
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/@majidh1/jalalidatepicker@1.0.0/dist/jalalidatepicker.min.css">
-  <link rel="stylesheet" href="style.css?v=2.1.1-redesign"><link rel="stylesheet" href="upland.css?v=2.1.1-redesign">
+  <link rel="stylesheet" href="style.css?v=2.2.0-new-identity"><link rel="stylesheet" href="upland.css?v=2.2.0-new-identity">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onerror="this.onerror=null;this.src='https://unpkg.com/@supabase/supabase-js@2'"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script defer src="https://unpkg.com/@majidh1/jalalidatepicker@1.0.0/dist/jalalidatepicker.min.js"></script>
   <script>window.addEventListener("error",function(e){if(e.target&&e.target.src&&e.target.src.includes("xlsx.full.min.js")&&!window.XLSX){var s=document.createElement("script");s.src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js";document.head.appendChild(s)}},true);</script>
-  <script defer src="app.js?v=2.1.0-import-pipeline"></script>
+  <script defer src="app.js?v=2.2.0-new-identity"></script>
   <script defer src="planner-edit.js?v=1.3.1"></script>
   <script defer src="stickers.js?v=1.0.1"></script>
 </head>
 <body>
   <div id="startup-overlay" class="startup-overlay hidden" role="status" aria-live="polite" aria-label="در حال به‌روزرسانی برنامه">
     <div class="startup-card">
-      <div class="startup-mark">UP<br>LAND</div>
+      <div class="startup-mark">UPLAND</div>
       <div class="startup-spinner" aria-hidden="true"></div>
       <h1>در حال به‌روزرسانی برنامه...</h1>
       <p id="startup-status">در حال دریافت آخرین اطلاعات حساب شما</p>
@@ -33,8 +33,8 @@
   </div>
   <div id="terms-view" class="auth-wrap hidden">
     <section class="auth-card terms-card">
-      <div class="brand-mark">UP<br>LAND</div>
-      <p class="eyebrow">UP LAND / TERMS & PRIVACY</p>
+      <div class="brand-mark">UPLAND</div>
+      <p class="eyebrow">UPLAND / TERMS & PRIVACY</p>
       <h1>قوانین استفاده و حریم خصوصی</h1>
       <p class="muted">برای استفاده از سامانه، متن زیر را مطالعه کنید و در صورت موافقت، پذیرش خود را ثبت کنید. این تأیید فقط یک‌بار در همین مرورگر انجام می‌شود.</p>
       <div class="terms-content">
@@ -66,7 +66,7 @@
 
   <div id="auth-view" class="auth-wrap">
     <section id="login-card" class="auth-card hidden">
-      <div class="brand-mark">UP<br>LAND</div><p class="eyebrow">SMART LEARNING SPACE</p>
+      <div class="brand-mark">UPLAND</div><p class="eyebrow">SMART LEARNING SPACE</p>
       <h1>برنامه‌ریزی دقیق، پیشرفت واقعی</h1>
       <p class="muted">برای ورود، شناسه کاربری و رمز عبور را وارد کنید.</p>
       <form id="login-form">
@@ -76,19 +76,19 @@
       </form>
       <div class="login-contact"><p>جهت مشکل و خرید اشتراک با ما در ارتباط باشید.</p><a href="tel:09162987309" dir="ltr">☎ 09162987309</a><a href="https://ble.ir/me_god_me" target="_blank" rel="noopener noreferrer" dir="ltr">✈ @me_god_me</a></div>
       <p class="hint">حساب جدید؟ <button id="show-signup" type="button" class="secondary">ثبت‌نام</button></p>
-      <p class="hint"><a href="install.html" style="color:var(--accent)">نصب اپلیکیشن UP LAND روی گوشی</a></p>
+      <p class="hint"><a href="install.html" style="color:var(--accent)">نصب اپلیکیشن UPLAND روی گوشی</a></p>
       <p id="auth-message" class="message" role="status"></p>
     </section>
-    <section id="signup-card" class="auth-card hidden"><div class="brand-mark">UP<br>LAND</div><h1>ساخت حساب</h1><p class="muted">نوع حساب خود را انتخاب کنید. فقط نام، نام کاربری و رمز عبور لازم است؛ حساب پس از ثبت‌نام باید توسط مدیر تأیید شود.</p><form id="signup-form"><label>نوع حساب<select id="signup-account-type" required><option value="student">دانش‌آموز</option><option value="teacher">معلم</option></select></label><label>نام و نام خانوادگی<input id="signup-name" required maxlength="60" autocomplete="name" placeholder="نام و نام خانوادگی"></label><div class="form-row" id="signup-school-fields"><label>پایه تحصیلی<select id="signup-grade" required><option value="">انتخاب پایه</option><option value="هفتم">هفتم</option><option value="هشتم">هشتم</option><option value="نهم">نهم</option></select></label><label>نام کلاس<select id="signup-class" required disabled><option value="">ابتدا پایه را انتخاب کنید</option></select></label></div><label>نام کاربری<input id="signup-username" type="text" required minlength="3" maxlength="30" autocomplete="username" placeholder="مثلاً mmd_1405"></label><label>رمز عبور<input id="signup-password" type="password" minlength="8" maxlength="72" autocomplete="new-password" required placeholder="حداقل ۸ نویسه"></label><button class="primary full" type="submit">ساخت حساب</button></form><button id="show-login" class="secondary" type="button">بازگشت به ورود</button><p id="signup-message" class="message" role="status"></p></section>
+    <section id="signup-card" class="auth-card hidden"><div class="brand-mark">UPLAND</div><h1>ساخت حساب</h1><p class="muted">نوع حساب خود را انتخاب کنید. فقط نام، نام کاربری و رمز عبور لازم است؛ حساب پس از ثبت‌نام باید توسط مدیر تأیید شود.</p><form id="signup-form"><label>نوع حساب<select id="signup-account-type" required><option value="student">دانش‌آموز</option><option value="teacher">معلم</option></select></label><label>نام و نام خانوادگی<input id="signup-name" required maxlength="60" autocomplete="name" placeholder="نام و نام خانوادگی"></label><div class="form-row" id="signup-school-fields"><label>پایه تحصیلی<select id="signup-grade" required><option value="">انتخاب پایه</option><option value="هفتم">هفتم</option><option value="هشتم">هشتم</option><option value="نهم">نهم</option></select></label><label>نام کلاس<select id="signup-class" required disabled><option value="">ابتدا پایه را انتخاب کنید</option></select></label></div><label>نام کاربری<input id="signup-username" type="text" required minlength="3" maxlength="30" autocomplete="username" placeholder="مثلاً mmd_1405"></label><label>رمز عبور<input id="signup-password" type="password" minlength="8" maxlength="72" autocomplete="new-password" required placeholder="حداقل ۸ نویسه"></label><button class="primary full" type="submit">ساخت حساب</button></form><button id="show-login" class="secondary" type="button">بازگشت به ورود</button><p id="signup-message" class="message" role="status"></p></section>
   </div>
-  <div id="pending-approval-view" class="auth-wrap hidden"><section class="auth-card"><div class="brand-mark">UP<br>LAND</div><h1>در انتظار تأیید مدیر</h1><p>حساب شما ثبت شده است. پس از تأیید مدیر امکان ورود خواهید داشت.</p><button id="pending-logout" class="secondary" type="button">خروج</button></section></div>
-  <div id="expired-subscription-view" class="auth-wrap hidden"><section class="auth-card expired-card"><div class="brand-mark">UP<br>LAND</div><p class="eyebrow">UP LAND MEMBERSHIP</p><h1>اشتراک شما به پایان رسیده است</h1><p class="muted"><strong id="expired-user-name">کاربر</strong>، برای استفاده دوباره از امکانات برنامه، اشتراک خود را تمدید کنید.</p><p id="expired-subscription-date" class="expired-date"></p><div class="expired-actions"><a class="primary full renew-link" href="https://ble.ir/me_god_me" target="_blank" rel="noopener noreferrer">درخواست تمدید اشتراک در بله</a><a class="contact-method" href="tel:09162987309"><span class="contact-icon">☎</span><span><small>تماس برای تمدید</small><strong dir="ltr">09162987309</strong></span><b>تماس</b></a><a class="contact-method" href="https://ble.ir/me_god_me" target="_blank" rel="noopener noreferrer"><span class="contact-icon">✈</span><span><small>آیدی بله</small><strong dir="ltr">@me_god_me</strong></span><b>پیام</b></a><button id="expired-logout-btn" class="secondary full" type="button">خروج از حساب</button></div></section></div>
+  <div id="pending-approval-view" class="auth-wrap hidden"><section class="auth-card"><div class="brand-mark">UPLAND</div><h1>در انتظار تأیید مدیر</h1><p>حساب شما ثبت شده است. پس از تأیید مدیر امکان ورود خواهید داشت.</p><button id="pending-logout" class="secondary" type="button">خروج</button></section></div>
+  <div id="expired-subscription-view" class="auth-wrap hidden"><section class="auth-card expired-card"><div class="brand-mark">UPLAND</div><p class="eyebrow">UPLAND MEMBERSHIP</p><h1>اشتراک شما به پایان رسیده است</h1><p class="muted"><strong id="expired-user-name">کاربر</strong>، برای استفاده دوباره از امکانات برنامه، اشتراک خود را تمدید کنید.</p><p id="expired-subscription-date" class="expired-date"></p><div class="expired-actions"><a class="primary full renew-link" href="https://ble.ir/me_god_me" target="_blank" rel="noopener noreferrer">درخواست تمدید اشتراک در بله</a><a class="contact-method" href="tel:09162987309"><span class="contact-icon">☎</span><span><small>تماس برای تمدید</small><strong dir="ltr">09162987309</strong></span><b>تماس</b></a><a class="contact-method" href="https://ble.ir/me_god_me" target="_blank" rel="noopener noreferrer"><span class="contact-icon">✈</span><span><small>آیدی بله</small><strong dir="ltr">@me_god_me</strong></span><b>پیام</b></a><button id="expired-logout-btn" class="secondary full" type="button">خروج از حساب</button></div></section></div>
 
-  <div id="banned-account-view" class="auth-wrap hidden"><section class="auth-card expired-card banned-card"><div class="brand-mark">UP<br>LAND</div><p class="eyebrow">ACCOUNT STATUS</p><h1>حساب کاربری شما مسدود شده است</h1><p class="muted"><strong id="banned-user-name">کاربر</strong>، دسترسی این حساب توسط مدیر سامانه مسدود شده است.</p><p class="expired-date">برای بررسی علت مسدودیت و پیگیری رفع آن، با پشتیبانی تماس بگیرید.</p><div class="expired-actions"><a class="primary full renew-link" href="https://ble.ir/me_god_me" target="_blank" rel="noopener noreferrer">ارتباط با پشتیبانی در بله</a><a class="contact-method" href="tel:09162987309"><span class="contact-icon">☎</span><span><small>شماره تماس</small><strong dir="ltr">09162987309</strong></span><b>تماس</b></a><a class="contact-method" href="https://ble.ir/me_god_me" target="_blank" rel="noopener noreferrer"><span class="contact-icon">✈</span><span><small>آیدی بله</small><strong dir="ltr">@me_god_me</strong></span><b>پیام</b></a><button id="banned-logout-btn" class="secondary full" type="button">خروج از حساب</button></div></section></div>
+  <div id="banned-account-view" class="auth-wrap hidden"><section class="auth-card expired-card banned-card"><div class="brand-mark">UPLAND</div><p class="eyebrow">ACCOUNT STATUS</p><h1>حساب کاربری شما مسدود شده است</h1><p class="muted"><strong id="banned-user-name">کاربر</strong>، دسترسی این حساب توسط مدیر سامانه مسدود شده است.</p><p class="expired-date">برای بررسی علت مسدودیت و پیگیری رفع آن، با پشتیبانی تماس بگیرید.</p><div class="expired-actions"><a class="primary full renew-link" href="https://ble.ir/me_god_me" target="_blank" rel="noopener noreferrer">ارتباط با پشتیبانی در بله</a><a class="contact-method" href="tel:09162987309"><span class="contact-icon">☎</span><span><small>شماره تماس</small><strong dir="ltr">09162987309</strong></span><b>تماس</b></a><a class="contact-method" href="https://ble.ir/me_god_me" target="_blank" rel="noopener noreferrer"><span class="contact-icon">✈</span><span><small>آیدی بله</small><strong dir="ltr">@me_god_me</strong></span><b>پیام</b></a><button id="banned-logout-btn" class="secondary full" type="button">خروج از حساب</button></div></section></div>
 
   <div id="app-view" class="app-shell hidden">
     <aside class="sidebar" id="sidebar">
-      <div class="brand"><span class="brand-mark small">UP</span><div><b>UP LAND</b><small>فضای هوشمند یادگیری</small></div></div>
+      <div class="brand"><span class="brand-mark small">UP</span><div><b>UPLAND</b><small>فضای هوشمند یادگیری</small></div></div>
       <div class="sidebar-quick-actions"><button id="mobile-menu-toggle" class="mobile-menu-toggle" type="button" aria-label="باز کردن فهرست" aria-expanded="false"><span></span><span></span><span></span><b>منو</b><span id="menu-notification-count" class="menu-notification-count hidden">۰</span></button></div>
       <nav id="main-nav">
         <button class="nav-link active" data-page="today">◷ <span>امروز</span></button>
@@ -110,7 +110,7 @@
     </aside>
 
     <main class="main">
-      <header class="topbar"><div class="topbar-title"><p class="eyebrow">UP LAND / PERSONAL WORKSPACE</p><div class="topbar-title-row"><h1 id="page-title">امروز</h1></div></div><div class="topbar-actions"><div class="notification-center"><button id="notification-toggle" class="notification-toggle" type="button" aria-label="باز کردن اعلان‌ها" aria-expanded="false"><svg class="notification-bell-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg><span id="notification-count" class="notification-count hidden">۰</span></button><section id="notification-panel" class="notification-panel hidden" aria-label="فهرست اعلان‌ها"><div class="notification-panel-head"><b>اعلان‌ها</b><button id="notification-mark-read" type="button">خواندن همه</button></div><div id="notification-list" class="notification-list"><p class="notification-empty">هنوز اعلانی دریافت نکرده‌ای.</p></div></section></div><div class="date-pill" id="today-date"></div></div></header>
+      <header class="topbar"><div class="topbar-title"><p class="eyebrow">UPLAND / PERSONAL WORKSPACE</p><div class="topbar-title-row"><h1 id="page-title">امروز</h1></div></div><div class="topbar-actions"><div class="notification-center"><button id="notification-toggle" class="notification-toggle" type="button" aria-label="باز کردن اعلان‌ها" aria-expanded="false"><svg class="notification-bell-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg><span id="notification-count" class="notification-count hidden">۰</span></button><section id="notification-panel" class="notification-panel hidden" aria-label="فهرست اعلان‌ها"><div class="notification-panel-head"><b>اعلان‌ها</b><button id="notification-mark-read" type="button">خواندن همه</button></div><div id="notification-list" class="notification-list"><p class="notification-empty">هنوز اعلانی دریافت نکرده‌ای.</p></div></section></div><div class="date-pill" id="today-date"></div></div></header>
       <section id="page-today" class="page">
         <div class="welcome-panel"><div><p class="eyebrow">YOUR DAY, YOUR PACE</p><h2 id="welcome-title">برنامه امروزت آماده است.</h2><p id="welcome-mood">کارها را انجام بده و پیشرفتت را ثبت کن.</p></div><div class="progress-ring" id="today-ring"><strong id="today-percent">0٪</strong><small>انجام‌شده</small></div></div>
         <div class="stats-grid"><article class="stat-card"><span>کل وظایف</span><b id="stat-total">۰</b></article><article class="stat-card"><span>انجام‌شده</span><b id="stat-done">۰</b></article><article class="stat-card"><span>باقی‌مانده</span><b id="stat-pending">۰</b></article></div>
@@ -128,7 +128,7 @@
       </section>
 
       <section id="page-announcements" class="page hidden">
-        <div class="section-head"><div><p class="eyebrow">UP LAND NOTICES</p><h2>اعلانات و اطلاعیه‌ها</h2></div></div>
+        <div class="section-head"><div><p class="eyebrow">UPLAND NOTICES</p><h2>اعلانات و اطلاعیه‌ها</h2></div></div>
         <form id="announcement-admin-form" class="form-panel hidden">
           <h3>انتشار اطلاعیه جدید</h3>
           <label>عنوان اطلاعیه<input id="announcement-title" required maxlength="160"></label>
@@ -138,7 +138,7 @@
         <div id="announcement-list" class="task-list"></div>
       </section>
       <section id="page-contact" class="page hidden">
-        <div class="section-head"><div><p class="eyebrow">UP LAND SUPPORT</p><h2>ارتباط با ادمین</h2></div></div>
+        <div class="section-head"><div><p class="eyebrow">UPLAND SUPPORT</p><h2>ارتباط با ادمین</h2></div></div>
         <div class="contact-panel">
           <p class="muted">برای پرسش، گزارش مشکل یا دریافت راهنمایی می‌توانید از راه‌های زیر با مدیر سامانه در ارتباط باشید.</p>
           <a class="contact-method" href="tel:09162987309"><span class="contact-icon">☎</span><span><small>تماس تلفنی</small><strong dir="ltr">09162987309</strong></span><b>تماس</b></a>
@@ -201,7 +201,7 @@
         <div class="section-head"><div><p class="eyebrow">YOUR PERSONAL SPACE</p><h2>پروفایل من</h2><p class="muted">فضای شخصی خودت را بساز و هر زمان خواستی تغییرش بده.</p></div></div>
         <div class="profile-hero" id="profile-preview">
           <div class="profile-avatar-large" id="profile-preview-avatar">🌙</div>
-          <div><span class="profile-kicker">UP LAND MEMBER</span><h2 id="profile-preview-name">کاربر UP LAND</h2><p id="profile-preview-bio">اینجا معرفی کوتاهی از خودت بنویس.</p><span class="school-profile-badge" id="profile-school-badge">پایه و کلاس را انتخاب کنید</span></div>
+          <div><span class="profile-kicker">UPLAND MEMBER</span><h2 id="profile-preview-name">کاربر UPLAND</h2><p id="profile-preview-bio">اینجا معرفی کوتاهی از خودت بنویس.</p><span class="school-profile-badge" id="profile-school-badge">پایه و کلاس را انتخاب کنید</span></div>
           <span class="profile-sparkle">✦</span>
         </div>
         <form id="profile-form" class="form-panel profile-form">
@@ -221,7 +221,7 @@
           <label>مدت خواب شبانه (ساعت)<input id="sleep-hours" type="number" min="0" max="24" step=".5"></label>
           <label>ساعت بیداری<input id="wake-time" type="time"></label>
           <div class="settings-block"><div><h3>رنگ و ظاهر برنامه</h3><p class="muted">فضای برنامه را مطابق سلیقه‌ات انتخاب کن.</p></div><label>رنگ‌بندی<select id="accent-theme"><option value="emerald">سبز نئونی</option><option value="ocean">اقیانوسی</option><option value="violet">بنفش کهکشانی</option><option value="rose">صورتی یخی</option><option value="sunset">غروب آفتاب</option><option value="gold">طلایی لوکس</option><option value="mint">نعنایی</option><option value="graphite">خاکستری مینیمال</option></select></label><label>حالت نمایش<select id="appearance"><option value="light" selected>روشن</option><option value="dark">تیره</option><option value="system">مطابق دستگاه</option></select></label><label>تم فصلی<select id="season-theme"><option value="auto">خودکار بر اساس فصل</option><option value="spring">بهار · سبز و شکوفه‌ای</option><option value="summer">تابستان · آبی و آفتابی</option><option value="autumn">پاییز · نارنجی و گرم</option><option value="winter">زمستان · یخی و آبی</option></select></label><div class="palette-preview" aria-label="پیش‌نمایش رنگ‌ها"><i></i><i></i><i></i><i></i><i></i></div></div><div class="settings-block"><div><h3>برنامه‌ریز هوشمند هفتگی</h3><p class="muted">برنامه‌ریز هفتگی برای همه حساب‌ها فعال است و زمان‌بندی‌ها در حساب کاربر ذخیره می‌شوند.</p></div><label class="switch-row"><input id="smart-planner-toggle" type="checkbox" checked disabled><span>برنامه‌ریز هفتگی فعال است</span></label></div><div class="settings-block humor-setting"><div><h3>لحن طنز و شوخی</h3><p class="muted">در صورت فعال‌سازی، پیام‌های کوتاه و شوخ‌طبعانه در بخش‌های برنامه نمایش داده می‌شوند.</p></div><label class="switch-row"><input id="humor-enabled" type="checkbox"><span>فعال‌سازی لحن طنز</span></label></div>
-          <div class="settings-block ai-sync-settings"><div><h3>دستیار هوشمند همکلاسی</h3><p class="muted">با اجازهٔ شما، دستیار UP LAND در آینده از مسیر امن و مجاز به حساب همکلاسی متصل می‌شود و فقط تکالیف و امتحان‌های شما را برای برنامه‌ریز دریافت می‌کند. رمز عبور به مدل هوش مصنوعی ارسال یا در UP LAND ذخیره نخواهد شد.</p><p id="hamkelasi-consent-status" class="message" role="status">وضعیت اجازه در حال بررسی...</p></div><div class="ai-sync-actions"><button id="hamkelasi-consent-grant" class="primary" type="button">بررسی و ثبت اجازه</button><button id="hamkelasi-consent-revoke" class="secondary" type="button">لغو اجازه</button></div><small class="hint">ثبت اجازه به‌تنهایی اتصال را فعال نمی‌کند؛ تا فراهم شدن روش رسمی و امن ورود، هیچ ورود یا همگام‌سازی خودکاری انجام نمی‌شود.</small></div><div class="settings-block"><div><h3>اعلان پیام‌ها</h3><p class="muted">اعلان پیام‌ها، اطلاعیه‌ها و مطالب تازه در فهرست اعلان‌های سایت ثبت می‌شود. برای دریافت زنده باید سایت باز باشد؛ اعلان گوشی در پس‌زمینه فقط تا زمانی ممکن است که صفحه فعال بماند.</p><p id="push-status" class="message" role="status">وضعیت اعلان در حال بررسی...</p></div><button id="enable-push" class="secondary" type="button">فعال‌سازی اعلان‌های گوشی</button><button id="test-push" class="secondary" type="button">ارسال اعلان آزمایشی</button></div>
+          <div class="settings-block ai-sync-settings"><div><h3>دستیار هوشمند همکلاسی</h3><p class="muted">با اجازهٔ شما، دستیار UPLAND در آینده از مسیر امن و مجاز به حساب همکلاسی متصل می‌شود و فقط تکالیف و امتحان‌های شما را برای برنامه‌ریز دریافت می‌کند. رمز عبور به مدل هوش مصنوعی ارسال یا در UPLAND ذخیره نخواهد شد.</p><p id="hamkelasi-consent-status" class="message" role="status">وضعیت اجازه در حال بررسی...</p></div><div class="ai-sync-actions"><button id="hamkelasi-consent-grant" class="primary" type="button">بررسی و ثبت اجازه</button><button id="hamkelasi-consent-revoke" class="secondary" type="button">لغو اجازه</button></div><small class="hint">ثبت اجازه به‌تنهایی اتصال را فعال نمی‌کند؛ تا فراهم شدن روش رسمی و امن ورود، هیچ ورود یا همگام‌سازی خودکاری انجام نمی‌شود.</small></div><div class="settings-block"><div><h3>اعلان پیام‌ها</h3><p class="muted">اعلان پیام‌ها، اطلاعیه‌ها و مطالب تازه در فهرست اعلان‌های سایت ثبت می‌شود. برای دریافت زنده باید سایت باز باشد؛ اعلان گوشی در پس‌زمینه فقط تا زمانی ممکن است که صفحه فعال بماند.</p><p id="push-status" class="message" role="status">وضعیت اعلان در حال بررسی...</p></div><button id="enable-push" class="secondary" type="button">فعال‌سازی اعلان‌های گوشی</button><button id="test-push" class="secondary" type="button">ارسال اعلان آزمایشی</button></div>
            <button class="primary" type="submit">ذخیره تنظیمات</button>
         </form>
       </section>
@@ -252,9 +252,9 @@
           <div id="activity-report-list" class="task-list"><div class="empty">برای دریافت گزارش، دکمه نمایش فعالیت کاربران را بزنید.</div></div>
         </div>
       </section>
-      <footer> UP LAND <span>نسخه ۲.۱.۱</span> <a href="install.html" style="color:var(--accent)">نصب اپلیکیشن</a></footer>
+      <footer> UPLAND <span>نسخه ۲.۲.۰</span> <a href="install.html" style="color:var(--accent)">نصب اپلیکیشن</a></footer>
     </main>
   </div>
-  <div id="notification-popup" class="notification-popup hidden" role="alertdialog" aria-modal="true" aria-labelledby="notification-popup-title"><div class="notification-popup-card"><div class="notification-popup-icon">🔔</div><button id="notification-popup-close" class="notification-popup-close" type="button" aria-label="بستن">×</button><small>اعلان جدید</small><h3 id="notification-popup-title">اعلان</h3><p id="notification-popup-body"></p><div class="notification-popup-actions"><button id="notification-popup-open" class="primary" type="button">مشاهده</button><button id="notification-popup-dismiss" class="secondary" type="button">بستن</button></div></div></div><div id="hamkelasi-consent-modal" class="consent-modal hidden" role="dialog" aria-modal="true" aria-labelledby="hamkelasi-consent-title"><section class="consent-modal-card"><span class="consent-modal-mark">✦</span><p class="eyebrow">UP LAND SMART ASSISTANT</p><h2 id="hamkelasi-consent-title">دستیار هوشمند همکلاسی</h2><p>آیا اجازه می‌دهید دستیار هوشمند UP LAND پس از آماده‌شدن اتصال امن، با مجوز شما تکالیف و امتحان‌های حساب همکلاسی‌تان را بررسی و به برنامه‌ریز منتقل کند؟</p><ul><li>فقط تکالیف و امتحان‌های حساب خودتان خوانده می‌شود.</li><li>رمز عبور به مدل هوش مصنوعی ارسال یا در UP LAND ذخیره نمی‌شود.</li><li>هر زمان بخواهید می‌توانید اجازه را لغو کنید.</li></ul><p class="consent-modal-note">ثبت اجازه فعلاً به معنی اتصال نیست؛ تا آماده‌شدن مسیر رسمی و امن، هیچ ورود یا همگام‌سازی خودکاری انجام نمی‌شود.</p><div class="consent-modal-actions"><button id="hamkelasi-consent-accept" class="primary" type="button">بله، اجازه می‌دهم</button><button id="hamkelasi-consent-decline" class="secondary" type="button">فعلاً نه</button></div></section></div><div id="toast" class="toast" role="status"></div>
+  <div id="notification-popup" class="notification-popup hidden" role="alertdialog" aria-modal="true" aria-labelledby="notification-popup-title"><div class="notification-popup-card"><div class="notification-popup-icon">🔔</div><button id="notification-popup-close" class="notification-popup-close" type="button" aria-label="بستن">×</button><small>اعلان جدید</small><h3 id="notification-popup-title">اعلان</h3><p id="notification-popup-body"></p><div class="notification-popup-actions"><button id="notification-popup-open" class="primary" type="button">مشاهده</button><button id="notification-popup-dismiss" class="secondary" type="button">بستن</button></div></div></div><div id="hamkelasi-consent-modal" class="consent-modal hidden" role="dialog" aria-modal="true" aria-labelledby="hamkelasi-consent-title"><section class="consent-modal-card"><span class="consent-modal-mark">✦</span><p class="eyebrow">UPLAND SMART ASSISTANT</p><h2 id="hamkelasi-consent-title">دستیار هوشمند همکلاسی</h2><p>آیا اجازه می‌دهید دستیار هوشمند UPLAND پس از آماده‌شدن اتصال امن، با مجوز شما تکالیف و امتحان‌های حساب همکلاسی‌تان را بررسی و به برنامه‌ریز منتقل کند؟</p><ul><li>فقط تکالیف و امتحان‌های حساب خودتان خوانده می‌شود.</li><li>رمز عبور به مدل هوش مصنوعی ارسال یا در UPLAND ذخیره نمی‌شود.</li><li>هر زمان بخواهید می‌توانید اجازه را لغو کنید.</li></ul><p class="consent-modal-note">ثبت اجازه فعلاً به معنی اتصال نیست؛ تا آماده‌شدن مسیر رسمی و امن، هیچ ورود یا همگام‌سازی خودکاری انجام نمی‌شود.</p><div class="consent-modal-actions"><button id="hamkelasi-consent-accept" class="primary" type="button">بله، اجازه می‌دهم</button><button id="hamkelasi-consent-decline" class="secondary" type="button">فعلاً نه</button></div></section></div><div id="toast" class="toast" role="status"></div>
 </body>
 </html>
