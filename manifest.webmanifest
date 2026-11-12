@@ -13,7 +13,7 @@
   "icons": [
     {
       "src": "./assets/upland-logo.webp",
-      "sizes": "any",
+      "sizes": "320x320",
       "type": "image/webp",
       "purpose": "any"
     }
