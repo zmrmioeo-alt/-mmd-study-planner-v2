@@ -42,8 +42,12 @@ jobs:
         with:
           path: ~/.android/debug.keystore
           key: upland-android-debug-signing-key-v1
-      - name: Verify signing key cache
-        run: test -f ~/.android/debug.keystore
+      - name: Ensure stable Android signing key
+        run: |
+          mkdir -p "$HOME/.android"
+          if [ ! -f "$HOME/.android/debug.keystore" ]; then
+            keytool -genkeypair -v -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          fi
 
   android:
     if: github.event_name != 'schedule'
@@ -79,6 +83,13 @@ jobs:
         with:
           path: ~/.android/debug.keystore
           key: upland-android-debug-signing-key-v1
+
+      - name: Ensure stable Android signing key
+        run: |
+          mkdir -p "$HOME/.android"
+          if [ ! -f "$HOME/.android/debug.keystore" ]; then
+            keytool -genkeypair -v -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          fi
 
       - name: Prepare bundled web assets
         run: |
