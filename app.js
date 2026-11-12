@@ -870,7 +870,7 @@ async function callHamkelasiConsent(method="GET",state=null){
 function renderHamkelasiConsent(){
  const state=hamkelasiConsentState?.consent_state||null;
  const status=$("hamkelasi-consent-status");if(!status)return;
- status.textContent=state==="accepted"?"اجازهٔ شما ثبت شده است؛ اتصال همکلاسی هنوز فعال نشده است.":state==="declined"?"فعلاً اجازه نداده‌اید؛ هر زمان خواستید می‌توانید فعالش کنید.":state==="revoked"?"اجازهٔ دستیار لغو شده است.":"وضعیت اجازه هنوز دریافت نشده است.";
+ status.textContent=state==="accepted"?"اجازهٔ شما ثبت شده است؛ می‌توانید فایل خروجی حساب خودتان را وارد کنید.":state==="declined"?"فعلاً اجازه نداده‌اید؛ هر زمان خواستید می‌توانید فعالش کنید.":state==="revoked"?"اجازهٔ دستیار لغو شده است.":"وضعیت اجازه هنوز دریافت نشده است.";
  $("hamkelasi-consent-grant").disabled=state==="accepted";
  $("hamkelasi-consent-revoke").disabled=state!=="accepted";
 }
@@ -897,13 +897,13 @@ async function saveHamkelasiConsent(state){
  }catch(error){toast(error.message||"ثبت اجازه ناموفق بود.");renderHamkelasiConsent();["hamkelasi-consent-accept","hamkelasi-consent-decline"].forEach(id=>{if($(id))$(id).disabled=false});return false}
 }
 $("hamkelasi-consent-accept").addEventListener("click",async()=>{
- if(await saveHamkelasiConsent("accepted")){closeHamkelasiConsent();toast("اجازهٔ شما به‌صورت امن در حساب UPLAND ثبت شد؛ همگام‌سازی تا آماده‌شدن اتصال مجاز فعال نمی‌شود.")}
+ if(await saveHamkelasiConsent("accepted")){closeHamkelasiConsent();toast("اجازه ثبت شد؛ اکنون می‌توانید فایل خروجی حساب خودتان را وارد کنید.")}
 });
 $("hamkelasi-consent-decline").addEventListener("click",async()=>{
  if(await saveHamkelasiConsent("declined"))closeHamkelasiConsent();
 });
 $("hamkelasi-consent-grant").addEventListener("click",async()=>{
- if(await saveHamkelasiConsent("accepted"))toast("اجازهٔ دستیار ثبت شد؛ اتصال همکلاسی هنوز فعال نشده است.");
+ if(await saveHamkelasiConsent("accepted"))toast("اجازه ثبت شد؛ واردکردن فایل خروجی همکلاسی در دسترس است.");
 });
 $("hamkelasi-consent-revoke").addEventListener("click",async()=>{
  if(await saveHamkelasiConsent("revoked"))toast("اجازهٔ دستیار لغو شد.");
@@ -1402,10 +1402,12 @@ boot().catch(err=>{console.error(err);show("app-view",false);show("auth-view",tr
   parsed=[];button.disabled=true;preview.classList.add("hidden");status.textContent="";
   const f=file.files?.[0];if(!f)return;
   try{
+   if(f.size>10*1024*1024)throw new Error("حجم فایل نباید بیشتر از ۱۰ مگابایت باشد.");
    if(!window.XLSX)throw new Error("کتابخانهٔ خواندن فایل بارگذاری نشد؛ صفحه را تازه‌سازی کنید.");
    const data=await f.arrayBuffer(),wb=window.XLSX.read(data,{type:"array",cellDates:true});
    const rows=window.XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:""});
-   parsed=rows.map((r,i)=>{const title=String(pick(r,["عنوان","عنوان تکلیف","نام تکلیف","تکلیف","عنوان فعالیت","title","task","assignment","exam","نام امتحان"])).trim();if(!title)return null;const description=String(pick(r,["توضیحات","شرح","جزئیات","description","details"])).trim();const due=dueValue(pick(r,["مهلت","تاریخ تحویل","تاریخ انجام","تاریخ امتحان","سررسید","due date","deadline","date"]));const rawPriority=norm(pick(r,["اولویت","priority"]));const priority=/زیاد|مهم|high|urgent/.test(rawPriority)?"high":/کم|low/.test(rawPriority)?"low":"normal";const mins=Number(pick(r,["مدت","مدت زمان","زمان تخمینی","دقیقه","estimated minutes","duration"]));return {external_id:String(pick(r,["شناسه","کد تکلیف","id","task id"])||stableId(title+"|"+description+"|"+(due||""))),title,description,due_at:due,priority,estimated_minutes:Number.isInteger(mins)&&mins>=5&&mins<=1440?mins:null}}).filter(Boolean).slice(0,100);
+   if(rows.length>100)throw new Error("فایل بیش از ۱۰۰ ردیف دارد؛ آن را به چند فایل کوچک‌تر تقسیم کنید.");
+   parsed=rows.map((r,i)=>{const title=String(pick(r,["عنوان","عنوان تکلیف","نام تکلیف","تکلیف","عنوان فعالیت","title","task","assignment","exam","نام امتحان"])).trim();if(!title)return null;const description=String(pick(r,["توضیحات","شرح","جزئیات","description","details"])).trim();const due=dueValue(pick(r,["مهلت","تاریخ تحویل","تاریخ انجام","تاریخ امتحان","سررسید","due date","deadline","date"]));const rawPriority=norm(pick(r,["اولویت","priority"]));const priority=/زیاد|مهم|high|urgent/.test(rawPriority)?"high":/کم|low/.test(rawPriority)?"low":"normal";const mins=Number(pick(r,["مدت","مدت زمان","زمان تخمینی","دقیقه","estimated minutes","duration"]));return {external_id:String(pick(r,["شناسه","کد تکلیف","id","task id"])||stableId(title+"|"+description+"|"+(due||""))),title,description,due_at:due,priority,estimated_minutes:Number.isInteger(mins)&&mins>=5&&mins<=1440?mins:null}}).filter(Boolean);
    if(!parsed.length)throw new Error("در فایل، ستون عنوان تکلیف پیدا نشد. فایل خروجی کامل همکلاسی را انتخاب کنید.");
    preview.innerHTML='<strong>'+new Intl.NumberFormat("fa-IR").format(parsed.length)+' تکلیف شناسایی شد</strong><ul>'+parsed.slice(0,5).map(x=>'<li>'+String(x.title).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))+'</li>').join("")+'</ul>'+(parsed.length>5?'<small>و '+new Intl.NumberFormat("fa-IR").format(parsed.length-5)+' مورد دیگر</small>':"");
    preview.classList.remove("hidden");button.disabled=false;status.textContent="فایل آمادهٔ بررسی است. پس از تأیید، موارد تکراری با شناسهٔ منبع به‌روزرسانی می‌شوند.";
