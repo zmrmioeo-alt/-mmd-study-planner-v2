@@ -38,7 +38,6 @@ function enhanceChat(){
  ["🙂","😂","❤️","👍","🙏","🔥","🎉","💯","✨","📚","🤝","😅"].forEach(emoji=>{const b=document.createElement("button");b.type="button";b.textContent=emoji;b.setAttribute("aria-label","افزودن "+emoji);b.addEventListener("click",()=>{const input=$("chat-input");if(!input)return;const start=input.selectionStart??input.value.length,end=input.selectionEnd??start;input.value=input.value.slice(0,start)+emoji+input.value.slice(end);input.focus();input.setSelectionRange(start+emoji.length,start+emoji.length);input.dispatchEvent(new Event("input",{bubbles:true}))});row.append(b)});
  compose.insertAdjacentElement("beforebegin",row);
   }
- $("chat-input")?.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();$("chat-form")?.requestSubmit()}}); 
   const chatInput=$("chat-input");
   if(chatInput&&!chatInput.dataset.uxEnterReady){chatInput.dataset.uxEnterReady="1";chatInput.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing&&!e.repeat){e.preventDefault();$("chat-form")?.requestSubmit()}})}
   const record=$("ux-chat-record"),recordState=$("ux-chat-record-state");
