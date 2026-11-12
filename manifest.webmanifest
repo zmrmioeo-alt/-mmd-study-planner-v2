@@ -1,7 +1,7 @@
 {
   "name": "UPLAND",
   "short_name": "UPLAND",
-  "description": "فضای هوشمند برنامه‌ریزی و یادگیری",
+  "description": "برنامه‌ریز و فضای یادگیری مدرسه همت",
   "lang": "fa",
   "dir": "rtl",
   "start_url": "./?source=installed-app",
@@ -13,7 +13,7 @@
   "icons": [
     {
       "src": "./assets/upland-logo-original.svg",
-      "sizes": "any",
+      "sizes": "384x384",
       "type": "image/svg+xml",
       "purpose": "any"
     },
