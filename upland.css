@@ -410,3 +410,32 @@ body .eyebrow{font-family:"Vazirmatn",Tahoma,sans-serif!important;letter-spacing
 
 /* Unread message count on the main navigation item */
 #chat-nav{position:relative}#chat-nav.has-unread:after{content:attr(data-unread-count);display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 5px;margin-inline-start:auto;border-radius:999px;background:#ef476f;color:#fff;font-size:11px;font-weight:900;line-height:1;box-shadow:0 0 0 2px #08162b}#chat-nav:not(.has-unread):after{content:none}
+
+
+/* UPLAND ARCADE */
+.game-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(320px,1.05fr);gap:18px;align-items:start}
+.game-card,.game-leaderboard{background:linear-gradient(145deg,#132743,#0d1a30);border:1px solid #294b6c;border-radius:22px;padding:22px;box-shadow:0 18px 42px #02081738}
+.game-card-head,.game-leaderboard-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.game-chip{display:inline-flex;align-items:center;padding:7px 12px;border-radius:99px;background:#1c4c64;color:#9df5e9;font-size:11px;font-weight:800}
+.game-live-dot{color:#78e8c1;font-size:11px}.game-instruction{color:var(--muted);font-size:13px;line-height:1.9;margin:18px 0}
+.game-stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}
+.game-stats>div{display:grid;gap:8px;padding:16px;border:1px solid #294562;border-radius:16px;background:#0b182b;text-align:center}
+.game-stats small{font-size:11px;color:var(--muted)}.game-stats strong{font-size:32px;color:#72e8df;font-variant-numeric:tabular-nums}
+.game-start{width:100%;min-height:48px;margin:4px 0 10px}
+.game-tap{width:100%;min-height:100px;border:1px solid #6cefe2;border-radius:18px;background:linear-gradient(135deg,#1bb9b1,#277dd5);color:#031521;font-size:30px;font-weight:900;box-shadow:0 12px 30px #1cb9b533}
+.game-tap:active:not(:disabled){transform:scale(.98)}.game-tap:disabled{opacity:.35;cursor:not-allowed}
+.game-message{min-height:26px;text-align:center;color:#8ce8d9;font-size:12px}.game-message.error{color:var(--danger)}
+.game-personal-record{display:flex;justify-content:center;align-items:center;gap:7px;padding-top:14px;border-top:1px solid #294562;color:var(--muted);font-size:12px}
+.game-personal-record strong{font-size:20px;color:#f6d77a}.game-personal-record span{font-size:11px}
+.game-leaderboard-head h3{margin:0;font-size:19px}.game-podium{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:20px 0 14px;align-items:end}
+.game-podium-card{display:flex;flex-direction:column;align-items:center;gap:7px;padding:14px 7px;border:1px solid #314966;border-radius:16px;background:#0b192c;text-align:center;min-width:0}
+.game-podium-card.first{border-color:#d8b75b;background:linear-gradient(180deg,#5b4a1c55,#0b192c)}
+.game-podium-card.second{border-color:#9db2c8}.game-podium-card.third{border-color:#b77e55}
+.game-medal{font-size:25px}.game-podium-card b{font-size:11px;max-width:100%;overflow-wrap:anywhere}
+.game-podium-card strong{font-size:22px;color:#8ce8df}.game-podium-card small{font-size:10px;color:var(--muted)}
+.game-leaderboard-list{list-style:none;padding:0;margin:0;display:grid;gap:7px}
+.game-leaderboard-list li{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid #263f5e;border-radius:12px;background:#0b182a}
+.game-rank{display:grid;place-items:center;width:28px;height:28px;border-radius:9px;background:#19334f;color:#9cebe3;font-size:12px;font-weight:800}
+.game-leaderboard-list li b{flex:1;font-size:12px}.game-leaderboard-list li strong{font-size:12px;color:#a4cfff;white-space:nowrap}
+.game-footnote{color:var(--muted);font-size:10px;line-height:1.8;margin:14px 0 0}
+@media(max-width:850px){.game-layout{grid-template-columns:1fr}.game-card,.game-leaderboard{padding:17px}.game-podium-card{padding:12px 5px}}
