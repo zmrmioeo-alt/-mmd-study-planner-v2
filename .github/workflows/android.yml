@@ -28,10 +28,6 @@ on:
 permissions:
   contents: write
 
-concurrency:
-  group: upland-android-build
-  cancel-in-progress: true
-
 jobs:
   keep-signing-key-warm:
     if: github.event_name == 'schedule'
