@@ -1,5 +1,5 @@
-const CACHE_NAME="upland-shell-v71";
-const CORE=["./","./index.html","./install.html","./app.js","./planner-edit.js","./stickers.js","./style.css","./upland.css","./assets/upland-icon.svg","./assets/upland-icon-192.svg","./manifest.webmanifest","./version.json"];
+const CACHE_NAME="upland-shell-v72";
+const CORE=["./","./index.html","./install.html","./app.js","./planner-edit.js","./stickers.js","./style.css","./upland.css","./experience.css","./experience.js","./assets/upland-icon.svg","./assets/upland-icon-192.svg","./manifest.webmanifest","./version.json"];
 self.addEventListener("message",event=>{if(event.data?.type==="SKIP_WAITING")self.skipWaiting()});
 self.addEventListener("install",event=>{event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting()))});
 self.addEventListener("activate",event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE_NAME).map(key=>caches.delete(key)))).then(()=>self.clients.claim()))});
