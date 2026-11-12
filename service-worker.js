@@ -1,12 +1,12 @@
-const CACHE_NAME="upland-shell-v72";
-const CORE=["./","./index.html","./install.html","./app.js","./planner-edit.js","./stickers.js","./style.css","./upland.css","./experience.css","./experience.js","./assets/upland-icon.svg","./assets/upland-icon-192.svg","./manifest.webmanifest","./version.json"];
+const CACHE_NAME="upland-shell-v73";
+const CORE=["./","./index.html","./install.html","./app.js","./planner-edit.js","./stickers.js","./style.css","./upland.css","./experience.css","./experience.js","./assets/upland-logo.webp","./manifest.webmanifest","./version.json"];
 self.addEventListener("message",event=>{if(event.data?.type==="SKIP_WAITING")self.skipWaiting()});
 self.addEventListener("install",event=>{event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting()))});
 self.addEventListener("activate",event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE_NAME).map(key=>caches.delete(key)))).then(()=>self.clients.claim()))});
 self.addEventListener("push",event=>{
  let payload={};try{payload=event.data?event.data.json():{}}catch(_){payload={body:event.data?.text()||"پیام جدید"}}
  const title=payload.title||"پیام جدید در UPLAND";
- event.waitUntil(self.registration.showNotification(title,{body:payload.body||"یک پیام جدید دریافت کردی.",icon:"./assets/upland-icon.svg",badge:"./assets/upland-icon-192.svg",tag:payload.tag||"mmd-message",renotify:true,vibrate:[100,50,100],data:{url:payload.url||"./"}}));
+ event.waitUntil(self.registration.showNotification(title,{body:payload.body||"یک پیام جدید دریافت کردی.",icon:"./assets/upland-logo.webp",badge:"./assets/upland-logo.webp",tag:payload.tag||"mmd-message",renotify:true,vibrate:[100,50,100],data:{url:payload.url||"./"}}));
 });
 self.addEventListener("notificationclick",event=>{
  event.notification.close();const target=new URL(event.notification.data?.url||"./",self.registration.scope).href;
