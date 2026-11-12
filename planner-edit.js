@@ -65,12 +65,12 @@
   }
   async function editRoutine(id){
     const item=routines.find(r=>String(r.id)===String(id));if(!item)return;
-    const form=openEditor('<h2 style="margin:0">ویرایش برنامه ثابت</h2>'+field("عنوان برنامه","mmd-r-title",item.title)+field("توضیحات","mmd-r-details",item.details||"")+'<label style="display:grid;gap:6px">روز هفته<select id="mmd-r-day">'+["یکشنبه","دوشنبه","سه‌شنبه","چهارشنبه","پنجشنبه","جمعه","شنبه"].map((n,i)=>'<option value="'+i+'">'+n+'</option>').join("")+'</select></label>'+field("ساعت","mmd-r-time",(item.scheduled_time||"").slice(0,5),"time"));
+    const form=openEditor('<h2 style="margin:0">ویرایش برنامه ثابت</h2>'+field("عنوان برنامه","mmd-r-title",item.title)+field("توضیحات","mmd-r-details",item.details||"")+field("مدت‌زمان (دقیقه)","mmd-r-duration",item.duration_minutes||60,"number",'min="5" max="720" step="5" required')+'<label style="display:grid;gap:6px">روز هفته<select id="mmd-r-day">'+["یکشنبه","دوشنبه","سه‌شنبه","چهارشنبه","پنجشنبه","جمعه","شنبه"].map((n,i)=>'<option value="'+i+'">'+n+'</option>').join("")+'</select></label>'+field("ساعت","mmd-r-time",(item.scheduled_time||"").slice(0,5),"time"));
     $("mmd-r-day").value=String(item.weekday);
     form.addEventListener("submit",async e=>{
       e.preventDefault();const btn=$("mmd-edit-submit");btn.disabled=true;
       try{
-        const patch={title:$("mmd-r-title").value.trim(),details:$("mmd-r-details").value.trim(),weekday:Number($("mmd-r-day").value),scheduled_time:$("mmd-r-time").value||null};
+        const duration_minutes=Number($("mmd-r-duration").value);if(!Number.isInteger(duration_minutes)||duration_minutes<5||duration_minutes>720)throw new Error("مدت‌زمان باید بین ۵ تا ۷۲۰ دقیقه باشد.");const patch={title:$("mmd-r-title").value.trim(),details:$("mmd-r-details").value.trim(),weekday:Number($("mmd-r-day").value),scheduled_time:$("mmd-r-time").value||null,duration_minutes};
         if(!patch.title)throw new Error("عنوان برنامه را وارد کنید.");
         const {error}=await db.from("routines").update(patch).eq("id",item.id).eq("user_id",currentUser.id);
         if(error)throw error;

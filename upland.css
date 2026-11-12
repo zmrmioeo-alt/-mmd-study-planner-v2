@@ -407,3 +407,6 @@ body .eyebrow{font-family:"Vazirmatn",Tahoma,sans-serif!important;letter-spacing
  #app-view .topbar h1{font-size:20px!important}
  #app-view .date-pill{max-width:132px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
 }
+
+/* Unread message count on the main navigation item */
+#chat-nav{position:relative}#chat-nav.has-unread:after{content:attr(data-unread-count);display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 5px;margin-inline-start:auto;border-radius:999px;background:#ef476f;color:#fff;font-size:11px;font-weight:900;line-height:1;box-shadow:0 0 0 2px #08162b}#chat-nav:not(.has-unread):after{content:none}
