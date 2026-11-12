@@ -608,7 +608,12 @@ function plannerRestIntervals(day,dateKey){
  return result;
 }
 function plannerDayOccupancy(day,dateKey,exceptId=null){
- return [...planEntriesForDate(dateKey,exceptId),...plannerRestIntervals(day,dateKey)].sort((a,b)=>a.startDate-b.startDate);
+ const fixed=routines.filter(r=>r.active!==false&&Number(r.weekday)===Number(day)&&r.scheduled_time).map(r=>{
+  const start=plannerLocalDateTime(dateKey,String(r.scheduled_time).slice(0,5));
+  const duration=Math.max(15,Math.min(240,Number(r.duration_minutes)||60));
+  return {id:"routine-"+r.id,task_id:null,routine:true,title:r.title,startDate:start,endDate:new Date(start.getTime()+duration*60000),date:dateKey,duration};
+ });
+ return [...planEntriesForDate(dateKey,exceptId),...fixed,...plannerRestIntervals(day,dateKey)].sort((a,b)=>a.startDate-b.startDate);
 }
 function plannerMinutes(value){if(!value)return null;const [h,m]=value.split(":").map(Number);return h*60+m}
 function plannerLocalDateTime(dateKey,time){const [y,m,d]=dateKey.split("-").map(Number),[h,mi]=time.split(":").map(Number);return new Date(y,m-1,d,h,mi,0,0)}
@@ -699,6 +704,7 @@ function renderWeeklyPlan(){
   const a=weeklyAvailability[String(day)];
   return '<section class="planner-day" data-plan-drop="'+key+'"><header><b>'+plannerDayNames[day]+'</b><span>'+jalaliDate(date)+'</span><small>'+(a?a.start+" تا "+a.end:"بدون زمان آزاد")+'</small></header><div class="planner-day-items">'+(dayEntries.length?dayEntries.map(p=>{
    if(p.rest)return '<article class="planner-task planner-rest"><div class="planner-task-top"><b>استراحت</b><span>'+plannerTimeLabel(p.startDate)+' · '+fa(p.duration)+' دقیقه</span></div><small>زمان استراحت روزانه</small></article>';
+   if(p.routine)return '<article class="planner-task planner-fixed"><div class="planner-task-top"><b>'+escapeHtml(p.title)+'</b><span>'+plannerTimeLabel(p.startDate)+' · '+plannerTimeLabel(p.endDate)+'</span></div><small>برنامه ثابت · زمان رزروشده</small></article>';
    const t=tasksById.get(String(p.task_id)),done=t?.status==="done",start=p.startDate,planKey=String(p.id||p.task_id);
    const part=p.segment_total>1?' · بخش '+fa(p.segment_index)+' از '+fa(p.segment_total):"";
    return '<article class="planner-task '+(done?"is-done":"")+'" draggable="'+(!done)+'" data-plan-key="'+escapeHtml(planKey)+'"><div class="planner-task-top"><b>'+escapeHtml(t?.title||"کار حذف‌شده")+'</b><span>'+plannerTimeLabel(start)+' · '+fa(p.duration)+' دقیقه'+part+'</span></div><small>مهلت: '+(t?.due_at?jalaliDate(t.due_at,true):"تعیین نشده")+(p.locked?" · جابه‌جایی دستی":"")+'</small><div class="planner-move-controls"><select aria-label="انتقال به روز" data-plan-day="'+escapeHtml(planKey)+'">'+plannerDayOrder.map(d=>{const dt=plannerDateAt((d-6+7)%7),k=plannerDateKey(dt);return '<option value="'+k+'" '+(k===key?"selected":"")+'>'+plannerDayNames[d]+'</option>'}).join("")+'</select><input aria-label="ساعت شروع" type="time" value="'+plannerTimeValue(start)+'" data-plan-time="'+escapeHtml(planKey)+'"><button type="button" class="secondary" data-plan-save="'+escapeHtml(planKey)+'" '+(done?"disabled":"")+'>تغییر زمان</button>'+(p.locked?'<button type="button" class="secondary" data-plan-unlock="'+escapeHtml(planKey)+'">خودکار</button>':"")+'</div></article>';
