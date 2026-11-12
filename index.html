@@ -12,15 +12,15 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/@majidh1/jalalidatepicker@1.0.0/dist/jalalidatepicker.min.css">
-  <link rel="stylesheet" href="style.css?v=2.5.17"><link rel="stylesheet" href="upland.css?v=2.5.17"><link rel="stylesheet" href="experience.css?v=2.5.17">
+  <link rel="stylesheet" href="style.css?v=2.5.18"><link rel="stylesheet" href="upland.css?v=2.5.18"><link rel="stylesheet" href="experience.css?v=2.5.18">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onerror="this.onerror=null;this.src='https://unpkg.com/@supabase/supabase-js@2'"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script defer src="https://unpkg.com/@majidh1/jalalidatepicker@1.0.0/dist/jalalidatepicker.min.js"></script>
   <script>window.addEventListener("error",function(e){if(e.target&&e.target.src&&e.target.src.includes("xlsx.full.min.js")&&!window.XLSX){var s=document.createElement("script");s.src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js";document.head.appendChild(s)}},true);</script>
-  <script defer src="app.js?v=2.5.17"></script>
+  <script defer src="app.js?v=2.5.18"></script>
   <script defer src="planner-edit.js?v=1.3.2"></script>
   <script defer src="stickers.js?v=1.0.1"></script>
-  <script defer src="experience.js?v=2.5.17"></script>
+  <script defer src="experience.js?v=2.5.18"></script>
 </head>
 <body>
   <div id="startup-overlay" class="startup-overlay hidden" role="status" aria-live="polite" aria-label="در حال به‌روزرسانی برنامه">
@@ -220,7 +220,7 @@
       <section id="page-hamkelasi" class="page hidden">
         <div class="section-head"><div><p class="eyebrow">SCHOOL SYNC</p><h2>همکلاسی</h2><p class="muted">انتقال تکالیف حساب خودت به برنامه‌ریز UPLAND</p></div></div>
         <div class="hamkelasi-page-grid">
-          <div class="form-panel hamkelasi-consent-card"><div class="settings-block ai-sync-settings"><div><h3>دستیار هوشمند همکلاسی</h3><p class="muted">با اجازهٔ شما، تکالیف حساب خودتان را از فایل خروجی همکلاسی به برنامه‌ریز منتقل کنید. رمز عبور همکلاسی در UPLAND وارد یا ذخیره نمی‌شود.</p><p id="hamkelasi-consent-status" class="message" role="status">وضعیت اجازه در حال بررسی...</p></div><div class="ai-sync-actions"><button id="hamkelasi-consent-grant" class="primary" type="button">بررسی و ثبت اجازه</button><button id="hamkelasi-consent-revoke" class="secondary" type="button">لغو اجازه</button></div><small class="hint">برای همگام‌سازی، فایل خروجی تکالیف را در همین صفحه بارگذاری کنید. اتصال مستقیم فقط با API یا مجوز رسمی همکلاسی امکان‌پذیر است.</small></div></div>
+          <div class="form-panel hamkelasi-consent-card"><div class="settings-block ai-sync-settings"><div><h3>دستیار هوشمند همکلاسی</h3><p class="muted">با اجازهٔ شما، تکالیف حساب خودتان را از فایل خروجی همکلاسی به برنامه‌ریز منتقل کنید. رمز عبور همکلاسی در UPLAND وارد یا ذخیره نمی‌شود.</p><p id="hamkelasi-consent-status" class="message" role="status">وضعیت اجازه در حال بررسی...</p></div><div class="ai-sync-actions"><a class="hamkelasi-portal-link" href="https://hemmatsch.ir/" target="_blank" rel="noopener noreferrer">باز کردن سامانه همکلاسی ↗</a><button id="hamkelasi-consent-grant" class="primary" type="button">بررسی و ثبت اجازه</button><button id="hamkelasi-consent-revoke" class="secondary" type="button">لغو اجازه</button></div><small class="hint">برای همگام‌سازی، فایل خروجی تکالیف را در همین صفحه بارگذاری کنید. اتصال مستقیم فقط با API یا مجوز رسمی همکلاسی امکان‌پذیر است.</small></div></div>
           <div class="form-panel hamkelasi-import-card"><div class="hamkelasi-import-panel"><h4>واردکردن تکالیف از خروجی همکلاسی</h4><p class="muted">از حساب خودتان در همکلاسی فایل خروجی تکالیف را دریافت کنید و اینجا بارگذاری کنید. فایل فقط برای استخراج تکالیف خوانده می‌شود؛ رمز حساب درخواست یا ذخیره نمی‌شود.</p><label>فایل خروجی همکلاسی<input id="hamkelasi-export-file" type="file" accept=".xlsx,.xls,.csv"></label><div id="hamkelasi-import-preview" class="hamkelasi-import-preview hidden"></div><button id="hamkelasi-import-submit" class="primary" type="button" disabled>بررسی و انتقال تکالیف</button><p id="hamkelasi-import-message" class="message" role="status"></p></div></div>
         </div>
         <div class="hamkelasi-notice"><b>اتصال مستقیم</b><p>اتصال مستقیم به سامانه همکلاسی در حال حاضر در دسترس نیست؛ برای جلوگیری از دریافت رمز دیگران، فقط فایل خروجی حساب خودت وارد می‌شود. اتصال مستقیم پس از ارائه API یا روش رسمی سامانه فعال می‌شود.</p></div>
