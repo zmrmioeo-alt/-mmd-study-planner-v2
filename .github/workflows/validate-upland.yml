@@ -1,0 +1,30 @@
+name: Validate UP LAND
+on:
+  push:
+    branches:
+      - staging/up-land-redesign
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Check JavaScript syntax
+        run: |
+          node --check app.js
+          node --check planner-edit.js
+          node --check stickers.js
+          node --check service-worker.js
+      - name: Validate manifest and local assets
+        run: |
+          node -e "JSON.parse(require('fs').readFileSync('manifest.webmanifest','utf8')); JSON.parse(require('fs').readFileSync('version.json','utf8'));"
+          test -f index.html
+          test -f upland.css
+          grep -q 'upland.css' index.html
+          grep -q 'UP LAND' index.html
+          grep -q 'upland.css' service-worker.js
