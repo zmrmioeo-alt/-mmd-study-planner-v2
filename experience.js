@@ -48,7 +48,24 @@ function enhanceChat(){
    try{
     stream=await navigator.mediaDevices.getUserMedia({audio:true});chunks=[];recorder=new MediaRecorder(stream);recordStarted=Date.now();
     recorder.ondataavailable=e=>{if(e.data?.size)chunks.push(e.data)};
-    recorder.onstop=()=>{if(recordLimit)clearTimeout(recordLimit);recordLimit=null;const elapsed=Math.round((Date.now()-recordStarted)/1000);const blob=new Blob(chunks,{type:recorder.mimeType||"audio/webm"});stream?.getTracks().forEach(t=>t.stop());stream=null;if(blob.size){const file=new File([blob],"upland-voice-"+Date.now()+".webm",{type:blob.type});const transfer=new DataTransfer();transfer.items.add(file);$("chat-file").files=transfer.files;$("chat-file").dispatchEvent(new Event("change",{bubbles:true}));$("chat-input").value=$("chat-input").value.trim();if(recordState)recordState.textContent="پیام صوتی "+Math.floor(elapsed/60)+":"+String(elapsed%60).padStart(2,"0")+" آمادهٔ ارسال است."}record.textContent="● ضبط صدا";record.classList.remove("recording")};
+    recorder.onstop=()=>{
+     if(recordLimit)clearTimeout(recordLimit);recordLimit=null;
+     const elapsed=Math.round((Date.now()-recordStarted)/1000);
+     const blob=new Blob(chunks,{type:recorder.mimeType||"audio/webm"});
+     stream?.getTracks().forEach(t=>t.stop());stream=null;
+     try{
+      const input=$("chat-file");
+      if(!input)throw new Error("بخش پیوست پیام در دسترس نیست.");
+      if(!window.DataTransfer)throw new Error("این مرورگر افزودن خودکار فایل صوتی را پشتیبانی نمی‌کند.");
+      if(!blob.size)throw new Error("صدایی ضبط نشد؛ دوباره تلاش کن.");
+      const file=new File([blob],"upland-voice-"+Date.now()+".webm",{type:blob.type});
+      const transfer=new DataTransfer();transfer.items.add(file);input.files=transfer.files;
+      input.dispatchEvent(new Event("change",{bubbles:true}));
+      const textInput=$("chat-input");if(textInput)textInput.value=textInput.value.trim();
+      if(recordState)recordState.textContent="پیام صوتی "+Math.floor(elapsed/60)+":"+String(elapsed%60).padStart(2,"0")+" آماده است؛ برای ارسال، دکمهٔ ارسال پیام را بزن.";
+     }catch(err){if(recordState)recordState.textContent=err.message||"آماده‌سازی پیام صوتی ناموفق بود."}
+     record.textContent="● ضبط صدا";record.classList.remove("recording");
+    };
     recorder.start();recordLimit=setTimeout(()=>{if(recorder?.state==="recording"){if(recordState)recordState.textContent="حداکثر زمان ضبط (۳ دقیقه) تمام شد.";recorder.stop()}},180000);record.textContent="■ پایان ضبط";record.classList.add("recording");if(recordState)recordState.textContent="در حال ضبط…";
    }catch(e){stream?.getTracks().forEach(t=>t.stop());stream=null;if(recordState)recordState.textContent="دسترسی به میکروفون داده نشد."}
   });
