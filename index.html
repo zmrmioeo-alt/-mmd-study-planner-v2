@@ -12,15 +12,15 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/@majidh1/jalalidatepicker@1.0.0/dist/jalalidatepicker.min.css">
-  <link rel="stylesheet" href="style.css?v=2.5.15"><link rel="stylesheet" href="upland.css?v=2.5.15"><link rel="stylesheet" href="experience.css?v=2.5.15">
+  <link rel="stylesheet" href="style.css?v=2.5.16"><link rel="stylesheet" href="upland.css?v=2.5.16"><link rel="stylesheet" href="experience.css?v=2.5.16">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onerror="this.onerror=null;this.src='https://unpkg.com/@supabase/supabase-js@2'"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script defer src="https://unpkg.com/@majidh1/jalalidatepicker@1.0.0/dist/jalalidatepicker.min.js"></script>
   <script>window.addEventListener("error",function(e){if(e.target&&e.target.src&&e.target.src.includes("xlsx.full.min.js")&&!window.XLSX){var s=document.createElement("script");s.src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js";document.head.appendChild(s)}},true);</script>
-  <script defer src="app.js?v=2.5.15"></script>
+  <script defer src="app.js?v=2.5.16"></script>
   <script defer src="planner-edit.js?v=1.3.2"></script>
   <script defer src="stickers.js?v=1.0.1"></script>
-  <script defer src="experience.js?v=2.5.15"></script>
+  <script defer src="experience.js?v=2.5.16"></script>
 </head>
 <body>
   <div id="startup-overlay" class="startup-overlay hidden" role="status" aria-live="polite" aria-label="در حال به‌روزرسانی برنامه">
@@ -98,6 +98,7 @@
         <button class="nav-link" data-page="contact">☎ <span>ارتباط با ادمین</span></button>
         <button class="nav-link" id="chat-nav" data-page="chat">✉ <span>پیام‌رسان</span></button>
         <button class="nav-link" data-page="hamkelasi">⇄ <span>همکلاسی</span></button>
+        <button class="nav-link" data-page="games">🎮 <span>بازی و رکوردها</span></button>
         <button class="nav-link hidden" id="smart-planner-nav" data-page="smart">✦ <span>برنامه‌ریز هوشمند</span></button>
         <button class="nav-link" data-page="programs">▧ <span>همه برنامه‌ها</span></button>
         <button class="nav-link" data-page="tasks">▤ <span>وظایف و تکالیف</span></button>
@@ -260,6 +261,27 @@
           <p id="activity-report-message" class="message"></p>
           <div id="activity-report-summary" class="stats-grid"></div>
           <div id="activity-report-list" class="task-list"><div class="empty">برای دریافت گزارش، دکمه نمایش فعالیت کاربران را بزنید.</div></div>
+        </div>
+      </section>
+
+      <section id="page-games" class="page hidden">
+        <div class="section-head"><div><p class="eyebrow">UPLAND ARCADE</p><h2>بازی و رکوردها</h2><p class="muted">یک چالش کوتاه؛ رکوردت را ثبت کن و با هم‌مدرسه‌ای‌ها رقابت کن.</p></div><button id="game-refresh" class="secondary" type="button">به‌روزرسانی جدول</button></div>
+        <div class="game-layout">
+          <section class="game-card">
+            <div class="game-card-head"><span class="game-chip">چالش ۱۰ ثانیه‌ای</span><span class="game-live-dot">● رقابت زنده</span></div>
+            <p class="game-instruction">بعد از شروع، در ۱۰ ثانیه تا می‌توانی روی دکمه بزن.</p>
+            <div class="game-stats"><div><small>زمان باقی‌مانده</small><strong id="game-timer">۱۰</strong></div><div><small>امتیاز این دور</small><strong id="game-score">۰</strong></div></div>
+            <button id="game-start" class="primary game-start" type="button">شروع بازی</button>
+            <button id="game-tap" class="game-tap" type="button" disabled>بزن!</button>
+            <p id="game-message" class="game-message" role="status">برای ثبت رکورد، بازی را شروع کن.</p>
+            <div class="game-personal-record">بهترین رکورد تو <strong id="game-personal-record">—</strong> <span>کلیک</span></div>
+          </section>
+          <section class="game-leaderboard">
+            <div class="game-leaderboard-head"><div><p class="eyebrow">HALL OF FAME</p><h3>جدول رکوردها</h3></div><span class="game-chip">۱۰ ثانیه</span></div>
+            <div id="game-podium" class="game-podium"><div class="empty">در حال دریافت رکوردها…</div></div>
+            <ol id="game-leaderboard-list" class="game-leaderboard-list"><li class="empty">در حال دریافت رکوردها…</li></ol>
+            <p class="game-footnote">برای هر دانش‌آموز، بهترین رکورد ثبت می‌شود. سه نفر برتر همیشه بالای جدول هستند.</p>
+          </section>
         </div>
       </section>
       <footer> UPLAND <span>نسخه ۲.۵.۱۵</span> <a href="install.html" style="color:var(--accent)">نصب اپلیکیشن</a></footer>
