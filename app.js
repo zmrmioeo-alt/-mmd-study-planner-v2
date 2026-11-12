@@ -700,7 +700,7 @@ function renderWeeklyPlan(){
  const unscheduled=tasks.filter(t=>t.status==="pending"&&(!t.estimated_minutes||(assigned.get(String(t.id))||0)<Number(t.estimated_minutes)));
  const groups=plannerDayOrder.map(day=>{
   const date=plannerDateAt((day-6+7)%7),key=plannerDateKey(date);
-  const dayEntries=[...valid.filter(p=>p.date===key).map(p=>({...p,startDate:new Date(p.start),endDate:new Date(p.end)})),...plannerRestIntervals(day,key)].sort((a,b)=>a.startDate-b.startDate);
+  const dayEntries=plannerDayOccupancy(day,key).filter(p=>p.routine||p.rest||tasksById.has(String(p.task_id)));
   const a=weeklyAvailability[String(day)];
   return '<section class="planner-day" data-plan-drop="'+key+'"><header><b>'+plannerDayNames[day]+'</b><span>'+jalaliDate(date)+'</span><small>'+(a?a.start+" تا "+a.end:"بدون زمان آزاد")+'</small></header><div class="planner-day-items">'+(dayEntries.length?dayEntries.map(p=>{
    if(p.rest)return '<article class="planner-task planner-rest"><div class="planner-task-top"><b>استراحت</b><span>'+plannerTimeLabel(p.startDate)+' · '+fa(p.duration)+' دقیقه</span></div><small>زمان استراحت روزانه</small></article>';
