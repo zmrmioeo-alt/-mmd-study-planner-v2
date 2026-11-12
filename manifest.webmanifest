@@ -12,14 +12,14 @@
   "theme_color": "#050a16",
   "icons": [
     {
-      "src": "./assets/upland-logo-original.svg",
-      "sizes": "384x384",
+      "src": "./assets/upland-install-icon.svg",
+      "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "./assets/upland-logo-original.svg",
-      "sizes": "any",
+      "src": "./assets/upland-install-icon.svg",
+      "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "maskable"
     }
