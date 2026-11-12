@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#050a16">
-<link rel="apple-touch-icon" href="./assets/upland-logo-original.svg">
+<link rel="apple-touch-icon" href="./assets/upland-install-icon.svg">
 <meta name="description" content="نصب و به‌روزرسانی برنامه‌ریز درسی UPLAND">
 <link rel="manifest" href="./manifest.webmanifest">
-<link rel="icon" href="./assets/upland-logo-original.svg" type="image/svg+xml">
+<link rel="icon" href="./assets/upland-install-icon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -26,7 +26,7 @@ button:disabled{opacity:.55;cursor:wait}a.secondary,button.secondary{background:
 </head>
 <body>
 <main>
-<img class="logo" src="./assets/upland-logo-original.svg" alt="UPLAND">
+<img class="logo" src="./assets/upland-install-icon.svg" alt="UPLAND">
 <h1>نصب و به‌روزرسانی UPLAND</h1>
 <p>برنامه را روی صفحه اصلی گوشی نصب کن و هر زمان نسخه تازه‌ای منتشر شد، از همین صفحه آن را دریافت کن.</p>
 <div class="version">نسخه فعلی: <strong id="version-number">در حال بررسی…</strong></div>
@@ -116,7 +116,7 @@ $("enable-notifications").addEventListener("click",async()=>{
    return;
   }
   const registration=swRegistration||await navigator.serviceWorker?.getRegistration();
-  if(registration)await registration.showNotification("UPLAND",{body:"اعلان به‌روزرسانی فعال شد.",icon:"./assets/upland-logo-original.svg"});
+  if(registration)await registration.showNotification("UPLAND",{body:"اعلان به‌روزرسانی فعال شد.",icon:"./assets/upland-install-icon.svg"});
   else status.textContent="اعلان فعال شد؛ برای نمایش اعلان‌ها برنامه را در Chrome باز کن.";
  }catch(error){status.textContent="فعال‌سازی اعلان ممکن نشد.";}
 });
