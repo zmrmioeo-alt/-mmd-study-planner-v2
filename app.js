@@ -398,11 +398,11 @@ function pushKeyBytes(value){
 }
 async function syncPushStatus(){
  const el=$("push-status"),btn=$("enable-push");if(!el)return;
- const enabled=localStorage.getItem("mmd_inapp_notifications")!=="off";
  let devicePush=false;
  try{const reg=await navigator.serviceWorker?.getRegistration();devicePush=!!(await reg?.pushManager?.getSubscription())}catch(_){}
- el.textContent=enabled?(devicePush?"اعلان داخل سایت و اعلان پس‌زمینه این دستگاه فعال است.":"اعلان داخل سایت فعال است؛ برای اعلان پس‌زمینه، فعال‌سازی را انجام بده."):"اعلان‌های این حساب در این دستگاه غیرفعال است.";
- if(btn)btn.textContent=enabled?(devicePush?"غیرفعال‌کردن اعلان‌ها":"فعال‌سازی اعلان‌های گوشی"):"فعال‌کردن اعلان‌ها";
+ const inAppEnabled=localStorage.getItem("mmd_inapp_notifications")!=="off";
+ el.textContent=devicePush?"اعلان داخل سایت و اعلان پس‌زمینه این دستگاه فعال است.":(inAppEnabled?"اعلان داخل سایت فعال است؛ اعلان پس‌زمینه گوشی هنوز فعال نشده.":"اعلان‌ها در این دستگاه غیرفعال است.");
+ if(btn)btn.textContent=devicePush?"غیرفعال‌کردن اعلان‌های گوشی":"فعال‌سازی اعلان‌های گوشی";
  const test=$("test-push");if(test)test.textContent="ارسال اعلان آزمایشی به گوشی";
 }
 async function enablePushNotifications(){
