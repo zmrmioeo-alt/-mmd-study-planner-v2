@@ -870,7 +870,7 @@ $("admin-humor-list").addEventListener("click",async e=>{
  try{await callAdmin("review_humor_post",{post_id:b.dataset.publish||b.dataset.decline,status:b.dataset.publish?"approved":"rejected"});await loadAdminHumor();await loadHumorFeed();toast(b.dataset.publish?"مطلب منتشر شد.":"مطلب رد شد.");}
  catch(x){toast(x.message)}
 });
-async async function loadHumorFeed(){
+async function loadHumorFeed(){
  if(!currentUser)return;
  if(!featureFlags.humor_enabled&&!profile?.is_admin){$("humor-feed").textContent="این بخش موقتاً غیرفعال است.";return}
  const q=await db.from("humor_posts").select("id,user_id,title,body,media_path,media_type,status,created_at").or("status.eq.approved,user_id.eq."+currentUser.id).order("created_at",{ascending:false});if(q.error)throw q.error;
