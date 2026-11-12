@@ -1504,3 +1504,44 @@ function startTapGame(){
 $("game-start")?.addEventListener("click",startTapGame);
 $("game-tap")?.addEventListener("click",()=>{if(!gameActive)return;if(performance.now()>=gameDeadline){finishTapGame();return}gameScore++;$("game-score").textContent=fa(gameScore)});
 $("game-refresh")?.addEventListener("click",()=>loadGameLeaderboard().then(()=>setGameMessage("جدول رکوردها به‌روز شد.")).catch(e=>setGameMessage(e.message,true)));
+
+
+/* ORBIT — precision pin-launch arcade game */
+(()=>{
+ const canvas=$("orbit-canvas");if(!canvas)return;
+ const ctx=canvas.getContext("2d"),start=$("orbit-start"),shoot=$("orbit-shoot");
+ const bestKey="upland_orbit_best_v1";let best=Number(localStorage.getItem(bestKey)||1),level=1,remaining=5,attached=[],rotation=0,speed=.72,playing=false,failed=false,raf=0,last=0,flash=0;
+ $("orbit-best").textContent=fa(best);
+ const cx=180,cy=190,r=78;
+ const msg=(t,err=false)=>{const el=$("orbit-message");el.textContent=t;el.classList.toggle("error",err)};
+ const norm=a=>{while(a<0)a+=Math.PI*2;while(a>=Math.PI*2)a-=Math.PI*2;return a};
+ const distance=(a,b)=>{let d=Math.abs(norm(a)-norm(b));return Math.min(d,Math.PI*2-d)};
+ function draw(){
+  const w=canvas.width,h=canvas.height;ctx.clearRect(0,0,w,h);
+  const bg=ctx.createLinearGradient(0,0,0,h);bg.addColorStop(0,"#0d1b35");bg.addColorStop(1,"#08101f");ctx.fillStyle=bg;ctx.fillRect(0,0,w,h);
+  for(let i=0;i<34;i++){const x=(i*83+29)%w,y=(i*137+17)%h;ctx.fillStyle="rgba(177,207,255,.28)";ctx.beginPath();ctx.arc(x,y,(i%3)*.45+.7,0,Math.PI*2);ctx.fill()}
+  ctx.save();ctx.translate(cx,cy);ctx.rotate(rotation);
+  ctx.shadowColor="#65d9ff";ctx.shadowBlur=22;ctx.strokeStyle="#73d9ff";ctx.lineWidth=5;ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.stroke();ctx.shadowBlur=0;
+  ctx.fillStyle="#e7f8ff";ctx.beginPath();ctx.arc(0,0,7,0,Math.PI*2);ctx.fill();
+  attached.forEach((a,i)=>{ctx.save();ctx.rotate(a);ctx.strokeStyle="#f8fbff";ctx.lineWidth=4;ctx.lineCap="round";ctx.beginPath();ctx.moveTo(0,r-1);ctx.lineTo(0,r+35);ctx.stroke();ctx.fillStyle="#ffca78";ctx.beginPath();ctx.arc(0,r+35,4,0,Math.PI*2);ctx.fill();ctx.restore()});
+  ctx.restore();
+  ctx.fillStyle="rgba(255,255,255,.12)";ctx.fillRect(cx-2,cy+r+50,4,155);
+  const launchY=cy+r+50+(5-remaining)*24;
+  ctx.strokeStyle="#ffca78";ctx.lineWidth=4;ctx.lineCap="round";ctx.beginPath();ctx.moveTo(cx,launchY+24);ctx.lineTo(cx,launchY-4);ctx.stroke();
+  ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(cx,launchY-5,5,0,Math.PI*2);ctx.fill();
+  if(flash>0){ctx.fillStyle="rgba(255,80,100,"+(flash*.22)+")";ctx.fillRect(0,0,w,h)}
+ }
+ function ui(){ $("orbit-level").textContent=fa(level);$("orbit-left").textContent=fa(remaining);$("orbit-best").textContent=fa(best);shoot.disabled=!playing;start.textContent=playing?"در حال بازی…":failed?"تلاش دوباره":"شروع بازی"}
+ function reset(){cancelAnimationFrame(raf);level=1;remaining=5;attached=[];rotation=0;speed=.72;playing=false;failed=false;flash=0;ui();draw();msg("برای شروع آماده‌ای؟")}
+ function begin(){level=1;remaining=5;attached=[];rotation=0;speed=.72;failed=false;playing=true;last=0;ui();msg("با دقت پرتاب کن؛ هر مرحله سریع‌تر می‌شود.");raf=requestAnimationFrame(loop)}
+ function loop(t){if(!playing)return;const dt=Math.min(32,t-(last||t));last=t;rotation+=speed*dt/1000;draw();if(flash>0)flash=Math.max(0,flash-dt/160);raf=requestAnimationFrame(loop)}
+ function lose(){playing=false;failed=true;flash=1;cancelAnimationFrame(raf);shoot.disabled=true;start.disabled=false;ui();draw();msg("برخورد کردی! مرحلهٔ "+fa(level)+"؛ دوباره امتحان کن.",true)}
+ function winLevel(){playing=false;cancelAnimationFrame(raf);shoot.disabled=true;if(level>=best){best=level+1;localStorage.setItem(bestKey,String(best))}ui();draw();msg("مرحلهٔ "+fa(level)+" کامل شد! آمادهٔ مرحلهٔ بعدی؟");start.textContent="مرحله بعد"}
+ function fire(){if(!playing)return;const angle=norm(Math.PI/2-rotation);if(attached.some(a=>distance(a,angle)<(0.25+Math.min(level*.008,.12)))){lose();return}attached.push(angle);remaining--;ui();draw();if(remaining<=0)winLevel()}
+ function next(){if(playing)return;if(failed){begin();return}if(level===1&&attached.length===0){begin();return}level++;remaining=Math.min(5+Math.floor((level-1)/2),10);speed=Math.min(.72+(level-1)*.13,2.4);attached=[];rotation=0;playing=true;last=0;ui();msg("مرحلهٔ "+fa(level)+"؛ سرعت بیشتر شده!");raf=requestAnimationFrame(loop)}
+ start.addEventListener("click",()=>{if(!playing){if(failed||level===1&&attached.length===0)begin();else next()}});
+ shoot.addEventListener("click",fire);canvas.addEventListener("pointerdown",e=>{if(playing){e.preventDefault();fire()}});
+ document.addEventListener("keydown",e=>{if(e.code==="Space"&&document.querySelector("#page-games:not(.hidden)")&&playing){e.preventDefault();fire()}});
+ document.addEventListener("visibilitychange",()=>{if(document.hidden&&playing){playing=false;cancelAnimationFrame(raf);ui();msg("بازی متوقف شد؛ برای ادامه، شروع را بزن.")}});
+ draw();ui();
+})();
