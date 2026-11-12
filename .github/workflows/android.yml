@@ -99,6 +99,82 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
+
+      - name: Add native Hamkelasi in-app portal
+        run: |
+          mkdir -p android/app/src/main/java/com/mmd/studyplanner
+          cat > android/app/src/main/java/com/mmd/studyplanner/HamkelasiPortalPlugin.java <<'JAVA'
+          package com.mmd.studyplanner;
+          import android.app.Dialog;
+          import android.graphics.Color;
+          import android.graphics.Typeface;
+          import android.os.Build;
+          import android.view.ViewGroup;
+          import android.webkit.CookieManager;
+          import android.webkit.WebChromeClient;
+          import android.webkit.WebResourceRequest;
+          import android.webkit.WebSettings;
+          import android.webkit.WebView;
+          import android.webkit.WebViewClient;
+          import android.widget.Button;
+          import android.widget.LinearLayout;
+          import android.widget.TextView;
+          import com.getcapacitor.JSObject;
+          import com.getcapacitor.Plugin;
+          import com.getcapacitor.PluginCall;
+          import com.getcapacitor.PluginMethod;
+          import com.getcapacitor.annotation.CapacitorPlugin;
+          import org.json.JSONObject;
+          import org.json.JSONTokener;
+
+          @CapacitorPlugin(name = "HamkelasiPortal")
+          public class HamkelasiPortalPlugin extends Plugin {
+              private Dialog dialog;
+              private WebView webView;
+              private PluginCall activeCall;
+              private TextView address;
+              @PluginMethod
+              public void openPortal(PluginCall call) {
+                  if (dialog != null && dialog.isShowing()) { call.reject("پنجرهٔ همکلاسی از قبل باز است."); return; }
+                  activeCall = call;
+                  getActivity().runOnUiThread(() -> {
+                      LinearLayout root = new LinearLayout(getContext()); root.setOrientation(LinearLayout.VERTICAL); root.setBackgroundColor(Color.WHITE);
+                      LinearLayout bar = new LinearLayout(getContext()); bar.setOrientation(LinearLayout.VERTICAL); bar.setPadding(18,14,18,10); bar.setBackgroundColor(Color.rgb(12,24,48));
+                      TextView title = new TextView(getContext()); title.setText("ورود امن به همکلاسی"); title.setTextColor(Color.WHITE); title.setTextSize(17); title.setTypeface(null, Typeface.BOLD);
+                      address = new TextView(getContext()); address.setText("hemmatsch.ir"); address.setTextColor(Color.rgb(180,205,240)); address.setTextSize(12);
+                      bar.addView(title); bar.addView(address); root.addView(bar,new LinearLayout.LayoutParams(-1,-2));
+                      webView = new WebView(getContext()); WebSettings settings=webView.getSettings(); settings.setJavaScriptEnabled(true); settings.setDomStorageEnabled(true); settings.setDatabaseEnabled(true); settings.setLoadWithOverviewMode(true); settings.setUseWideViewPort(true); settings.setJavaScriptCanOpenWindowsAutomatically(false); settings.setSupportMultipleWindows(false);
+                      CookieManager.getInstance().setAcceptCookie(true); if(Build.VERSION.SDK_INT>=21) CookieManager.getInstance().setAcceptThirdPartyCookies(webView,true);
+                      webView.setWebChromeClient(new WebChromeClient());
+                      webView.setWebViewClient(new WebViewClient(){ @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request){return false;} @Override public void onPageFinished(WebView view,String url){if(address!=null)address.setText(url);} });
+                      root.addView(webView,new LinearLayout.LayoutParams(-1,0,1));
+                      LinearLayout actions=new LinearLayout(getContext()); actions.setPadding(12,8,12,8);
+                      Button sync=new Button(getContext()); sync.setText("گرفتن تکالیف از این صفحه"); Button close=new Button(getContext()); close.setText("بستن");
+                      actions.addView(sync,new LinearLayout.LayoutParams(0,-2,2)); actions.addView(close,new LinearLayout.LayoutParams(0,-2,1)); root.addView(actions);
+                      dialog=new Dialog(getContext()); dialog.setContentView(root);
+                      dialog.setOnDismissListener(d->{if(webView!=null){webView.stopLoading();webView.destroy();webView=null;}dialog=null;if(activeCall!=null){activeCall.reject("پنجرهٔ همکلاسی بسته شد.");activeCall=null;}});
+                      close.setOnClickListener(v->dialog.dismiss());
+                      sync.setOnClickListener(v->{if(webView==null||activeCall==null)return;sync.setEnabled(false);
+                          String script="(function(){var tables=Array.from(document.querySelectorAll('table')).map(function(t){var trs=Array.from(t.querySelectorAll('tr'));if(!trs.length)return null;var headers=Array.from(trs[0].querySelectorAll('th,td')).map(function(x){return (x.innerText||x.textContent||'').trim()});var rows=trs.slice(1).map(function(tr){var cells=Array.from(tr.querySelectorAll('th,td')).map(function(x){return (x.innerText||x.textContent||'').trim()});var o={};cells.forEach(function(v,i){o[headers[i]||('ستون '+(i+1))]=v});return o}).filter(function(o){return Object.values(o).some(Boolean)});return {headers:headers,rows:rows}}).filter(Boolean);return JSON.stringify({title:document.title,url:location.href,tables:tables,body:(document.body&&document.body.innerText||'').slice(0,20000)})})()";
+                          webView.evaluateJavascript(script,value->{try{Object parsed=new JSONTokener(value).nextValue();if(!(parsed instanceof String))throw new Exception("پاسخ صفحه قابل خواندن نیست.");JSONObject snapshot=new JSONObject((String)parsed);JSObject result=new JSObject();result.put("snapshot",snapshot.toString());activeCall.resolve(result);activeCall=null;dialog.dismiss();}catch(Exception e){sync.setEnabled(true);android.widget.Toast.makeText(getContext(),"خواندن صفحه ممکن نشد؛ صفحهٔ تکالیف را باز کن.",android.widget.Toast.LENGTH_LONG).show();}});
+                      });
+                      dialog.show();dialog.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT,ViewGroup.LayoutParams.MATCH_PARENT);webView.loadUrl("https://hemmatsch.ir/");
+                  });
+              }
+          }
+          JAVA
+          cat > android/app/src/main/java/com/mmd/studyplanner/MainActivity.java <<'JAVA'
+          package com.mmd.studyplanner;
+          import android.os.Bundle;
+          import com.getcapacitor.BridgeActivity;
+          public class MainActivity extends BridgeActivity {
+              @Override public void onCreate(Bundle savedInstanceState) {
+                  registerPlugin(HamkelasiPortalPlugin.class);
+                  super.onCreate(savedInstanceState);
+              }
+          }
+          JAVA
+
       - name: Build installable APK
         working-directory: android
         run: |
