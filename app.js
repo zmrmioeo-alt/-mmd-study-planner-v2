@@ -211,9 +211,12 @@ $("signup-form").addEventListener("submit",async e=>{
  finally{if(submit)submit.disabled=false;}
 });
 $("pending-logout").addEventListener("click",()=>db.auth.signOut());
+const isNativeUplandApp=()=>!!(window.Capacitor?.isNativePlatform?.());
+const uplandVersionFeed=()=>isNativeUplandApp()?"https://zmrmioeo-alt.github.io/-mmd-study-planner-v2/version.json":"./version.json";
+const uplandLatestApkUrl="https://github.com/zmrmioeo-alt/-mmd-study-planner-v2/releases/latest";
 async function checkAppUpdateNotice(){
  try{
-  const r=await fetch("./version.json?notice="+Date.now(),{cache:"no-store"});if(!r.ok)return;
+  const r=await fetch(uplandVersionFeed()+"?notice="+Date.now(),{cache:"no-store"});if(!r.ok)return;
   const v=await r.json(),seen=localStorage.getItem("mmd_seen_version");
   if(!v.version||seen===String(v.version))return;
   localStorage.setItem("mmd_seen_version",String(v.version));
@@ -226,7 +229,7 @@ async function checkAppUpdateNotice(){
   const wrap=document.createElement("section");wrap.className="form-panel";wrap.style.cssText="margin:0 0 18px;border:1px solid var(--accent);";
   const h=document.createElement("h3");h.textContent=title;const p=document.createElement("p");p.textContent=body;
   const b=document.createElement("button");b.className="primary";b.textContent="دریافت به‌روزرسانی";
-  b.addEventListener("click",async()=>{b.disabled=true;b.textContent="در حال دریافت...";try{const reg=await navigator.serviceWorker?.getRegistration();await reg?.update();if(reg?.waiting)reg.waiting.postMessage({type:"SKIP_WAITING"});setTimeout(()=>location.reload(),1200)}catch(e){b.disabled=false;b.textContent="تلاش دوباره";toast("به‌روزرسانی انجام نشد؛ از صفحه نصب اقدام کنید.")}});
+  b.addEventListener("click",async()=>{if(isNativeUplandApp()){window.open(uplandLatestApkUrl,"_blank");b.textContent="صفحه دریافت APK باز شد";return;}b.disabled=true;b.textContent="در حال دریافت...";try{const reg=await navigator.serviceWorker?.getRegistration();await reg?.update();if(reg?.waiting)reg.waiting.postMessage({type:"SKIP_WAITING"});setTimeout(()=>location.reload(),1200)}catch(e){b.disabled=false;b.textContent="تلاش دوباره";toast("به‌روزرسانی انجام نشد؛ از صفحه نصب اقدام کنید.")}});
   const n=document.createElement("button");n.className="secondary";n.textContent=localStorage.getItem("mmd_update_notifications")==="on"?"اعلان انتشار نسخه فعال است":"فعال‌سازی اعلان انتشار نسخه";
   n.addEventListener("click",async()=>{if(!("Notification"in window)){toast("این مرورگر از اعلان پشتیبانی نمی‌کند.");return}const permission=await Notification.requestPermission();if(permission==="granted"){localStorage.setItem("mmd_update_notifications","on");n.textContent="اعلان انتشار نسخه فعال شد";toast("از این پس هنگام بازکردن برنامه، انتشار نسخه جدید با اعلان اطلاع‌رسانی می‌شود.")}else toast("اجازه اعلان داده نشد.")});
   wrap.append(h,p,b,n);document.querySelector(".main")?.prepend(wrap);
@@ -237,7 +240,7 @@ function startUpdateMonitor(){
  if(updateMonitorStarted)return;updateMonitorStarted=true;
  setInterval(async()=>{
   try{
-   const r=await fetch("./version.json?poll="+Date.now(),{cache:"no-store"});if(!r.ok)return;
+   const r=await fetch(uplandVersionFeed()+"?poll="+Date.now(),{cache:"no-store"});if(!r.ok)return;
    const v=await r.json(),seen=localStorage.getItem("mmd_seen_version");
    if(v.version&&seen&&seen!==String(v.version))checkAppUpdateNotice();
    const reg=await navigator.serviceWorker?.getRegistration();await reg?.update();
@@ -1363,7 +1366,7 @@ $("export-activity-report").addEventListener("click",async()=>{
 
 async function checkMmdRelease(showNotice=true){
  try{
-  const response=await fetch("./version.json?ts="+Date.now(),{cache:"no-store"});if(!response.ok)return;
+  const response=await fetch(uplandVersionFeed()+"?ts="+Date.now(),{cache:"no-store"});if(!response.ok)return;
   const info=await response.json(),version=String(info.version||"");if(!version)return;
   const seen=localStorage.getItem("mmd_seen_release");
   if(seen&&seen!==version&&showNotice){
