@@ -39,17 +39,18 @@ function enhanceChat(){
  compose.insertAdjacentElement("beforebegin",row);
  $("chat-input")?.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();$("chat-form")?.requestSubmit()}}); 
  const record=$("ux-chat-record"),recordState=$("ux-chat-record-state");
- let recorder=null,stream=null,chunks=[],recordStarted=0;
+ let recorder=null,stream=null,chunks=[],recordStarted=0,recordLimit=null;
  record?.addEventListener("click",async()=>{
   if(recorder?.state==="recording"){recorder.stop();return}
   if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder){if(recordState)recordState.textContent="ضبط صدا در این مرورگر پشتیبانی نمی‌شود.";return}
   try{
    stream=await navigator.mediaDevices.getUserMedia({audio:true});chunks=[];recorder=new MediaRecorder(stream);recordStarted=Date.now();
    recorder.ondataavailable=e=>{if(e.data?.size)chunks.push(e.data)};
-   recorder.onstop=()=>{const blob=new Blob(chunks,{type:recorder.mimeType||"audio/webm"});stream?.getTracks().forEach(t=>t.stop());stream=null;if(blob.size){const file=new File([blob],"upland-voice-"+Date.now()+".webm",{type:blob.type});const transfer=new DataTransfer();transfer.items.add(file);$("chat-file").files=transfer.files;$("chat-file").dispatchEvent(new Event("change",{bubbles:true}));$("chat-input").value=$("chat-input").value.trim();if(recordState)recordState.textContent="پیام صوتی آمادهٔ ارسال است."}record.textContent="● ضبط صدا";record.classList.remove("recording")};
-   recorder.start();record.textContent="■ پایان ضبط";record.classList.add("recording");if(recordState)recordState.textContent="در حال ضبط…";
-  }catch(e){if(recordState)recordState.textContent="دسترسی به میکروفون داده نشد."}
+   recorder.onstop=()=>{if(recordLimit)clearTimeout(recordLimit);recordLimit=null;const elapsed=Math.round((Date.now()-recordStarted)/1000);const blob=new Blob(chunks,{type:recorder.mimeType||"audio/webm"});stream?.getTracks().forEach(t=>t.stop());stream=null;if(blob.size){const file=new File([blob],"upland-voice-"+Date.now()+".webm",{type:blob.type});const transfer=new DataTransfer();transfer.items.add(file);$("chat-file").files=transfer.files;$("chat-file").dispatchEvent(new Event("change",{bubbles:true}));$("chat-input").value=$("chat-input").value.trim();if(recordState)recordState.textContent="پیام صوتی "+Math.floor(elapsed/60)+":"+String(elapsed%60).padStart(2,"0")+" آمادهٔ ارسال است."}record.textContent="● ضبط صدا";record.classList.remove("recording")};
+   recorder.start();recordLimit=setTimeout(()=>{if(recorder?.state==="recording"){if(recordState)recordState.textContent="حداکثر زمان ضبط (۳ دقیقه) تمام شد.";recorder.stop()}},180000);record.textContent="■ پایان ضبط";record.classList.add("recording");if(recordState)recordState.textContent="در حال ضبط…";
+  }catch(e){stream?.getTracks().forEach(t=>t.stop());stream=null;if(recordState)recordState.textContent="دسترسی به میکروفون داده نشد."}
  });
+ document.addEventListener("visibilitychange",()=>{if(document.hidden&&recorder?.state==="recording"){recorder.stop();if(recordState)recordState.textContent="ضبط با خروج از صفحه متوقف شد."}});
 
  const obs=new MutationObserver(()=>{messages.querySelectorAll(".chat-bubble").forEach(b=>{if(b.querySelector(".ux-copy-message"))return;const p=b.querySelector("p");if(!p||!p.textContent.trim())return;const c=document.createElement("button");c.type="button";c.className="ux-copy-message";c.textContent="کپی";c.style.cssText="font-size:11px;background:transparent;border:0;color:#83dcd8;margin-inline-start:8px";c.addEventListener("click",async()=>{try{await navigator.clipboard.writeText(p.textContent);c.textContent="کپی شد";setTimeout(()=>c.textContent="کپی",1200)}catch(_){c.textContent="ناموفق"}});b.querySelector("small")?.append(c)})});
  obs.observe(messages,{childList:true,subtree:true});obs.takeRecords();
