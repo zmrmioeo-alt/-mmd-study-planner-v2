@@ -26,7 +26,15 @@ for (const [, attr] of html.matchAll(/\b(?:src|href)=["']([^"']+)["']/g)) {
   assert.ok(fs.existsSync(path.join(root, local)), `Missing local asset referenced by index.html: ${attr}`);
 }
 
-for (const file of ["app.js", "experience.js", "service-worker.js"]) {
+for (const file of ["app.js", "experience.js", "service-worker.js", "planner-edit.js", "stickers.js"]) {
   assert.ok(fs.existsSync(path.join(root, file)), `Missing runtime file: ${file}`);
 }
+
+const app = read("app.js");
+assert.match(app, /const jalali=raw\.match\(/, "Hamkelasi import must recognize Persian-calendar dates");
+assert.match(app, /function jalaliInputToDate\(/, "Persian date conversion helper must be available");
+const unreadHandler = app.slice(app.indexOf("async function notifyUnreadMessagesOnEntry"), app.indexOf("function stopChatRealtime"));
+assert.ok(unreadHandler.includes("setChatUnreadBadge(0)"), "Unread chat badge must clear before refreshing its count");
+assert.ok(unreadHandler.includes("setChatUnreadBadge(count)"), "Unread chat badge must reflect the latest count");
+
 console.log(`UPLAND ${version.version}: static checks passed (${ids.length} unique HTML IDs).`);
