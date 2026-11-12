@@ -594,24 +594,33 @@ function plannerOffsetForDate(d){return Math.round((new Date(d.getFullYear(),d.g
 const plannerDailyRestTotal=60,plannerDailyRestParts=6,plannerDailyRestPart=10;
 function plannerRestIntervals(day,dateKey){
  const avail=weeklyAvailability[String(day)];if(!avail)return [];
- const start=plannerLocalDateTime(dateKey,avail.start),end=plannerLocalDateTime(dateKey,avail.end),span=end-start;
- const spanMinutes=span/60000;if(spanMinutes<plannerDailyRestTotal)return [];
- const count=Math.min(plannerDailyRestParts,Math.max(1,Math.floor((spanMinutes-plannerDailyRestTotal)/5)+1));
- const partMinutes=plannerDailyRestTotal/count,gap=(spanMinutes-plannerDailyRestTotal)/(count+1);
- const result=[];
- for(let i=1;i<=count;i++){
-  let at=new Date(start.getTime()+(gap*i+partMinutes*(i-1))*60000);
-  at.setMinutes(Math.round(at.getMinutes()/5)*5,0,0);
+ const start=plannerLocalDateTime(dateKey,avail.start),end=plannerLocalDateTime(dateKey,avail.end),spanMinutes=(end-start)/60000;
+ if(spanMinutes<plannerDailyRestTotal)return [];
+ const fixed=routines.filter(r=>r.active!==false&&Number(r.weekday)===Number(day)&&r.scheduled_time).map(r=>{
+  const st=plannerLocalDateTime(dateKey,String(r.scheduled_time).slice(0,5)),mins=Math.max(5,Math.min(720,Number(r.duration_minutes)||60));
+  return {start:st,end:new Date(st.getTime()+mins*60000)};
+ }).filter(x=>x.end>start&&x.start<end).sort((a,b)=>a.start-b.start);
+ const gaps=[];let cursor=new Date(start);
+ for(const block of fixed){const bs=new Date(Math.max(block.start.getTime(),start.getTime())),be=new Date(Math.min(block.end.getTime(),end.getTime()));if(bs>cursor)gaps.push({start:new Date(cursor),end:bs});if(be>cursor)cursor=be}
+ if(cursor<end)gaps.push({start:new Date(cursor),end:new Date(end)});
+ const totalFree=gaps.reduce((n,g)=>n+(g.end-g.start)/60000,0);if(totalFree<plannerDailyRestTotal)return [];
+ const parts=Math.min(plannerDailyRestParts,Math.max(1,Math.floor(plannerDailyRestTotal/5))),partMinutes=plannerDailyRestTotal/parts,result=[];
+ for(let i=0;i<parts;i++){
+  const target=start.getTime()+spanMinutes*((i+1)/(parts+1)),choices=gaps.map((g,index)=>({g,index,capacity:(g.end-g.start)/60000})).filter(x=>x.capacity>=partMinutes);
+  if(!choices.length)break;
+  choices.sort((a,b)=>Math.abs((a.g.start.getTime()+a.g.end.getTime())/2-target)-Math.abs((b.g.start.getTime()+b.g.end.getTime())/2-target));
+  const chosen=choices[0],g=chosen.g,latest=g.end.getTime()-partMinutes*60000;
+  const at=new Date(Math.max(g.start.getTime(),Math.min(latest,target-partMinutes*30000)));
   const finish=new Date(at.getTime()+partMinutes*60000);
-  if(at<start||finish>end)continue;
-  result.push({id:"rest-"+dateKey+"-"+i,rest:true,startDate:at,endDate:finish,date:dateKey,duration:partMinutes});
+  result.push({id:"rest-"+dateKey+"-"+(i+1),rest:true,startDate:at,endDate:finish,date:dateKey,duration:partMinutes});
+  gaps.splice(chosen.index,1,...(at>g.start?[{start:g.start,end:at}]:[]),...(finish<g.end?[{start:finish,end:g.end}]:[]));
  }
- return result;
+ return result.sort((a,b)=>a.startDate-b.startDate);
 }
 function plannerDayOccupancy(day,dateKey,exceptId=null){
  const fixed=routines.filter(r=>r.active!==false&&Number(r.weekday)===Number(day)&&r.scheduled_time).map(r=>{
   const start=plannerLocalDateTime(dateKey,String(r.scheduled_time).slice(0,5));
-  const duration=Math.max(15,Math.min(240,Number(r.duration_minutes)||60));
+  const duration=Math.max(15,Math.min(720,Number(r.duration_minutes)||60));
   return {id:"routine-"+r.id,task_id:null,routine:true,title:r.title,startDate:start,endDate:new Date(start.getTime()+duration*60000),date:dateKey,duration};
  });
  return [...planEntriesForDate(dateKey,exceptId),...fixed,...plannerRestIntervals(day,dateKey)].sort((a,b)=>a.startDate-b.startDate);
