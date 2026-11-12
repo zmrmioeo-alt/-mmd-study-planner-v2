@@ -1,24 +1,24 @@
 {
-  "name": "MMD Study Planner",
-  "short_name": "MMD",
-  "description": "برنامه‌ریز درسی MMD",
+  "name": "UP LAND",
+  "short_name": "UP LAND",
+  "description": "فضای هوشمند برنامه‌ریزی و یادگیری",
   "lang": "fa",
   "dir": "rtl",
   "start_url": "./?source=installed-app",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0c111b",
-  "theme_color": "#101522",
+  "background_color": "#080f1e",
+  "theme_color": "#091426",
   "icons": [
     {
-      "src": "./assets/icon-192.svg",
+      "src": "./assets/upland-icon-192.svg",
       "sizes": "192x192",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "./assets/icon.svg",
+      "src": "./assets/upland-icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
