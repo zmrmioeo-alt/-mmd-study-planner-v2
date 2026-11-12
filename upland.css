@@ -101,3 +101,12 @@ hr,.divider{border-color:#263e5e}
  .task-item,.routine-card{padding:13px}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+/* Keep the UP LAND night palette consistent even when legacy settings request light mode. */
+body.light{color-scheme:dark;background:radial-gradient(ellipse at 8% -8%,#16436b55,transparent 36%),radial-gradient(ellipse at 100% 18%,#123d4850,transparent 32%),linear-gradient(145deg,#070d19,#0b1425 58%,#0a1728);color:var(--text)}
+body.light .sidebar{background:linear-gradient(180deg,#0c192cfa,#0a1425f5);border-left-color:#263c5c}
+body.light .topbar,body.light .stat-card,body.light .panel,body.light .form-panel,body.light .task-item,body.light .routine-card,body.light .announcement-card,body.light .post-card,body.light .chat-card,body.light .report-card,body.light .settings-card,body.light .profile-card,body.light .contact-panel{background:linear-gradient(145deg,#12213a,#0e1a2e);border-color:#263e5e;color:var(--text)}
+body.light input,body.light select,body.light textarea{background:#091426;color:#edf5ff;border-color:#2a4264}
+body.light .secondary{background:#14243b;color:#d9eaff;border-color:#345174}
+body.light .nav-link{color:#a9bbd5}
+body.light .nav-link.active{background:linear-gradient(100deg,#164b58,#153b5c);color:#69f3df;border-color:#2b8c91}
