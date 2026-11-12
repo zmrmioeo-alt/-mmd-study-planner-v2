@@ -5,9 +5,5 @@
   "bundledWebRuntime": false,
   "android": {
     "allowMixedContent": false
-  },
-  "server": {
-    "url": "https://zmrmioeo-alt.github.io/-mmd-study-planner-v2/",
-    "cleartext": false
   }
 }
