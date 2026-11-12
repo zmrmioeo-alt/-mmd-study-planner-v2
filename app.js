@@ -389,7 +389,7 @@ async function notifyLiveEvent(title,body,tag,page,chatTargetId=null){
  addInAppNotification(title,body,tag,page,chatTargetId);
  if(isNew&&document.visibilityState==="visible"){playShortNotificationTone();showNotificationPopup(title,body,page,chatTargetId)}
  if(localStorage.getItem("mmd_browser_notifications")==="on"&&"Notification"in window&&Notification.permission==="granted"){
-  try{const reg=await navigator.serviceWorker?.getRegistration();const targetUrl=page==="chat"&&chatTargetId?"./?page=chat&chatTarget="+encodeURIComponent(chatTargetId):"./?page="+encodeURIComponent(page||"today");if(reg)await reg.showNotification(title,{body,icon:"./assets/upland-logo-original.svg",badge:"./assets/icon-192.svg",tag,renotify:true,data:{url:targetUrl}});else new Notification(title,{body,tag})}catch(err){console.debug("Browser notification unavailable",err)}
+  try{const reg=await navigator.serviceWorker?.getRegistration();const targetUrl=page==="chat"&&chatTargetId?"./?page=chat&chatTarget="+encodeURIComponent(chatTargetId):"./?page="+encodeURIComponent(page||"today");if(reg)await reg.showNotification(title,{body,icon:"./assets/upland-logo-original.svg",badge:"./assets/upland-logo-original.svg",tag,renotify:true,data:{url:targetUrl}});else new Notification(title,{body,tag})}catch(err){console.debug("Browser notification unavailable",err)}
  }
 }
 async function pushApi(action,extra={}){
