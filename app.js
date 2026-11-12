@@ -863,12 +863,12 @@ async function importHamkelasiTasks(items){
 
 function normalizeHamkelasiHeader(value){return String(value||"").trim().toLocaleLowerCase("fa").replace(/[ي]/g,"ی").replace(/[ك]/g,"ک").replace(/\s+/g," ")}
 function parseHamkelasiPortalSnapshot(snapshot){
- const aliases={title:["عنوان","عنوان تکلیف","نام تکلیف","تکلیف","فعالیت","موضوع","title","task","assignment","exam"],description:["توضیحات","شرح","جزئیات","description","details"],due:["مهلت","تاریخ تحویل","تاریخ انجام","تاریخ امتحان","سررسید","تاریخ","deadline","due date","date"],subject:["درس","نام درس","ماده درسی","subject"]};
+ const aliases={title:["عنوان","عنوان تکلیف","نام تکلیف","تکلیف","فعالیت","موضوع","شرح تکلیف","title","task","assignment","exam","homework"],description:["توضیحات","شرح","جزئیات","description","details"],due:["مهلت","تاریخ تحویل","تاریخ انجام","تاریخ امتحان","سررسید","موعد","تاریخ","deadline","due date","date"],subject:["درس","نام درس","ماده درسی","subject"]};
  const pick=(row,keys)=>{for(const key of keys){const k=Object.keys(row).find(x=>normalizeHamkelasiHeader(x)===normalizeHamkelasiHeader(key)||normalizeHamkelasiHeader(x).includes(normalizeHamkelasiHeader(key)));if(k&&String(row[k]??"").trim())return String(row[k]).trim()}return ""};
- const rows=(Array.isArray(snapshot?.tables)?snapshot.tables:[]).flatMap(t=>Array.isArray(t?.rows)?t.rows:[]),out=[];
+ const tables=Array.isArray(snapshot?.tables)?snapshot.tables:[],rows=tables.flatMap(t=>Array.isArray(t?.rows)?t.rows:[]),out=[];
  for(const row of rows){if(!row||typeof row!=="object")continue;const title=pick(row,aliases.title);if(!title||title.length>300)continue;
   const raw=pick(row,aliases.due).replace(/[۰-۹]/g,d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d)).replace(/[٠-٩]/g,d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d));let due=null;
-  if(raw){const j=raw.match(/^(1[23-5]\d{2})[/.\-](\d{1,2})[/.\-](\d{1,2})/);if(j){try{due=jalaliInputToDate(j[1]+"/"+j[2]+"/"+j[3]).toISOString()}catch(_){}}else{const d=new Date(raw);if(!isNaN(d))due=d.toISOString()}}
+  if(raw){const j=raw.match(/(1[23-5]\d{2})[/.\-](\d{1,2})[/.\-](\d{1,2})/);if(j){try{due=jalaliInputToDate(j[1]+"/"+j[2]+"/"+j[3]).toISOString()}catch(_){}}else{const d=new Date(raw);if(!isNaN(d))due=d.toISOString()}}
   const subject=pick(row,aliases.subject),description=pick(row,aliases.description),seed=[title,subject,description,due||""].join("|");let hash=2166136261;for(let i=0;i<seed.length;i++){hash^=seed.charCodeAt(i);hash=Math.imul(hash,16777619)}
   out.push({external_id:"hk-webview-"+(hash>>>0).toString(16),title:subject?subject+" — "+title:title,description,due_at:due,priority:"normal",estimated_minutes:null});
  }
@@ -901,7 +901,7 @@ async function callHamkelasiConsent(method="GET",state=null){
 function renderHamkelasiConsent(){
  const state=hamkelasiConsentState?.consent_state||null;
  const status=$("hamkelasi-consent-status");if(!status)return;
- status.textContent=state==="accepted"?"اجازهٔ شما ثبت شده است؛ می‌توانید فایل خروجی حساب خودتان را وارد کنید.":state==="declined"?"فعلاً اجازه نداده‌اید؛ هر زمان خواستید می‌توانید فعالش کنید.":state==="revoked"?"اجازهٔ دستیار لغو شده است.":"وضعیت اجازه هنوز دریافت نشده است.";
+ status.textContent=state==="accepted"?"اجازه ثبت شده است؛ می‌توانید داخل برنامه وارد همکلاسی شوید و تکالیف را همگام کنید.":state==="declined"?"فعلاً اجازه نداده‌اید؛ هر زمان خواستید می‌توانید فعالش کنید.":state==="revoked"?"اجازهٔ دستیار لغو شده است.":"وضعیت اجازه هنوز دریافت نشده است.";
  $("hamkelasi-consent-grant").disabled=state==="accepted";
  $("hamkelasi-consent-revoke").disabled=state!=="accepted";
 }
@@ -928,7 +928,7 @@ async function saveHamkelasiConsent(state){
  }catch(error){toast(error.message||"ثبت اجازه ناموفق بود.");renderHamkelasiConsent();["hamkelasi-consent-accept","hamkelasi-consent-decline"].forEach(id=>{if($(id))$(id).disabled=false});return false}
 }
 $("hamkelasi-consent-accept").addEventListener("click",async()=>{
- if(await saveHamkelasiConsent("accepted")){closeHamkelasiConsent();toast("اجازه ثبت شد؛ اکنون می‌توانید فایل خروجی حساب خودتان را وارد کنید.")}
+ if(await saveHamkelasiConsent("accepted")){closeHamkelasiConsent();toast("اجازه ثبت شد؛ ورود داخلی و همگام‌سازی فعال است.")}
 });
 $("hamkelasi-consent-decline").addEventListener("click",async()=>{
  if(await saveHamkelasiConsent("declined"))closeHamkelasiConsent();
