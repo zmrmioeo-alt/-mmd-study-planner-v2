@@ -33,14 +33,14 @@ function enhanceChat(){
  tools.innerHTML='<input id="ux-chat-search" type="search" placeholder="جست‌وجو در پیام‌های همین گفت‌وگو…"><span class="ux-count">جست‌وجوی پیام‌ها</span><button type="button" id="ux-chat-record" title="ضبط پیام صوتی">● ضبط صدا</button><span id="ux-chat-record-state" aria-live="polite"></span>';
  messages.insertAdjacentElement("beforebegin",tools);
  $("ux-chat-search").addEventListener("input",()=>{const q=safe($("ux-chat-search").value);messages.querySelectorAll(".chat-bubble").forEach(b=>b.classList.toggle("hidden",!!q&&!safe(b.innerText).includes(q)))});
- if($("ux-chat-emoji-row"))return;
+ if(!$("ux-chat-emoji-row")){
  const row=document.createElement("div");row.id="ux-chat-emoji-row";row.className="ux-emoji-row";
  ["🙂","😂","❤️","👍","🙏","🔥","🎉","💯","✨","📚","🤝","😅"].forEach(emoji=>{const b=document.createElement("button");b.type="button";b.textContent=emoji;b.setAttribute("aria-label","افزودن "+emoji);b.addEventListener("click",()=>{const input=$("chat-input");if(!input)return;const start=input.selectionStart??input.value.length,end=input.selectionEnd??start;input.value=input.value.slice(0,start)+emoji+input.value.slice(end);input.focus();input.setSelectionRange(start+emoji.length,start+emoji.length);input.dispatchEvent(new Event("input",{bubbles:true}))});row.append(b)});
  compose.insertAdjacentElement("beforebegin",row);
+  }
  $("chat-input")?.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();$("chat-form")?.requestSubmit()}}); 
- const record=$("ux-chat-record"),recordState=$("ux-chat-record-state");
- let recorder=null,stream=null,chunks=[],recordStarted=0,recordLimit=null;
- record?.addEventListener("click",async()=>{
+  const chatInput=$("chat-input");
+  if(chatInput&&!chatInput.dataset.uxEnterReady){chatInput.dataset.uxEnterReady="1";chatInput.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing&&!e.repeat){e.preventDefault();$("chat-form")?.requestSubmit()}})}
   if(recorder?.state==="recording"){recorder.stop();return}
   if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder){if(recordState)recordState.textContent="ضبط صدا در این مرورگر پشتیبانی نمی‌شود.";return}
   try{
