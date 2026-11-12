@@ -868,7 +868,7 @@ function parseHamkelasiPortalSnapshot(snapshot){
  const tables=Array.isArray(snapshot?.tables)?snapshot.tables:[],rows=tables.flatMap(t=>Array.isArray(t?.rows)?t.rows:[]),out=[];
  for(const row of rows){if(!row||typeof row!=="object")continue;const title=pick(row,aliases.title);if(!title||title.length>300)continue;
   const raw=pick(row,aliases.due).replace(/[۰-۹]/g,d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d)).replace(/[٠-٩]/g,d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d));let due=null;
-  if(raw){const j=raw.match(/(1[23-5]\d{2})[/.\-](\d{1,2})[/.\-](\d{1,2})/);if(j){try{due=jalaliInputToDate(j[1]+"/"+j[2]+"/"+j[3]).toISOString()}catch(_){}}else{const d=new Date(raw);if(!isNaN(d))due=d.toISOString()}}
+  if(raw){const jalali=raw.match(/(1[23-5]\d{2})[/.\-](\d{1,2})[/.\-](\d{1,2})/);if(jalali){try{due=jalaliInputToDate(jalali[1]+"/"+jalali[2]+"/"+jalali[3]).toISOString()}catch(_){}}else{const d=new Date(raw);if(!isNaN(d))due=d.toISOString()}}
   const subject=pick(row,aliases.subject),description=pick(row,aliases.description),seed=[title,subject,description,due||""].join("|");let hash=2166136261;for(let i=0;i<seed.length;i++){hash^=seed.charCodeAt(i);hash=Math.imul(hash,16777619)}
   out.push({external_id:"hk-webview-"+(hash>>>0).toString(16),title:subject?subject+" — "+title:title,description,due_at:due,priority:"normal",estimated_minutes:null});
  }
