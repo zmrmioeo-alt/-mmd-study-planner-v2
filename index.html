@@ -265,7 +265,13 @@
       </section>
 
       <section id="page-games" class="page hidden">
-        <div class="section-head"><div><p class="eyebrow">UPLAND ARCADE</p><h2>بازی و رکوردها</h2><p class="muted">یک چالش کوتاه؛ رکوردت را ثبت کن و با هم‌مدرسه‌ای‌ها رقابت کن.</p></div><button id="game-refresh" class="secondary" type="button">به‌روزرسانی جدول</button></div>
+        <div class="section-head"><div><p class="eyebrow">UPLAND ARCADE</p><h2>بازی و رکوردها</h2><p class="muted">دو چالش کوتاه برای تمرکز، دقت و سرعت عمل.</p></div><button id="game-refresh" class="secondary" type="button">به‌روزرسانی جدول</button></div>
+        <section class="orbit-game-card">
+          <div class="orbit-game-heading"><div><span class="game-chip">بازی مهارتی</span><h3>مدار | ORBIT</h3><p>سوزن‌ها را به دایره وصل کن؛ مراقب برخورد با سوزن‌های قبلی باش.</p></div><div class="orbit-best"><small>بهترین مرحله</small><strong id="orbit-best">۱</strong></div></div>
+          <div class="orbit-stage"><canvas id="orbit-canvas" width="360" height="470" aria-label="صفحه بازی مدار"></canvas><div class="orbit-hud"><span>مرحله <b id="orbit-level">۱</b></span><span>سوزن باقی‌مانده <b id="orbit-left">۵</b></span></div></div>
+          <div class="orbit-controls"><button id="orbit-start" class="primary" type="button">شروع بازی</button><button id="orbit-shoot" class="orbit-shoot" type="button" disabled>پرتاب سوزن</button></div>
+          <p id="orbit-message" class="game-message" role="status">برای شروع آماده‌ای؟</p>
+        </section>
         <div class="game-layout">
           <section class="game-card">
             <div class="game-card-head"><span class="game-chip">چالش ۱۰ ثانیه‌ای</span><span class="game-live-dot">● رقابت زنده</span></div>
