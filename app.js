@@ -211,15 +211,17 @@ $("signup-form").addEventListener("submit",async e=>{
  finally{if(submit)submit.disabled=false;}
 });
 $("pending-logout").addEventListener("click",()=>db.auth.signOut());
+const UPLAND_BUNDLED_VERSION="2.5.22";
+const compareUplandVersions=(remote,local)=>{const a=String(remote).split(".").map(x=>Number(x)||0),b=String(local).split(".").map(x=>Number(x)||0);for(let i=0;i<Math.max(a.length,b.length);i++){const d=(a[i]||0)-(b[i]||0);if(d)return d;}return 0;};
 const isNativeUplandApp=()=>!!(window.Capacitor?.isNativePlatform?.());
 const uplandVersionFeed=()=>isNativeUplandApp()?"https://zmrmioeo-alt.github.io/-mmd-study-planner-v2/version.json":"./version.json";
 const uplandLatestApkUrl="https://github.com/zmrmioeo-alt/-mmd-study-planner-v2/releases/latest/download/UPLAND-latest.apk";
 async function checkAppUpdateNotice(){
  try{
   const r=await fetch(uplandVersionFeed()+"?notice="+Date.now(),{cache:"no-store"});if(!r.ok)return;
-  const v=await r.json(),seen=localStorage.getItem("mmd_seen_version");
-  if(!v.version||seen===String(v.version))return;
-  localStorage.setItem("mmd_seen_version",String(v.version));
+  const v=await r.json(),remoteVersion=String(v.version||"");
+  if(!remoteVersion||compareUplandVersions(remoteVersion,UPLAND_BUNDLED_VERSION)<=0)return;
+  localStorage.setItem("mmd_seen_version",remoteVersion);
   const title="نسخه جدید برنامه منتشر شد · "+v.version,body=v.release_notes||"برای دریافت امکانات تازه، برنامه را به‌روزرسانی کنید.";
   if(localStorage.getItem("mmd_update_notifications")==="on"&&"Notification"in window&&Notification.permission==="granted"){
    const reg=await navigator.serviceWorker?.getRegistration();
@@ -1368,8 +1370,8 @@ async function checkMmdRelease(showNotice=true){
  try{
   const response=await fetch(uplandVersionFeed()+"?ts="+Date.now(),{cache:"no-store"});if(!response.ok)return;
   const info=await response.json(),version=String(info.version||"");if(!version)return;
-  const seen=localStorage.getItem("mmd_seen_release");
-  if(seen&&seen!==version&&showNotice){
+  const isNewVersion=compareUplandVersions(version,UPLAND_BUNDLED_VERSION)>0;
+  if(isNewVersion&&showNotice){
    const text="نسخه "+version+" منتشر شد. "+(info.release_notes||"برای دریافت نسخه تازه، برنامه را به‌روزرسانی کنید.");
    if(typeof toast==="function")toast(text);
    if("Notification" in window&&Notification.permission==="granted")new Notification("به‌روزرسانی MMD",{body:text,icon:"./assets/upland-logo-original.svg"});
