@@ -163,3 +163,10 @@ body.light .nav-link.active{background:linear-gradient(100deg,#164b58,#153b5c);c
 .startup-card small{font-size:12px;color:#7fa5c2}
 @keyframes upland-spin{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.startup-spinner{animation:none;border-top-color:#42e6d0}}
+
+/* Authorized Hamkelasi assistant consent */
+.ai-sync-settings{display:grid;gap:14px;border:1px solid #347f91;background:linear-gradient(120deg,#123347aa,#10213a)}
+.ai-sync-actions{display:flex;gap:10px;flex-wrap:wrap}
+.ai-sync-actions button{min-width:150px}
+.ai-sync-settings .hint{line-height:1.9}
+@media(max-width:520px){.ai-sync-actions{display:grid;grid-template-columns:1fr}.ai-sync-actions button{width:100%}}
