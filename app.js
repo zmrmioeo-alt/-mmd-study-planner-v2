@@ -592,7 +592,7 @@ function plannerDateAt(offset){const d=plannerWeekStart();d.setDate(d.getDate()+
 function plannerDateKey(d){return [d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-")}
 function plannerOffsetForDate(d){return Math.round((new Date(d.getFullYear(),d.getMonth(),d.getDate())-plannerWeekStart())/86400000)}
 const plannerDailyRestTotal=60,plannerDailyRestParts=6,plannerDailyRestPart=10;
-function plannerRestIntervals(day,dateKey){
+function plannerRestIntervals(day,dateKey,exceptPlanId=null){
  const avail=weeklyAvailability[String(day)];if(!avail)return [];
  const start=plannerLocalDateTime(dateKey,avail.start),end=plannerLocalDateTime(dateKey,avail.end),spanMinutes=(end-start)/60000;
  if(spanMinutes<plannerDailyRestTotal)return [];
@@ -601,7 +601,7 @@ function plannerRestIntervals(day,dateKey){
    const st=plannerLocalDateTime(dateKey,String(r.scheduled_time).slice(0,5)),mins=Math.max(5,Math.min(720,Number(r.duration_minutes)||60));
    return {start:st,end:new Date(st.getTime()+mins*60000)};
   }),
-  ...planEntriesForDate(dateKey).map(p=>({start:new Date(p.start),end:new Date(p.end)}))
+  ...planEntriesForDate(dateKey,exceptPlanId).map(p=>({start:new Date(p.start),end:new Date(p.end)}))
  ].filter(x=>x.end>start&&x.start<end).map(x=>({start:new Date(Math.max(x.start.getTime(),start.getTime())),end:new Date(Math.min(x.end.getTime(),end.getTime()))})).sort((a,b)=>a.start-b.start);
  const gaps=[];let cursor=new Date(start);
  for(const block of blocks){if(block.start>cursor)gaps.push({start:new Date(cursor),end:new Date(block.start)});if(block.end>cursor)cursor=new Date(block.end)}
@@ -626,7 +626,7 @@ function plannerDayOccupancy(day,dateKey,exceptId=null){
   const duration=Math.max(5,Math.min(720,Number(r.duration_minutes)||60));
   return {id:"routine-"+r.id,task_id:null,routine:true,title:r.title,startDate:start,endDate:new Date(start.getTime()+duration*60000),date:dateKey,duration};
  });
- return [...planEntriesForDate(dateKey,exceptId),...fixed,...plannerRestIntervals(day,dateKey)].sort((a,b)=>a.startDate-b.startDate);
+ return [...planEntriesForDate(dateKey,exceptId),...fixed,...plannerRestIntervals(day,dateKey,exceptId)].sort((a,b)=>a.startDate-b.startDate);
 }
 function plannerMinutes(value){if(!value)return null;const [h,m]=value.split(":").map(Number);return h*60+m}
 function plannerLocalDateTime(dateKey,time){const [y,m,d]=dateKey.split("-").map(Number),[h,mi]=time.split(":").map(Number);return new Date(y,m-1,d,h,mi,0,0)}
