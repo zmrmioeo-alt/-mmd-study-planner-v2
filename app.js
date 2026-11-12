@@ -473,13 +473,24 @@ async function refreshChatUnreadBadge(){if(!currentUser)return;const {data:convs
 
 async function notifyUnreadMessagesOnEntry(){
  if(!currentUser)return;
- const {data:conversations,error:conversationError}=await db.from("private_conversations").select("id,user_one,user_two").or("user_one.eq."+currentUser.id+",user_two.eq."+currentUser.id);
+ const userId=currentUser.id;
+ setChatUnreadBadge(0);
+ const {data:conversations,error:conversationError}=await db.from("private_conversations").select("id,user_one,user_two").or("user_one.eq."+userId+",user_two.eq."+userId);
  if(conversationError)throw conversationError;
- const ids=(conversations||[]).map(c=>c.id);if(!ids.length)return;
- const {data:unread,error}=await db.from("private_messages").select("id,conversation_id,sender_id").in("conversation_id",ids).neq("sender_id",currentUser.id).is("read_at",null).is("deleted_at",null);
+ const ids=(conversations||[]).map(c=>c.id);
+ if(!ids.length){setChatUnreadBadge(0);return}
+ const {data:unread,error}=await db.from("private_messages").select("id,conversation_id,sender_id").in("conversation_id",ids).neq("sender_id",userId).is("read_at",null).is("deleted_at",null);
  if(error)throw error;
+ if(currentUser?.id!==userId)return;
  const count=unread?.length||0;
- if(count){const firstUnread=unread[0],conversation=conversations.find(c=>c.id===firstUnread.conversation_id);const peerId=conversation?(conversation.user_one===currentUser.id?conversation.user_two:conversation.user_one):null;const chatTargetId=conversation?(profile?.is_admin?conversation.id:peerId):null;addInAppNotification("پیام‌های خوانده‌نشده",fa(count)+" پیام جدید هنگام نبودنت دریافت شده است.","mmd-unread-entry-"+currentUser.id+"-"+new Date().toDateString(),"chat",chatTargetId);toast("هنگام نبودنت "+fa(count)+" پیام جدید دریافت کردی. برای دیدن پیام‌ها وارد بخش چت شو.");setChatUnreadBadge(count);}
+ setChatUnreadBadge(count);
+ if(count){
+  const firstUnread=unread[0],conversation=conversations.find(c=>c.id===firstUnread.conversation_id);
+  const peerId=conversation?(conversation.user_one===userId?conversation.user_two:conversation.user_one):null;
+  const chatTargetId=conversation?(profile?.is_admin?conversation.id:peerId):null;
+  addInAppNotification("پیام‌های خوانده‌نشده",fa(count)+" پیام جدید هنگام نبودنت دریافت شده است.","mmd-unread-entry-"+userId+"-"+new Date().toDateString(),"chat",chatTargetId);
+  toast("هنگام نبودنت "+fa(count)+" پیام جدید دریافت کردی. برای دیدن پیام‌ها وارد بخش چت شو.");
+ }
 }
 
 function stopChatRealtime(){if(chatChannel){db.removeChannel(chatChannel);chatChannel=null}}
