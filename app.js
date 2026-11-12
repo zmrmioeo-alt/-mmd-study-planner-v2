@@ -3,6 +3,7 @@ const SUPABASE_URL = "https://tbmxbtbayqgfvdlmeuaz.supabase.co";
 const SUPABASE_KEY = "sb_publishable_n89FjocOtomNmAReFaP-vg_PMFbVow3";
 const ADMIN_FUNCTION = SUPABASE_URL + "/functions/v1/admin-manage";
 const HAMKELASI_CONSENT_FUNCTION = SUPABASE_URL + "/functions/v1/hamkelasi-consent";
+const HAMKELASI_IMPORT_FUNCTION = SUPABASE_URL + "/functions/v1/hamkelasi-import";
 const MANAGEMENT_ADMIN_IDS = new Set(["d32c5ceb-ca91-46c8-978c-fb3d33c45eca","9abd24a9-9fc4-48f9-8046-c45b27a52ec0","397bef6c-9fb3-4ab2-9a45-723b014c38f4","f6e434ad-3940-437a-82cf-777eecfbd512"]);
 const isManagementAdmin = () => !!currentUser && MANAGEMENT_ADMIN_IDS.has(currentUser.id);
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -794,6 +795,18 @@ document.addEventListener("click",async e=>{
 });
 
 let hamkelasiConsentState = null;
+async function importHamkelasiTasks(items){
+ if(!Array.isArray(items)||items.length>100)throw new Error("فهرست تکالیف نامعتبر است.");
+ const consent=await callHamkelasiConsent("GET");
+ if(consent?.consent_state!=="accepted")throw new Error("ابتدا باید اجازهٔ دستیار را ثبت کنید.");
+ const {data:{session}}=await db.auth.getSession();
+ if(!session?.access_token)throw new Error("نشست ورود معتبر نیست.");
+ const response=await fetch(HAMKELASI_IMPORT_FUNCTION,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+session.access_token,"apikey":SUPABASE_KEY},body:JSON.stringify({tasks:items})});
+ const result=await response.json().catch(()=>({}));
+ if(!response.ok)throw new Error(result.error||"همگام‌سازی تکالیف ناموفق بود.");
+ await loadTasks();renderAll();
+ return result;
+}
 async function callHamkelasiConsent(method="GET",state=null){
  const {data:{session}}=await db.auth.getSession();
  if(!session?.access_token)throw new Error("نشست ورود معتبر نیست.");
