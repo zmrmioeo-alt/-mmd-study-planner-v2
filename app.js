@@ -833,7 +833,7 @@ async function saveHamkelasiConsent(state){
   hamkelasiConsentState=await callHamkelasiConsent("POST",state);
   renderHamkelasiConsent();
   return true;
- }catch(error){toast(error.message||"ثبت اجازه ناموفق بود.");renderHamkelasiConsent();return false}
+ }catch(error){toast(error.message||"ثبت اجازه ناموفق بود.");renderHamkelasiConsent();["hamkelasi-consent-accept","hamkelasi-consent-decline"].forEach(id=>{if($(id))$(id).disabled=false});return false}
 }
 $("hamkelasi-consent-accept").addEventListener("click",async()=>{
  if(await saveHamkelasiConsent("accepted")){closeHamkelasiConsent();toast("اجازهٔ شما به‌صورت امن در حساب UP LAND ثبت شد؛ همگام‌سازی تا آماده‌شدن اتصال مجاز فعال نمی‌شود.")}
