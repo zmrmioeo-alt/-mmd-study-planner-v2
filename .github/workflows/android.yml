@@ -2,6 +2,8 @@ name: Build Android APK
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '17 3 */5 * *'
   push:
     branches: [main]
     paths:
@@ -27,7 +29,20 @@ permissions:
   contents: write
 
 jobs:
+  keep-signing-key-warm:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Restore stable Android signing key
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: upland-android-debug-signing-key-v1
+      - name: Verify signing key cache
+        run: test -f ~/.android/debug.keystore
+
   android:
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -54,6 +69,12 @@ jobs:
 
       - name: Install dependencies
         run: npm install
+
+      - name: Restore stable Android signing key
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: upland-android-debug-signing-key-v1
 
       - name: Prepare bundled web assets
         run: |
