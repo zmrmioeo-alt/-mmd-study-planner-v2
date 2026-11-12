@@ -543,7 +543,15 @@ async function loadSupportChat(){
  window.__chatProfiles=profiles||[];
  const list=$("chat-inbox-list");
  if(profile?.is_admin){list.innerHTML=(convs||[]).map(c=>'<button class="chat-thread" data-conv="'+c.id+'"><b>'+escapeHtml(names.get(c.user_one)||"کاربر")+" ↔ "+escapeHtml(names.get(c.user_two)||"کاربر")+'</b></button>').join("")||'<div class="empty">گفت‌وگویی نیست.</div>'}
- else {list.innerHTML=(profiles||[]).filter(p=>p.id!==currentUser.id&&p.chat_enabled!==false).map(p=>{const grade=p.account_type==="teacher"?"معلم":(p.school_grade||"پایه نامشخص");const cls=p.school_class?" · کلاس "+p.school_class:"";return '<button class="chat-thread" data-person="'+p.id+'"><b>'+escapeHtml(p.display_name||"کاربر")+'</b><small>'+escapeHtml(grade+cls)+'</small></button>'}).join("")||'<div class="empty">کاربر دیگری در دسترس نیست.</div>'}
+ else {
+  const mine=(convs||[]).filter(c=>c.user_one===currentUser.id||c.user_two===currentUser.id);
+  const ids=mine.map(c=>c.id);
+  const msgRows=ids.length?await db.from("private_messages").select("conversation_id,body,media_type,created_at,sender_id,read_at,deleted_at").in("conversation_id",ids).order("created_at",{ascending:false}):{data:[],error:null};
+  if(msgRows.error)throw msgRows.error;
+  const latest=new Map(),unread=new Map();
+  for(const m of msgRows.data||[]){if(!latest.has(m.conversation_id))latest.set(m.conversation_id,m);if(m.sender_id!==currentUser.id&&!m.read_at&&!m.deleted_at)unread.set(m.conversation_id,(unread.get(m.conversation_id)||0)+1)}
+  list.innerHTML=mine.map(c=>{const peerId=c.user_one===currentUser.id?c.user_two:c.user_one;const peer=(profiles||[]).find(p=>p.id===peerId)||{};const last=latest.get(c.id);const preview=last?(last.deleted_at?"پیام حذف شده":(last.media_type?"پیوست":(last.body||"پیام"))):"گفت‌وگوی جدید";const count=unread.get(c.id)||0;return '<button class="chat-thread" data-person="'+peerId+'"><span class="chat-thread-line"><b>'+escapeHtml(peer.display_name||"کاربر")+'</b>'+(count?'<em class="chat-unread-count">'+fa(count)+'</em>':"")+'</span><small>'+escapeHtml(preview.slice(0,58))+'</small><time>'+ (last?new Intl.DateTimeFormat("fa-IR",{hour:"2-digit",minute:"2-digit"}).format(new Date(last.created_at)):"")+'</time></button>'}).join("")||'<div class="chat-empty-state"><strong>هنوز گفت‌وگویی ندارید</strong><p>برای شروع، یک نفر را از فهرست کاربران پیدا کنید.</p><button type="button" class="primary" id="chat-empty-find">شروع گفت‌وگوی جدید</button></div>';
+ }
  if(!chatTargetUserId&&profile?.is_admin&&convs?.length)chatTargetUserId=convs[0].id;
  let conv=(convs||[]).find(c=>c.id===chatTargetUserId);
  if(!conv&&chatTargetUserId&&chatTargetUserId!==currentUser.id){const peerId=chatTargetUserId;const pair=currentUser.id<peerId?[currentUser.id,peerId]:[peerId,currentUser.id];const findConversation=()=>db.from("private_conversations").select("*").eq("user_one",pair[0]).eq("user_two",pair[1]).maybeSingle();const q=await findConversation();if(q.error)throw q.error;conv=q.data;if(!conv){const r=await db.from("private_conversations").insert({user_one:pair[0],user_two:pair[1]}).select().single();if(r.error){if(r.error.code==="23505"){const retry=await findConversation();if(retry.error)throw retry.error;conv=retry.data;if(!conv)throw r.error}else throw r.error}else conv=r.data}}
@@ -552,7 +560,7 @@ async function loadSupportChat(){
  const {data:msgs,error:me}=await db.from("private_messages").select("*").eq("conversation_id",conv.id).order("created_at");if(me)throw me;
  const unread=(msgs||[]).filter(m=>m.sender_id!==currentUser.id&&!m.read_at&&!m.deleted_at);
  if(unread.length){const readAt=new Date().toISOString();const {error:readError}=await db.from("private_messages").update({read_at:readAt}).in("id",unread.map(m=>m.id)).eq("conversation_id",conv.id).neq("sender_id",currentUser.id);if(readError)throw readError;unread.forEach(m=>m.read_at=readAt)}
- const rendered=await Promise.all((msgs||[]).map(async m=>{let media="";if(m.media_path&&!m.deleted_at){const z=await db.storage.from("private-chat-media").createSignedUrl(m.media_path,1800);if(z.data?.signedUrl){const u=z.data.signedUrl;if((m.media_type||"").startsWith("image/"))media='<a class="chat-image-open" href="'+u+'" target="_blank" rel="noopener"><img src="'+u+'" loading="lazy" style="max-width:280px;max-height:300px" alt="تصویر پیام" onerror="this.parentElement.textContent=\'نمایش تصویر ممکن نیست\'"></a>';else if((m.media_type||"").startsWith("video/"))media='<video controls playsinline src="'+u+'" style="max-width:240px"></video>';else media='<a href="'+u+'" target="_blank">مشاهده فایل</a>'}}return '<article class="chat-bubble '+(m.sender_id===currentUser.id?'mine':'theirs')+'"><p>'+(m.deleted_at?"پیام حذف شده":escapeHtml(m.body||""))+'</p>'+media+'<small>'+new Intl.DateTimeFormat('fa-IR',{hour:'2-digit',minute:'2-digit'}).format(new Date(m.created_at))+(!m.deleted_at&&(m.sender_id===currentUser.id||profile?.is_admin)?(m.sender_id===currentUser.id?(m.read_at?' · <span class="chat-read">خوانده شد ✓✓</span>':' · <span class="chat-sent">ارسال شد ✓</span>')+' · ':'')+'<button class="chat-delete" data-delete-msg="'+m.id+'">حذف</button>':'')+'</small></article>'}));
+ const rendered=await Promise.all((msgs||[]).map(async m=>{let media="";if(m.media_path&&!m.deleted_at){const z=await db.storage.from("private-chat-media").createSignedUrl(m.media_path,1800);if(z.data?.signedUrl){const u=z.data.signedUrl;if((m.media_type||"").startsWith("image/"))media='<a class="chat-image-open" href="'+u+'" target="_blank" rel="noopener"><img src="'+u+'" loading="lazy" style="max-width:280px;max-height:300px" alt="تصویر پیام" onerror="this.parentElement.textContent=\'نمایش تصویر ممکن نیست\'"></a>';else if((m.media_type||"").startsWith("video/"))media='<video controls playsinline src="'+u+'" style="max-width:280px"></video>';else if((m.media_type||"").startsWith("audio/"))media='<audio controls preload="metadata" src="'+u+'"></audio>';else media='<a href="'+u+'" target="_blank" rel="noopener">دریافت فایل</a>'}}return '<article class="chat-bubble '+(m.sender_id===currentUser.id?'mine':'theirs')+'"><p>'+(m.deleted_at?"پیام حذف شده":escapeHtml(m.body||""))+'</p>'+media+'<small>'+new Intl.DateTimeFormat('fa-IR',{hour:'2-digit',minute:'2-digit'}).format(new Date(m.created_at))+(!m.deleted_at&&(m.sender_id===currentUser.id||profile?.is_admin)?(m.sender_id===currentUser.id?(m.read_at?' · <span class="chat-read">خوانده شد ✓✓</span>':' · <span class="chat-sent">ارسال شد ✓</span>')+' · ':'')+'<button class="chat-delete" data-delete-msg="'+m.id+'">حذف</button>':'')+'</small></article>'}));
  $("chat-messages").innerHTML=rendered.join("");$("chat-messages").scrollTop=$("chat-messages").scrollHeight;
 }
 document.querySelector(".chat-peer-card")?.addEventListener("click",()=>{const p=(window.__chatProfiles||[]).find(x=>x.id===chatPeerId);if(!p)return;const grade=p.account_type==="teacher"?"معلم":(p.school_grade||"پایه نامشخص");const cls=p.school_class?" · کلاس "+p.school_class:"";alert((p.display_name||"کاربر")+"\n"+grade+cls+"\n"+(p.bio||"معرفی‌ای ثبت نشده است."))});
@@ -1332,3 +1340,34 @@ checkMmdRelease().catch(()=>{});setInterval(()=>checkMmdRelease(),180000);
 boot().catch(err=>{console.error(err);show("app-view",false);show("auth-view",true);message("auth-message","خطا در راه‌اندازی: "+err.message,true)});
 // In the messenger, Enter inserts a new line; sending is only done with the send button.
 $("chat-input").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();const t=e.currentTarget,start=t.selectionStart,end=t.selectionEnd;t.setRangeText("\n",start,end,"end");t.dispatchEvent(new Event("input",{bubbles:true}))}});
+
+
+/* Hamkelasi export bridge: local parsing, consent-gated import, no passwords. */
+(()=>{
+ const $=id=>document.getElementById(id);let parsed=[];
+ const file=$("hamkelasi-export-file"),preview=$("hamkelasi-import-preview"),button=$("hamkelasi-import-submit"),status=$("hamkelasi-import-message");
+ if(!file||!preview||!button||!status)return;
+ const norm=v=>String(v??"").trim().toLocaleLowerCase("fa").replace(/[ي]/g,"ی").replace(/[ك]/g,"ک").replace(/[۰-۹]/g,d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d)).replace(/\s+/g," ");
+ const pick=(row,keys)=>{for(const k of keys){const found=Object.keys(row).find(x=>norm(x)===norm(k)||norm(x).includes(norm(k)));if(found&&row[found]!=null&&String(row[found]).trim())return row[found]}return ""};
+ const dueValue=v=>{if(!v)return null;if(v instanceof Date&&!isNaN(v))return v.toISOString();if(typeof v==="number"&&window.XLSX?.SSF){const d=window.XLSX.SSF.parse_date_code(v);if(d)return new Date(Date.UTC(d.y,d.m-1,d.d,d.H||0,d.M||0,d.S||0)).toISOString()}const d=new Date(String(v).trim());return isNaN(d)?null:d.toISOString()};
+ const stableId=(x)=>{let h=2166136261;for(let i=0;i<x.length;i++){h^=x.charCodeAt(i);h=Math.imul(h,16777619)}return "hk-"+(h>>>0).toString(16)};
+ file.addEventListener("change",async()=>{
+  parsed=[];button.disabled=true;preview.classList.add("hidden");status.textContent="";
+  const f=file.files?.[0];if(!f)return;
+  try{
+   if(!window.XLSX)throw new Error("کتابخانهٔ خواندن فایل بارگذاری نشد؛ صفحه را تازه‌سازی کنید.");
+   const data=await f.arrayBuffer(),wb=window.XLSX.read(data,{type:"array",cellDates:true});
+   const rows=window.XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:""});
+   parsed=rows.map((r,i)=>{const title=String(pick(r,["عنوان","عنوان تکلیف","نام تکلیف","تکلیف","عنوان فعالیت","title","task","assignment","exam","نام امتحان"])).trim();if(!title)return null;const description=String(pick(r,["توضیحات","شرح","جزئیات","description","details"])).trim();const due=dueValue(pick(r,["مهلت","تاریخ تحویل","تاریخ انجام","تاریخ امتحان","سررسید","due date","deadline","date"]));const rawPriority=norm(pick(r,["اولویت","priority"]));const priority=/زیاد|مهم|high|urgent/.test(rawPriority)?"high":/کم|low/.test(rawPriority)?"low":"normal";const mins=Number(pick(r,["مدت","مدت زمان","زمان تخمینی","دقیقه","estimated minutes","duration"]));return {external_id:String(pick(r,["شناسه","کد تکلیف","id","task id"])||stableId(title+"|"+description+"|"+(due||"")+"|"+i)),title,description,due_at:due,priority,estimated_minutes:Number.isInteger(mins)&&mins>=5&&mins<=1440?mins:null}}).filter(Boolean).slice(0,100);
+   if(!parsed.length)throw new Error("در فایل، ستون عنوان تکلیف پیدا نشد. فایل خروجی کامل همکلاسی را انتخاب کنید.");
+   preview.innerHTML='<strong>'+new Intl.NumberFormat("fa-IR").format(parsed.length)+' تکلیف شناسایی شد</strong><ul>'+parsed.slice(0,5).map(x=>'<li>'+String(x.title).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))+'</li>').join("")+'</ul>'+(parsed.length>5?'<small>و '+new Intl.NumberFormat("fa-IR").format(parsed.length-5)+' مورد دیگر</small>':"");
+   preview.classList.remove("hidden");button.disabled=false;status.textContent="فایل آمادهٔ بررسی است. پس از تأیید، موارد تکراری با شناسهٔ منبع به‌روزرسانی می‌شوند.";
+  }catch(e){parsed=[];status.textContent=e.message||"خواندن فایل ناموفق بود."}
+ });
+ button.addEventListener("click",async()=>{
+  if(!parsed.length)return;button.disabled=true;status.textContent="در حال انتقال تکالیف…";
+  try{const r=await importHamkelasiTasks(parsed);status.textContent=new Intl.NumberFormat("fa-IR").format(r.synced||r.imported||0)+" تکلیف از فایل همکلاسی همگام شد.";parsed=[];file.value="";preview.classList.add("hidden");toast("همگام‌سازی تکالیف همکلاسی انجام شد.");}
+  catch(e){status.textContent=e.message||"همگام‌سازی انجام نشد."}
+  finally{button.disabled=!parsed.length}
+ });
+})();
