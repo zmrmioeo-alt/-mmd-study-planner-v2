@@ -860,6 +860,32 @@ async function importHamkelasiTasks(items){
  await loadTasks();renderAll();
  return result;
 }
+
+function normalizeHamkelasiHeader(value){return String(value||"").trim().toLocaleLowerCase("fa").replace(/[ي]/g,"ی").replace(/[ك]/g,"ک").replace(/\s+/g," ")}
+function parseHamkelasiPortalSnapshot(snapshot){
+ const aliases={title:["عنوان","عنوان تکلیف","نام تکلیف","تکلیف","فعالیت","موضوع","title","task","assignment","exam"],description:["توضیحات","شرح","جزئیات","description","details"],due:["مهلت","تاریخ تحویل","تاریخ انجام","تاریخ امتحان","سررسید","تاریخ","deadline","due date","date"],subject:["درس","نام درس","ماده درسی","subject"]};
+ const pick=(row,keys)=>{for(const key of keys){const k=Object.keys(row).find(x=>normalizeHamkelasiHeader(x)===normalizeHamkelasiHeader(key)||normalizeHamkelasiHeader(x).includes(normalizeHamkelasiHeader(key)));if(k&&String(row[k]??"").trim())return String(row[k]).trim()}return ""};
+ const rows=(Array.isArray(snapshot?.tables)?snapshot.tables:[]).flatMap(t=>Array.isArray(t?.rows)?t.rows:[]),out=[];
+ for(const row of rows){if(!row||typeof row!=="object")continue;const title=pick(row,aliases.title);if(!title||title.length>300)continue;
+  const raw=pick(row,aliases.due).replace(/[۰-۹]/g,d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d)).replace(/[٠-٩]/g,d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d));let due=null;
+  if(raw){const j=raw.match(/^(1[23-5]\d{2})[/.\-](\d{1,2})[/.\-](\d{1,2})/);if(j){try{due=jalaliInputToDate(j[1]+"/"+j[2]+"/"+j[3]).toISOString()}catch(_){}}else{const d=new Date(raw);if(!isNaN(d))due=d.toISOString()}}
+  const subject=pick(row,aliases.subject),description=pick(row,aliases.description),seed=[title,subject,description,due||""].join("|");let hash=2166136261;for(let i=0;i<seed.length;i++){hash^=seed.charCodeAt(i);hash=Math.imul(hash,16777619)}
+  out.push({external_id:"hk-webview-"+(hash>>>0).toString(16),title:subject?subject+" — "+title:title,description,due_at:due,priority:"normal",estimated_minutes:null});
+ }
+ return out.filter((x,i,all)=>all.findIndex(y=>y.external_id===x.external_id)===i).slice(0,100);
+}
+async function syncHamkelasiFromNative(){
+ const status=$("hamkelasi-import-message"),button=$("hamkelasi-native-sync");
+ if(!window.Capacitor?.Plugins?.HamkelasiPortal){if(status)status.textContent="این قابلیت فقط در نسخهٔ نصب‌شدهٔ اندروید فعال است.";return}
+ if((await callHamkelasiConsent("GET"))?.consent_state!=="accepted"){toast("ابتدا اجازهٔ دستیار همکلاسی را ثبت کنید.");show("hamkelasi-consent-modal",true);return}
+ if(button)button.disabled=true;if(status)status.textContent="در حال بازکردن محیط داخلی همکلاسی…";
+ try{const result=await window.Capacitor.Plugins.HamkelasiPortal.openPortal();const snapshot=JSON.parse(result.snapshot||"{}");const items=parseHamkelasiPortalSnapshot(snapshot);
+  if(!items.length){if(status)status.textContent="جدول تکالیف قابل تشخیص نبود؛ پس از ورود، صفحهٔ فهرست تکالیف را باز کن و دوباره تلاش کن.";return}
+  if(status)status.textContent=items.length+" تکلیف شناسایی شد؛ در حال انتقال…";const imported=await importHamkelasiTasks(items);
+  if(status)status.textContent=new Intl.NumberFormat("fa-IR").format(imported.synced||imported.imported||items.length)+" تکلیف منتقل شد.";toast("همگام‌سازی همکلاسی انجام شد.");
+ }catch(error){if(status)status.textContent=error?.message||"همگام‌سازی انجام نشد."}finally{if(button)button.disabled=false}
+}
+
 async function callHamkelasiConsent(method="GET",state=null){
  const {data:{session}}=await db.auth.getSession();
  if(!session?.access_token)throw new Error("نشست ورود معتبر نیست.");
