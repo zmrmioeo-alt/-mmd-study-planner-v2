@@ -3,30 +3,30 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#101522">
-<meta name="description" content="نصب و به‌روزرسانی برنامه‌ریز درسی MMD">
+<meta name="theme-color" content="#091426">
+<meta name="description" content="نصب و به‌روزرسانی برنامه‌ریز درسی UP LAND">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" href="./assets/icon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<title>نصب و به‌روزرسانی MMD</title>
+<title>نصب و به‌روزرسانی UP LAND</title>
 <style>
-:root{color-scheme:dark;font-family:Vazirmatn,Tahoma,sans-serif;--bg:#0c111b;--panel:#151e2d;--line:#28364b;--text:#eef3fb;--muted:#91a0b6;--accent:#a4f05b}
+:root{color-scheme:dark;font-family:Vazirmatn,Tahoma,sans-serif;--bg:#080f1e;--panel:#101b30;--line:#263b5c;--text:#eef3fb;--muted:#91a0b6;--accent:#42e6d0}
 *{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;padding:22px;background:radial-gradient(ellipse at 85% 0%,#1c2c3e,transparent 42%),var(--bg);color:var(--text)}
 main{width:min(100%,480px);padding:30px;background:var(--panel);border:1px solid var(--line);border-radius:25px;box-shadow:0 20px 60px #0005;text-align:center}
 .logo{width:100px;height:100px;object-fit:contain;margin:0 auto 20px}h1{font-size:25px;margin:0 0 10px}p{line-height:2;color:var(--muted);font-size:13px}
 button,a.btn{display:block;width:100%;padding:14px;margin-top:13px;border:0;border-radius:13px;background:var(--accent);color:#17220e;text-decoration:none;font:800 15px Vazirmatn,Tahoma,sans-serif;cursor:pointer}
 button:disabled{opacity:.55;cursor:wait}a.secondary,button.secondary{background:#202d40;color:var(--text);border:1px solid var(--line)}
 .steps{text-align:right;margin:20px 0;padding:15px;border:1px solid var(--line);border-radius:14px;color:var(--muted);font-size:12px;line-height:2}
-.version{display:inline-flex;gap:7px;padding:7px 13px;border:1px solid #a4f05b55;border-radius:30px;color:var(--accent);font-size:12px;font-weight:800;margin:8px auto}
+.version{display:inline-flex;gap:7px;padding:7px 13px;border:1px solid #42e6d055;border-radius:30px;color:var(--accent);font-size:12px;font-weight:800;margin:8px auto}
 #status{min-height:28px;color:var(--accent);font-size:12px}.hidden{display:none!important}
 </style>
 </head>
 <body>
 <main>
-<img class="logo" src="./assets/icon.svg" alt="MMD">
-<h1>نصب و به‌روزرسانی MMD</h1>
+<img class="logo" src="./assets/icon.svg" alt="UP LAND">
+<h1>نصب و به‌روزرسانی UP LAND</h1>
 <p>برنامه را روی صفحه اصلی گوشی نصب کن و هر زمان نسخه تازه‌ای منتشر شد، از همین صفحه آن را دریافت کن.</p>
 <div class="version">نسخه فعلی: <strong id="version-number">در حال بررسی…</strong></div>
 <p id="update-note">برای بررسی نسخه تازه، دکمه زیر را بزن.</p>
@@ -115,7 +115,7 @@ $("enable-notifications").addEventListener("click",async()=>{
    return;
   }
   const registration=swRegistration||await navigator.serviceWorker?.getRegistration();
-  if(registration)await registration.showNotification("MMD",{body:"اعلان به‌روزرسانی فعال شد.",icon:"./assets/icon.svg"});
+  if(registration)await registration.showNotification("UP LAND",{body:"اعلان به‌روزرسانی فعال شد.",icon:"./assets/icon.svg"});
   else status.textContent="اعلان فعال شد؛ برای نمایش اعلان‌ها برنامه را در Chrome باز کن.";
  }catch(error){status.textContent="فعال‌سازی اعلان ممکن نشد.";}
 });
@@ -151,11 +151,11 @@ readVersion().catch(()=>{
  $("version-number").textContent="نامشخص";
  status.textContent="دریافت شماره نسخه ممکن نشد.";
 });
-registerWorker().catch(error=>console.warn("MMD service worker:",error));
+registerWorker().catch(error=>console.warn("UP LAND service worker:",error));
 if("serviceWorker" in navigator){
  navigator.serviceWorker.addEventListener("controllerchange",()=>{
-  if(!sessionStorage.getItem("mmd_sw_reloaded")){
-   sessionStorage.setItem("mmd_sw_reloaded","1");
+  if(!sessionStorage.getItem("upland_sw_reloaded")){
+   sessionStorage.setItem("upland_sw_reloaded","1");
    location.reload();
   }
  });
