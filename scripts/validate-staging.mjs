@@ -10,7 +10,8 @@ const manifest = JSON.parse(read("manifest.webmanifest"));
 
 assert.match(version.version, /^\d+\.\d+\.\d+$/);
 assert.equal(version.release, "staging-preview", "This branch must remain a preview");
-assert.ok(html.includes("نسخه " + version.version), "Visible footer version must match version.json");
+const normalizedHtml = html.replace(/[۰-۹]/g, (digit) => "۰۱۲۳۴۵۶۷۸۹".indexOf(digit));
+assert.ok(normalizedHtml.includes("نسخه " + version.version), "Visible footer version must match version.json");
 assert.equal(manifest.name, "UPLAND");
 assert.ok(manifest.icons?.some((icon) => icon.src.includes("upland-logo-original.svg")), "Official logo must be present in the app manifest");
 
