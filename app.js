@@ -1002,7 +1002,7 @@ async function loadHumorFeed(){
  const comments=await db.from("humor_post_comments").select("id,post_id,user_id,body,created_at").order("created_at");if(comments.error)throw comments.error;
  const commentIds=[...new Set((comments.data||[]).map(x=>x.user_id))];const cp=commentIds.length?await db.from("public_profiles").select("id,display_name").in("id",commentIds):{data:[],error:null};if(cp.error)throw cp.error;const commentPeople=new Map((cp.data||[]).map(p=>[p.id,p]));const people=new Map((pr.data||[]).map(p=>[p.id,p]));const feed=$("humor-feed");feed.innerHTML="";
  for(const p of q.data||[]){
-  const u=people.get(p.user_id)||{};const card=document.createElement("article");card.className="post-card community-post";
+  const u=people.get(p.user_id)||{};const card=document.createElement("article");card.className="post-card community-post";card.dataset.postId=p.id;
   const author=document.createElement("button");author.className="post-author-link";author.type="button";
   const av=u.avatar_path?db.storage.from("profile-avatars").getPublicUrl(u.avatar_path).data.publicUrl:"";
   if(av){const img=document.createElement("img");img.src=av;img.alt="";author.append(img)}else{const span=document.createElement("span");span.className="post-avatar";span.textContent="👤";author.append(span)}
