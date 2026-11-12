@@ -22,6 +22,12 @@
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "maskable"
+    },
+    {
+      "src": "./assets/upland-logo-original.svg",
+      "sizes": "384x384",
+      "type": "image/svg+xml",
+      "purpose": "any"
     }
   ],
   "id": "./"
