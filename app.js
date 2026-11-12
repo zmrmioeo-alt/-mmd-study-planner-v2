@@ -313,7 +313,7 @@ async function loadProfile(){
 async function loadTasks(){const {data,error}=await db.from("study_tasks").select("*").eq("user_id",currentUser.id).order("position").order("created_at",{ascending:false});if(error)throw error;tasks=data||[]}
 async function loadRoutines(){const {data,error}=await db.from("routines").select("*").eq("user_id",currentUser.id).order("weekday").order("scheduled_time");if(error)throw error;routines=data||[]}
 async function loadSettings(){const {data,error}=await db.from("planner_settings").select("*").eq("user_id",currentUser.id).maybeSingle();if(error)throw error;settings=data||{}}
-function renderAll(){if(!currentUser)return;weeklyAvailability=settings.weekly_availability||{};weeklyPlan=Array.isArray(settings.weekly_plan)?settings.weekly_plan:[];renderPlannerAvailability();renderWeeklyPlan();renderAnnouncements();renderTasks();renderRoutines();renderReports();syncProfileForm();$("welcome-title").textContent="سلام "+(profile.display_name||"")+", برنامه امروزت آماده است."; $("display-name").value=profile.display_name||"";$("sleep-hours").value=settings.sleep_hours??"";$("wake-time").value=settings.wake_time?.slice(0,5)||"";$("accent-theme").value=settings.accent_theme||"emerald";$("appearance").value=settings.appearance||settings.theme||"light";$("season-theme").value=settings.season_theme||"auto";$("humor-enabled").checked=!!settings.humor_enabled;applyTheme(settings.accent_theme||"emerald",settings.appearance||settings.theme||"light",settings.season_theme||"auto");updateHumor()}
+function renderAll(){if(!currentUser)return;renderHamkelasiConsent();weeklyAvailability=settings.weekly_availability||{};weeklyPlan=Array.isArray(settings.weekly_plan)?settings.weekly_plan:[];renderPlannerAvailability();renderWeeklyPlan();renderAnnouncements();renderTasks();renderRoutines();renderReports();syncProfileForm();$("welcome-title").textContent="سلام "+(profile.display_name||"")+", برنامه امروزت آماده است."; $("display-name").value=profile.display_name||"";$("sleep-hours").value=settings.sleep_hours??"";$("wake-time").value=settings.wake_time?.slice(0,5)||"";$("accent-theme").value=settings.accent_theme||"emerald";$("appearance").value=settings.appearance||settings.theme||"light";$("season-theme").value=settings.season_theme||"auto";$("humor-enabled").checked=!!settings.humor_enabled;applyTheme(settings.accent_theme||"emerald",settings.appearance||settings.theme||"light",settings.season_theme||"auto");updateHumor()}
 function taskMarkup(t){const done=t.status==="done";const due=t.due_at?jalaliDate(t.due_at,true):"بدون مهلت";return '<article class="task-item '+(done?'done':'')+'"><input class="task-check" type="checkbox" data-task-check="'+t.id+'" '+(done?'checked':'')+' aria-label="تغییر وضعیت"><div class="task-main"><h3>'+escapeHtml(t.title)+'</h3><p>'+escapeHtml(t.description||"")+' · '+due+'</p></div><span class="priority '+(t.priority==="high"?"high":"")+'">'+(t.priority==="high"?"زیاد":t.priority==="low"?"کم":"معمولی")+'</span><div class="task-actions"><button class="icon-btn" data-task-delete="'+t.id+'">حذف</button></div></article>'}
 function renderTodayWork(){
  const today=tasks.filter(t=>isToday(t.due_at)||(!t.due_at&&t.status==="pending"));
@@ -792,6 +792,28 @@ document.addEventListener("click",async e=>{
  const b=e.target.closest("[data-plan-save]");if(!b)return;const id=b.dataset.planSave,date=document.querySelector("[data-plan-day='"+id+"']")?.value,time=document.querySelector("[data-plan-time='"+id+"']")?.value;if(!date||!time)return;await movePlannerTask(id,date,time)
 });
 
+function hamkelasiConsentKey(){return "upland_hamkelasi_consent_v1_"+(currentUser?.id||"guest")}
+function renderHamkelasiConsent(){
+ const allowed=localStorage.getItem(hamkelasiConsentKey())==="granted";
+ const status=$("hamkelasi-consent-status");if(!status)return;
+ status.textContent=allowed?"اجازهٔ اولیه روی این دستگاه ثبت شده است؛ اتصال خودکار هنوز فعال نیست.":"هنوز اجازه‌ای ثبت نشده است.";
+ $("hamkelasi-consent-grant").disabled=allowed;
+ $("hamkelasi-consent-revoke").disabled=!allowed;
+}
+$("hamkelasi-consent-grant").addEventListener("click",()=>{
+ if(!currentUser)return;
+ const approved=confirm("آیا اجازه می‌دهید دستیار هوشمند UP LAND پس از آماده‌شدن اتصال امن، فقط تکالیف و امتحان‌های حساب همکلاسی شما را بخواند و به برنامه‌ریز منتقل کند؟ رمز عبور به هوش مصنوعی ارسال نمی‌شود.");
+ if(!approved)return;
+ localStorage.setItem(hamkelasiConsentKey(),"granted");
+ renderHamkelasiConsent();
+ toast("اجازهٔ اولیه ثبت شد؛ همگام‌سازی تا آماده‌شدن اتصال امن غیرفعال می‌ماند.");
+});
+$("hamkelasi-consent-revoke").addEventListener("click",()=>{
+ if(!currentUser)return;
+ localStorage.removeItem(hamkelasiConsentKey());
+ renderHamkelasiConsent();
+ toast("اجازهٔ دستیار لغو شد.");
+});
 $("settings-form").addEventListener("submit",async e=>{e.preventDefault();const row={user_id:currentUser.id,sleep_hours:$("sleep-hours").value?Number($("sleep-hours").value):null,wake_time:$("wake-time").value||null,theme:$("appearance").value,accent_theme:$("accent-theme").value,appearance:$("appearance").value,season_theme:$("season-theme").value,humor_enabled:$("humor-enabled").checked};const {error}=await db.from("planner_settings").upsert(row,{onConflict:"user_id"});if(error){toast(error.message);return}settings=row;profile.display_name=$("display-name").value.trim()||"کاربر";const {error:pe}=await db.from("profiles").update({display_name:profile.display_name}).eq("id",currentUser.id);if(pe){toast(pe.message);return} $("user-name").textContent=profile.display_name;$("user-avatar").textContent="👤";applyTheme(row.accent_theme,row.appearance,row.season_theme);updateHumor();toast("تنظیمات ذخیره شد.")});
 function applyTheme(accent="emerald",appearance="light",season="auto"){const m=new Date().getMonth()+1;const detected=m>=3&&m<=5?"spring":m>=6&&m<=8?"summer":m>=9&&m<=11?"autumn":"winter";document.body.dataset.theme=accent;document.body.dataset.appearance=appearance;document.body.dataset.season=season==="auto"?detected:season;document.body.classList.toggle("light",appearance==="light"||(appearance==="system"&&matchMedia("(prefers-color-scheme: light)").matches));document.documentElement.dataset.font="vazirmatn"}
 const humorLines=["اگر تکلیف‌ها خودشان انجام می‌شدند، احتمالاً الان اینجا نبودیم!","یک قدم کوچک هم از صفر کیلومتر جلوتر است.","مغزت را روشن کن؛ حالت پرواز برای بعد از درس!","امروز با خودت رقابت کن، نه با کل دنیا.","استراحت کوتاه مجاز است؛ ناپدید شدن سه‌ساعته نه!","هر تیک، یک پیروزی کوچک است."];
