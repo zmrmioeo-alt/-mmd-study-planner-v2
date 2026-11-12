@@ -1386,7 +1386,17 @@ boot().catch(err=>{console.error(err);show("app-view",false);show("auth-view",tr
  if(!file||!preview||!button||!status)return;
  const norm=v=>String(v??"").trim().toLocaleLowerCase("fa").replace(/[ي]/g,"ی").replace(/[ك]/g,"ک").replace(/[۰-۹]/g,d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d)).replace(/\s+/g," ");
  const pick=(row,keys)=>{for(const k of keys){const found=Object.keys(row).find(x=>norm(x)===norm(k)||norm(x).includes(norm(k)));if(found&&row[found]!=null&&String(row[found]).trim())return row[found]}return ""};
- const dueValue=v=>{if(!v)return null;if(v instanceof Date&&!isNaN(v))return v.toISOString();if(typeof v==="number"&&window.XLSX?.SSF){const d=window.XLSX.SSF.parse_date_code(v);if(d)return new Date(Date.UTC(d.y,d.m-1,d.d,d.H||0,d.M||0,d.S||0)).toISOString()}const d=new Date(String(v).trim());return isNaN(d)?null:d.toISOString()};
+ const dueValue=v=>{
+  if(!v)return null;
+  if(v instanceof Date&&!isNaN(v))return v.toISOString();
+  if(typeof v==="number"&&window.XLSX?.SSF){const d=window.XLSX.SSF.parse_date_code(v);if(d)return new Date(Date.UTC(d.y,d.m-1,d.d,d.H||0,d.M||0,d.S||0)).toISOString()}
+  const raw=String(v).trim().replace(/[۰-۹]/g,d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d)).replace(/[٠-٩]/g,d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d));
+  const jalali=raw.match(/^(1[23-5]\d{2})[/.\-](\d{1,2})[/.\-](\d{1,2})(?:[ T](\d{1,2}):(\d{2}))?$/);
+  if(jalali){
+   try{const date=jalaliInputToDate(jalali[1]+"/"+jalali[2]+"/"+jalali[3]);if(jalali[4]!=null){const hour=Number(jalali[4]),minute=Number(jalali[5]);if(hour>23||minute>59)return null;date.setHours(hour,minute,0,0)}return date.toISOString()}catch(_){return null}
+  }
+  const date=new Date(raw);return isNaN(date)?null:date.toISOString()
+};
  const stableId=(x)=>{let h=2166136261;for(let i=0;i<x.length;i++){h^=x.charCodeAt(i);h=Math.imul(h,16777619)}return "hk-"+(h>>>0).toString(16)};
  file.addEventListener("change",async()=>{
   parsed=[];button.disabled=true;preview.classList.add("hidden");status.textContent="";
