@@ -384,27 +384,58 @@ async function notifyLiveEvent(title,body,tag,page,chatTargetId=null){
   try{const reg=await navigator.serviceWorker?.getRegistration();const targetUrl=page==="chat"&&chatTargetId?"./?page=chat&chatTarget="+encodeURIComponent(chatTargetId):"./?page="+encodeURIComponent(page||"today");if(reg)await reg.showNotification(title,{body,icon:"./assets/icon.svg",badge:"./assets/icon-192.svg",tag,renotify:true,data:{url:targetUrl}});else new Notification(title,{body,tag})}catch(err){console.debug("Browser notification unavailable",err)}
  }
 }
+async function pushApi(action,extra={}){
+ const {data:{session}}=await db.auth.getSession();
+ if(!session)throw new Error("برای فعال‌سازی اعلان ابتدا وارد حساب شو.");
+ const response=await fetch(SUPABASE_URL+"/functions/v1/push-notify",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+session.access_token,"apikey":SUPABASE_KEY},body:JSON.stringify({action,...extra})});
+ const data=await response.json().catch(()=>({}));
+ if(!response.ok||data.ok===false)throw new Error(data.error||"ارتباط با سرویس اعلان برقرار نشد.");
+ return data;
+}
+function pushKeyBytes(value){
+ const padding="=".repeat((4-value.length%4)%4),base=(value+padding).replace(/-/g,"+").replace(/_/g,"/");
+ const raw=atob(base),out=new Uint8Array(raw.length);for(let i=0;i<raw.length;i++)out[i]=raw.charCodeAt(i);return out;
+}
 async function syncPushStatus(){
  const el=$("push-status"),btn=$("enable-push");if(!el)return;
  const enabled=localStorage.getItem("mmd_inapp_notifications")!=="off";
- el.textContent=enabled?"اعلان‌های داخل سایت فعال است؛ برای دریافت زنده، سایت باید باز باشد.":"اعلان‌های داخل سایت غیرفعال است.";
- if(btn)btn.textContent=enabled?"غیرفعال‌کردن اعلان‌های داخل سایت":"فعال‌کردن اعلان‌های داخل سایت";
- const test=$("test-push");if(test)test.textContent="آزمایش اعلان داخل سایت";
+ let devicePush=false;
+ try{const reg=await navigator.serviceWorker?.getRegistration();devicePush=!!(await reg?.pushManager?.getSubscription())}catch(_){}
+ el.textContent=enabled?(devicePush?"اعلان داخل سایت و اعلان پس‌زمینه این دستگاه فعال است.":"اعلان داخل سایت فعال است؛ برای اعلان پس‌زمینه، فعال‌سازی را انجام بده."):"اعلان‌های این حساب در این دستگاه غیرفعال است.";
+ if(btn)btn.textContent=enabled?(devicePush?"غیرفعال‌کردن اعلان‌ها":"فعال‌سازی اعلان‌های گوشی"):"فعال‌کردن اعلان‌ها";
+ const test=$("test-push");if(test)test.textContent="ارسال اعلان آزمایشی به گوشی";
 }
 async function enablePushNotifications(){
- const enabled=localStorage.getItem("mmd_inapp_notifications")!=="off";
- if(enabled){localStorage.setItem("mmd_inapp_notifications","off");localStorage.setItem("mmd_browser_notifications","off");toast("اعلان‌های داخل سایت غیرفعال شد.")}
- else{
-  localStorage.setItem("mmd_inapp_notifications","on");
-  if("Notification"in window&&Notification.permission==="default"){
-   try{const permission=await Notification.requestPermission();localStorage.setItem("mmd_browser_notifications",permission==="granted"?"on":"off")}catch(_){localStorage.setItem("mmd_browser_notifications","off")}
-  }else if("Notification"in window&&Notification.permission==="granted")localStorage.setItem("mmd_browser_notifications","on");
-  toast("اعلان‌های داخل سایت فعال شد.");
- }
- await syncPushStatus();
+ const btn=$("enable-push");if(btn)btn.disabled=true;
+ try{
+  const enabled=localStorage.getItem("mmd_inapp_notifications")!=="off";
+  if(enabled){
+   const reg=await navigator.serviceWorker?.getRegistration(),sub=await reg?.pushManager?.getSubscription();
+   if(sub){await pushApi("unsubscribe",{endpoint:sub.endpoint});await sub.unsubscribe()}
+   localStorage.setItem("mmd_inapp_notifications","off");localStorage.setItem("mmd_browser_notifications","off");
+   toast("اعلان‌ها در این دستگاه غیرفعال شدند.");
+  }else{
+   if(!("serviceWorker"in navigator)||!("PushManager"in window))throw new Error("مرورگر یا حالت نصب‌شده از اعلان پس‌زمینه پشتیبانی نمی‌کند.");
+   if(!("Notification"in window))throw new Error("این مرورگر از اعلان گوشی پشتیبانی نمی‌کند.");
+   const permission=await Notification.requestPermission();if(permission!=="granted")throw new Error("اجازه نمایش اعلان داده نشد.");
+   const reg=await navigator.serviceWorker.register("./service-worker.js");await navigator.serviceWorker.ready;
+   const keyInfo=await pushApi("public_key");if(!keyInfo.publicKey)throw new Error("کلید عمومی اعلان روی سرور تنظیم نشده است.");
+   let sub=await reg.pushManager.getSubscription();
+   if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:pushKeyBytes(keyInfo.publicKey)});
+   await pushApi("subscribe",{subscription:sub.toJSON()});
+   localStorage.setItem("mmd_inapp_notifications","on");localStorage.setItem("mmd_browser_notifications","on");
+   toast("اعلان‌های گوشی برای این حساب فعال شد.");
+  }
+ }catch(err){toast(err.message||"فعال‌سازی اعلان انجام نشد.");}
+ finally{if(btn)btn.disabled=false;await syncPushStatus()}
 }
 $("enable-push")?.addEventListener("click",enablePushNotifications);
-async function testPushNotification(){addInAppNotification("اعلان آزمایشی","سامانه اعلان داخل سایت درست کار می‌کند.","mmd-test-"+Date.now(),"settings");toast("اعلان آزمایشی به فهرست اعلان‌ها اضافه شد.");}
+async function testPushNotification(){
+ const button=$("test-push");if(button)button.disabled=true;
+ try{const result=await pushApi("test");if(!result.sent)throw new Error("اعلان آزمایشی به هیچ دستگاهی ارسال نشد.");toast("اعلان آزمایشی به "+fa(result.sent)+" دستگاه ارسال شد.")}
+ catch(err){toast(err.message||"ارسال اعلان آزمایشی ناموفق بود.")}
+ finally{if(button)button.disabled=false}
+}
 $("test-push")?.addEventListener("click",testPushNotification);
 $("notification-toggle")?.addEventListener("click",e=>{e.preventDefault();e.stopPropagation();const panel=$("notification-panel"),button=$("notification-toggle");if(!panel)return;const opening=panel.classList.contains("hidden");panel.classList.toggle("hidden",!opening);button?.setAttribute("aria-expanded",String(opening));});
 $("notification-mark-read")?.addEventListener("click",()=>{markAllNotificationsRead();toast("همه اعلان‌ها خوانده شدند.")});
