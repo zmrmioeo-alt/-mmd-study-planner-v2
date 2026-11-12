@@ -1,0 +1,50 @@
+/* UPLAND EXPERIENCE — client-side enhancements; no schema changes */
+(()=>{"use strict";
+const $=id=>document.getElementById(id);
+const safe=(s)=>String(s||"").toLocaleLowerCase("fa");
+function addFeedTools(){
+ const feed=$("humor-feed"),head=document.querySelector("#page-humor .section-head");
+ if(!feed||!head||$("ux-feed-tools"))return;
+ const tools=document.createElement("div");tools.id="ux-feed-tools";tools.className="ux-feed-tools";
+ tools.innerHTML='<input id="ux-feed-search" type="search" placeholder="جست‌وجو در نوشته‌ها و نام‌ها…" aria-label="جست‌وجو در همتانه"><button class="ux-tool-chip active" data-feed-filter="all">همه</button><button class="ux-tool-chip" data-feed-filter="media">دارای تصویر یا ویدئو</button><button class="ux-tool-chip" data-feed-filter="text">نوشته‌ها</button><span class="ux-count" id="ux-feed-count"></span>';
+ head.insertAdjacentElement("afterend",tools);
+ const update=()=>{const q=safe($("ux-feed-search").value);let n=0;feed.querySelectorAll(".community-post").forEach(card=>{const media=!!card.querySelector(":scope > img,:scope > video");const filter=tools.dataset.filter||"all";const match=(!q||safe(card.innerText).includes(q))&&(filter==="all"||(filter==="media"&&media)||(filter==="text"&&!media));card.classList.toggle("hidden",!match);if(match)n++});$("ux-feed-count").textContent=n+" مطلب"};
+ tools.dataset.filter="all";$("ux-feed-search").addEventListener("input",update);
+ tools.addEventListener("click",e=>{const b=e.target.closest("[data-feed-filter]");if(!b)return;tools.dataset.filter=b.dataset.feedFilter;tools.querySelectorAll("[data-feed-filter]").forEach(x=>x.classList.toggle("active",x===b));update()});
+ const observer=new MutationObserver(update);observer.observe(feed,{childList:true,subtree:true});update();
+}
+function enhanceComposer(){
+ const form=$("humor-submit-form");if(!form||form.dataset.uxReady)return;form.dataset.uxReady="1";
+ const body=$("humor-body");if(body){const meter=document.createElement("div");meter.className="ux-composer-meter";meter.textContent="۰ / ۵۰۰۰";body.insertAdjacentElement("afterend",meter);body.addEventListener("input",()=>meter.textContent=body.value.length.toLocaleString("fa")+" / ۵۰۰۰ نویسه")}
+ const file=$("humor-file");if(file){const preview=document.createElement("div");preview.className="ux-file-preview";preview.style.cssText="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px";file.insertAdjacentElement("afterend",preview);file.addEventListener("change",()=>{preview.innerHTML="";const f=file.files?.[0];if(!f)return;const name=document.createElement("span");name.textContent=f.name+" · "+(f.size/1048576).toFixed(1)+" MB";preview.append(name);if(f.type.startsWith("image/")){const img=document.createElement("img");img.src=URL.createObjectURL(f);img.style.cssText="width:110px;height:110px;object-fit:cover;border-radius:14px";preview.append(img)}})}
+}
+function enhanceChat(){
+ const messages=$("chat-messages"),compose=$("chat-compose")||document.querySelector(".chat-compose");
+ if(!messages||!compose||$("ux-chat-tools"))return;
+ const tools=document.createElement("div");tools.id="ux-chat-tools";tools.className="ux-chat-tools";
+ tools.innerHTML='<input id="ux-chat-search" type="search" placeholder="جست‌وجو در پیام‌های همین گفت‌وگو…"><span class="ux-count">جست‌وجوی محلی</span>';
+ messages.insertAdjacentElement("beforebegin",tools);
+ $("ux-chat-search").addEventListener("input",()=>{const q=safe($("ux-chat-search").value);messages.querySelectorAll(".chat-bubble").forEach(b=>b.classList.toggle("hidden",!!q&&!safe(b.innerText).includes(q)))});
+ if($("ux-chat-emoji-row"))return;
+ const row=document.createElement("div");row.id="ux-chat-emoji-row";row.className="ux-emoji-row";
+ ["🙂","😂","❤️","👍","🙏","🔥","🎉","💯","✨","📚","🤝","😅"].forEach(emoji=>{const b=document.createElement("button");b.type="button";b.textContent=emoji;b.setAttribute("aria-label","افزودن "+emoji);b.addEventListener("click",()=>{const input=$("chat-input");if(!input)return;const start=input.selectionStart??input.value.length,end=input.selectionEnd??start;input.value=input.value.slice(0,start)+emoji+input.value.slice(end);input.focus();input.setSelectionRange(start+emoji.length,start+emoji.length);input.dispatchEvent(new Event("input",{bubbles:true}))});row.append(b)});
+ compose.insertAdjacentElement("beforebegin",row);
+ $("chat-input")?.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();$("chat-form")?.requestSubmit()}});
+ const obs=new MutationObserver(()=>{messages.querySelectorAll(".chat-bubble").forEach(b=>{if(b.querySelector(".ux-copy-message"))return;const p=b.querySelector("p");if(!p||!p.textContent.trim())return;const c=document.createElement("button");c.type="button";c.className="ux-copy-message";c.textContent="کپی";c.style.cssText="font-size:11px;background:transparent;border:0;color:#83dcd8;margin-inline-start:8px";c.addEventListener("click",async()=>{try{await navigator.clipboard.writeText(p.textContent);c.textContent="کپی شد";setTimeout(()=>c.textContent="کپی",1200)}catch(_){c.textContent="ناموفق"}});b.querySelector("small")?.append(c)})});
+ obs.observe(messages,{childList:true,subtree:true});obs.takeRecords();
+}
+const pages=[["today","امروز","نمای کلی روز"],["today-work","کارهای امروز","فهرست کارهای روزانه"],["humor","همتانه","شبکه اجتماعی مدرسه"],["chat","چت","پیام‌رسان خصوصی"],["smart","برنامه‌ریز هوشمند","برنامه هفتگی"],["tasks","وظایف و تکالیف","مدیریت کارها"],["programs","همه برنامه‌ها","مرکز برنامه‌ها"],["routines","برنامه ثابت","روتین هفتگی"],["reports","گزارش پیشرفت","آمار عملکرد"],["profile","پروفایل من","حساب شخصی"],["settings","تنظیمات","شخصی‌سازی"]];
+function commandPalette(){
+ if($("ux-command-overlay"))return;
+ const overlay=document.createElement("div");overlay.id="ux-command-overlay";overlay.className="ux-command-overlay";overlay.hidden=true;
+ overlay.innerHTML='<div class="ux-command-box" role="dialog" aria-modal="true" aria-label="جست‌وجوی سریع"><input id="ux-command-search" type="search" placeholder="کجا می‌خواهی بروی؟ (مثلاً چت، برنامه‌ریز…)"><div id="ux-command-list" class="ux-command-list"></div><small style="color:#8ca8c0">کلید میان‌بر: Ctrl + K · بستن: Esc</small></div>';
+ document.body.append(overlay);
+ const draw=()=>{const q=safe($("ux-command-search").value);$("ux-command-list").innerHTML="";pages.filter(p=>safe(p[1]+" "+p[2]).includes(q)).forEach(p=>{const b=document.createElement("button");b.innerHTML="<b>"+p[1]+"</b><small>"+p[2]+"</small>";b.addEventListener("click",()=>{if(typeof window.navigate==="function")window.navigate(p[0]);else document.querySelector('[data-page="'+p[0]+'"]')?.click();overlay.hidden=true});$("ux-command-list").append(b)})};
+ $("ux-command-search").addEventListener("input",draw);overlay.addEventListener("click",e=>{if(e.target===overlay)overlay.hidden=true});document.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="k"){e.preventDefault();overlay.hidden=false;$("ux-command-search").value="";draw();$("ux-command-search").focus()}if(e.key==="Escape")overlay.hidden=true});draw();
+}
+function lightbox(){
+ document.addEventListener("click",e=>{const img=e.target.closest("#humor-feed .community-post > img");if(!img)return;const box=document.createElement("div");box.className="ux-lightbox";const large=document.createElement("img");large.src=img.src;large.alt=img.alt||"نمایش تصویر";box.append(large);box.addEventListener("click",()=>box.remove());document.body.append(box)});
+}
+function start(){addFeedTools();enhanceComposer();enhanceChat();commandPalette();lightbox();const feed=$("humor-feed");if(feed)new MutationObserver(()=>{addFeedTools();enhanceComposer()}).observe(feed,{childList:true});const chat=$("chat-content");if(chat)new MutationObserver(()=>enhanceChat()).observe(chat,{childList:true,subtree:true});}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",start);else start();
+})();
