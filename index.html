@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f4f6fb">
+  <meta name="theme-color" content="#050a16">
   <meta name="description" content="UPLAND؛ فضای هوشمند برنامه‌ریزی، یادگیری و ارتباط دانش‌آموزان">
   <title>UPLAND | فضای هوشمند یادگیری</title>
-  <link rel="icon" href="assets/upland-icon.svg" type="image/svg+xml"><link rel="icon" href="assets/upland-icon-192.svg" type="image/svg+xml" sizes="192x192">
+  <link rel="icon" href="assets/upland-logo.webp" type="image/webp"><link rel="apple-touch-icon" href="assets/upland-logo.webp">
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -34,7 +34,7 @@
   </div>
   <div id="terms-view" class="auth-wrap hidden">
     <section class="auth-card terms-card">
-      <div class="brand-mark">UPLAND</div>
+      <div class="brand-mark" role="img" aria-label="لوگوی UPLAND"></div>
       <p class="eyebrow">UPLAND / TERMS & PRIVACY</p>
       <h1>قوانین استفاده و حریم خصوصی</h1>
       <p class="muted">برای استفاده از سامانه، متن زیر را مطالعه کنید و در صورت موافقت، پذیرش خود را ثبت کنید. این تأیید فقط یک‌بار در همین مرورگر انجام می‌شود.</p>
@@ -89,7 +89,7 @@
 
   <div id="app-view" class="app-shell hidden">
     <aside class="sidebar" id="sidebar">
-      <div class="brand"><span class="brand-mark small">UP</span><div><b>UPLAND</b><small>فضای هوشمند یادگیری</small></div></div>
+      <div class="brand"><span class="brand-mark small" role="img" aria-label="لوگوی UPLAND"></span><div><b>UPLAND</b><small>فضای هوشمند یادگیری</small></div></div>
       <div class="sidebar-quick-actions"><button id="mobile-menu-toggle" class="mobile-menu-toggle" type="button" aria-label="باز کردن فهرست" aria-expanded="false"><span></span><span></span><span></span><b>منو</b><span id="menu-notification-count" class="menu-notification-count hidden">۰</span></button></div>
       <nav id="main-nav">
         <button class="nav-link active" data-page="today">◷ <span>امروز</span></button>
@@ -222,7 +222,7 @@
           <label>مدت خواب شبانه (ساعت)<input id="sleep-hours" type="number" min="0" max="24" step=".5"></label>
           <label>ساعت بیداری<input id="wake-time" type="time"></label>
           <div class="settings-block"><div><h3>رنگ و ظاهر برنامه</h3><p class="muted">فضای برنامه را مطابق سلیقه‌ات انتخاب کن.</p></div><label>رنگ‌بندی<select id="accent-theme"><option value="emerald">سبز نئونی</option><option value="ocean">اقیانوسی</option><option value="violet">بنفش کهکشانی</option><option value="rose">صورتی یخی</option><option value="sunset">غروب آفتاب</option><option value="gold">طلایی لوکس</option><option value="mint">نعنایی</option><option value="graphite">خاکستری مینیمال</option></select></label><label>حالت نمایش<select id="appearance"><option value="light" selected>روشن</option><option value="dark">تیره</option><option value="system">مطابق دستگاه</option></select></label><label>تم فصلی<select id="season-theme"><option value="auto">خودکار بر اساس فصل</option><option value="spring">بهار · سبز و شکوفه‌ای</option><option value="summer">تابستان · آبی و آفتابی</option><option value="autumn">پاییز · نارنجی و گرم</option><option value="winter">زمستان · یخی و آبی</option></select></label><div class="palette-preview" aria-label="پیش‌نمایش رنگ‌ها"><i></i><i></i><i></i><i></i><i></i></div></div><div class="settings-block"><div><h3>برنامه‌ریز هوشمند هفتگی</h3><p class="muted">برنامه‌ریز هفتگی برای همه حساب‌ها فعال است و زمان‌بندی‌ها در حساب کاربر ذخیره می‌شوند.</p></div><label class="switch-row"><input id="smart-planner-toggle" type="checkbox" checked disabled><span>برنامه‌ریز هفتگی فعال است</span></label></div><div class="settings-block humor-setting"><div><h3>لحن طنز و شوخی</h3><p class="muted">در صورت فعال‌سازی، پیام‌های کوتاه و شوخ‌طبعانه در بخش‌های برنامه نمایش داده می‌شوند.</p></div><label class="switch-row"><input id="humor-enabled" type="checkbox"><span>فعال‌سازی لحن طنز</span></label></div>
-          <div class="settings-block ai-sync-settings"><div><h3>دستیار هوشمند همکلاسی</h3><p class="muted">با اجازهٔ شما، دستیار UPLAND در آینده از مسیر امن و مجاز به حساب همکلاسی متصل می‌شود و فقط تکالیف و امتحان‌های شما را برای برنامه‌ریز دریافت می‌کند. رمز عبور به مدل هوش مصنوعی ارسال یا در UPLAND ذخیره نخواهد شد.</p><p id="hamkelasi-consent-status" class="message" role="status">وضعیت اجازه در حال بررسی...</p></div><div class="ai-sync-actions"><button id="hamkelasi-consent-grant" class="primary" type="button">بررسی و ثبت اجازه</button><button id="hamkelasi-consent-revoke" class="secondary" type="button">لغو اجازه</button></div><small class="hint">ثبت اجازه به‌تنهایی اتصال را فعال نمی‌کند؛ تا فراهم شدن روش رسمی و امن ورود، هیچ ورود یا همگام‌سازی خودکاری انجام نمی‌شود.</small></div><div class="settings-block"><div><h3>اعلان پیام‌ها</h3><p class="muted">اعلان پیام‌ها، اطلاعیه‌ها و مطالب تازه در فهرست اعلان‌های سایت ثبت می‌شود. برای دریافت زنده باید سایت باز باشد؛ اعلان گوشی در پس‌زمینه فقط تا زمانی ممکن است که صفحه فعال بماند.</p><p id="push-status" class="message" role="status">وضعیت اعلان در حال بررسی...</p></div><button id="enable-push" class="secondary" type="button">فعال‌سازی اعلان‌های گوشی</button><button id="test-push" class="secondary" type="button">ارسال اعلان آزمایشی</button></div>
+          <div class="settings-block ai-sync-settings"><div><h3>دستیار هوشمند همکلاسی</h3><p class="muted">با اجازهٔ شما، دستیار UPLAND در آینده از مسیر امن و مجاز به حساب همکلاسی متصل می‌شود و فقط تکالیف و امتحان‌های شما را برای برنامه‌ریز دریافت می‌کند. رمز عبور به مدل هوش مصنوعی ارسال یا در UPLAND ذخیره نخواهد شد.</p><p id="hamkelasi-consent-status" class="message" role="status">وضعیت اجازه در حال بررسی...</p></div><div class="ai-sync-actions"><button id="hamkelasi-consent-grant" class="primary" type="button">بررسی و ثبت اجازه</button><button id="hamkelasi-consent-revoke" class="secondary" type="button">لغو اجازه</button></div><small class="hint">ثبت اجازه به‌تنهایی اتصال را فعال نمی‌کند؛ تا فراهم شدن روش رسمی و امن ورود، هیچ ورود یا همگام‌سازی خودکاری انجام نمی‌شود.</small></div><div class="hamkelasi-import-panel"><h4>واردکردن تکالیف از خروجی همکلاسی</h4><p class="muted">از حساب خودتان در همکلاسی فایل خروجی تکالیف را دریافت کنید و اینجا بارگذاری کنید. فایل فقط برای استخراج تکالیف خوانده می‌شود؛ رمز حساب درخواست یا ذخیره نمی‌شود.</p><label>فایل خروجی همکلاسی<input id="hamkelasi-export-file" type="file" accept=".xlsx,.xls,.csv"></label><div id="hamkelasi-import-preview" class="hamkelasi-import-preview hidden"></div><button id="hamkelasi-import-submit" class="primary" type="button" disabled>بررسی و انتقال تکالیف</button><p id="hamkelasi-import-message" class="message" role="status"></p></div><div class="settings-block"><div><h3>اعلان پیام‌ها</h3><p class="muted">اعلان پیام‌ها، اطلاعیه‌ها و مطالب تازه در فهرست اعلان‌های سایت ثبت می‌شود. برای دریافت زنده باید سایت باز باشد؛ اعلان گوشی در پس‌زمینه فقط تا زمانی ممکن است که صفحه فعال بماند.</p><p id="push-status" class="message" role="status">وضعیت اعلان در حال بررسی...</p></div><button id="enable-push" class="secondary" type="button">فعال‌سازی اعلان‌های گوشی</button><button id="test-push" class="secondary" type="button">ارسال اعلان آزمایشی</button></div>
            <button class="primary" type="submit">ذخیره تنظیمات</button>
         </form>
       </section>
