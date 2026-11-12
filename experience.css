@@ -301,3 +301,5 @@ input,select,textarea,button {max-width:100%;min-width:0}
  #app-view .stat-card span{font-size:10px!important}
  #app-view .stat-card b{font-size:18px!important}
 }
+
+.hamkelasi-portal-link{display:inline-flex;align-items:center;justify-content:center;padding:11px 16px;border-radius:12px;text-decoration:none;font-weight:800;font-size:13px;background:#17395b;border:1px solid #3d79a8;color:#eaf8ff;min-height:42px}.hamkelasi-portal-link:hover{filter:brightness(1.12)}
