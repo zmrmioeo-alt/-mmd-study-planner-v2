@@ -594,7 +594,7 @@ $("chat-input")?.addEventListener("input",()=>{if(chatChannel&&chatTargetUserId)
 $("chat-form").addEventListener("submit",async e=>{e.preventDefault();if(!chatTargetUserId)return;const btn=e.submitter||$("chat-form").querySelector('button[type="submit"]'),body=$("chat-input").value.trim(),file=$("chat-file").files[0];if(!body&&!file)return;if(btn)btn.disabled=true;try{let path=null,type=null;if(file){if(file.size>52428800)throw Error("حداکثر حجم فایل ۵۰ مگابایت است.");path=currentUser.id+"/"+makeUUID()+"-"+file.name.replace(/[^a-zA-Z0-9._-]/g,"_");const compressed=await compressUploadFile(file);path=currentUser.id+"/"+makeUUID()+"-"+compressed.name.replace(/[^a-zA-Z0-9._-]/g,"_");const up=await db.storage.from("private-chat-media").upload(path,compressed,{contentType:compressed.type});if(up.error)throw up.error;type=compressed.type}const messageId=makeUUID();const r=await db.from("private_messages").insert({id:messageId,conversation_id:chatTargetUserId,sender_id:currentUser.id,body,media_path:path,media_type:type});if(r.error)throw r.error;pushApi("send",{conversation_id:chatTargetUserId,message_id:messageId}).catch(err=>console.debug("Push message notice skipped",err));$("chat-input").value="";$("chat-file").value="";clearChatFilePreview();await loadSupportChat()}catch(x){message("chat-message",x.message,true)}finally{if(btn)btn.disabled=false}});
 $("chat-messages").addEventListener("click",async e=>{const ab=e.target.closest("[data-admin-delete-msg]");const b=e.target.closest("[data-delete-msg]");if(!ab&&!b)return;const id=ab?.dataset.adminDeleteMsg||b?.dataset.deleteMsg;if(ab&&!profile?.is_admin){message("chat-message","دسترسی حذف مدیریتی ندارید.",true);return}if(!confirm(ab?"این پیام و پیوست آن برای هر دو طرف حذف شود؟":"پیام و پیوست آن حذف شود؟"))return;const btn=ab||b;btn.disabled=true;try{const q=await db.from("private_messages").select("id,sender_id,media_path").eq("id",id).maybeSingle();if(q.error)throw q.error;if(!q.data)throw new Error("پیام پیدا نشد یا قبلاً حذف شده است.");if(!ab&&q.data.sender_id!==currentUser.id)throw new Error("فقط پیام خودتان را می‌توانید حذف کنید.");if(q.data.media_path){const rm=await db.storage.from("private-chat-media").remove([q.data.media_path]);if(rm.error)throw rm.error}const d=await db.from("private_messages").delete().eq("id",id).select("id");if(d.error)throw d.error;if(!d.data?.length)throw new Error("حذف انجام نشد؛ مجوز پایگاه داده اجازه نداد.");await loadSupportChat();message("chat-message","پیام حذف شد.")}catch(err){console.error("Message delete failed",err);message("chat-message","حذف پیام ناموفق بود: "+err.message,true);btn.disabled=false}});
 
-function navigate(page,chatTargetId=null){if(page==="admin"&&!isManagementAdmin()){toast("دسترسی مدیریت کاربران برای این حساب فعال نیست.");page="today";} $("chat-content")?.classList.remove("focused-chat");if(page==="chat"&&!featureFlags.chat_enabled&&!profile?.is_admin){toast("بخش چت غیرفعال است.");page="today"}if(page==="humor"&&!featureFlags.humor_enabled&&!profile?.is_admin){toast("بخش همتانه غیرفعال است.");page="today"}document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));show("page-"+page,true);document.querySelectorAll(".nav-link").forEach(b=>b.classList.toggle("active",b.dataset.page===page));const titles={"public-profile":"پروفایل کاربر",today:"امروز","today-work":"کارهای امروز",profile:"پروفایل من",announcements:"اعلان‌ها",contact:"ارتباط با ادمین",chat:"پیام‌رسان",smart:"برنامه‌ریز هوشمند",tasks:"وظایف و تکالیف",programs:"همه برنامه‌ها",routines:"برنامه ثابت",reports:"گزارش پیشرفت",settings:"تنظیمات",hamkelasi:"همکلاسی",admin:"مدیریت کاربران"};if(page==="smart"&&!smartEnabled())page="today";$("page-title").textContent=titles[page]||"امروز";if(page==="admin")loadAdminUsers().catch(e=>message("admin-message",e.message,true));if(page==="chat"){chatTargetUserId=chatTargetId||null;show("chat-content",true);loadSupportChat().then(startChatRealtime).catch(e=>message("chat-message",e.message,true))}else stopChatRealtime();if(page==="humor"){loadHumorFeed().catch(e=>toast(e.message))}}
+function navigate(page,chatTargetId=null){if(page==="admin"&&!isManagementAdmin()){toast("دسترسی مدیریت کاربران برای این حساب فعال نیست.");page="today";} $("chat-content")?.classList.remove("focused-chat");if(page==="chat"&&!featureFlags.chat_enabled&&!profile?.is_admin){toast("بخش چت غیرفعال است.");page="today"}if(page==="humor"&&!featureFlags.humor_enabled&&!profile?.is_admin){toast("بخش همتانه غیرفعال است.");page="today"}document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));show("page-"+page,true);document.querySelectorAll(".nav-link").forEach(b=>b.classList.toggle("active",b.dataset.page===page));const titles={"public-profile":"پروفایل کاربر",today:"امروز","today-work":"کارهای امروز",profile:"پروفایل من",announcements:"اعلان‌ها",contact:"ارتباط با ادمین",chat:"پیام‌رسان",smart:"برنامه‌ریز هوشمند",tasks:"وظایف و تکالیف",programs:"همه برنامه‌ها",routines:"برنامه ثابت",reports:"گزارش پیشرفت",settings:"تنظیمات",hamkelasi:"همکلاسی",games:"بازی و رکوردها",admin:"مدیریت کاربران"};if(page==="smart"&&!smartEnabled())page="today";$("page-title").textContent=titles[page]||"امروز";if(page==="admin")loadAdminUsers().catch(e=>message("admin-message",e.message,true));if(page==="chat"){chatTargetUserId=chatTargetId||null;show("chat-content",true);loadSupportChat().then(startChatRealtime).catch(e=>message("chat-message",e.message,true))}else stopChatRealtime();if(page==="humor"){loadHumorFeed().catch(e=>toast(e.message))}if(page==="games"){loadGameLeaderboard().catch(e=>setGameMessage(e.message,true))}}
 document.querySelector("#page-public-profile [data-page=humor]")?.addEventListener("click",()=>navigate("humor"));
 document.querySelectorAll("[data-filter]").forEach(b=>b.addEventListener("click",()=>{taskFilter=b.dataset.filter;document.querySelectorAll("[data-filter]").forEach(x=>x.classList.toggle("active",x===b));renderTasks()}));
 $("smart-planner-toggle").addEventListener("change",e=>{if(e.target.checked)localStorage.setItem(smartKey(),"on");else localStorage.removeItem(smartKey());syncSmartPlanner();toast(e.target.checked?"برنامه‌ریز هوشمند فعال شد.":"برنامه‌ریز هوشمند غیرفعال شد.");});
@@ -1420,3 +1420,56 @@ boot().catch(err=>{console.error(err);show("app-view",false);show("auth-view",tr
   finally{button.disabled=!parsed.length}
  });
 })();
+
+
+/* UPLAND ARCADE — shared ten-second tap leaderboard */
+let gameActive=false,gameScore=0,gameDeadline=0,gameTimerHandle=null,gameBest=0;
+function setGameMessage(text,isError=false){const el=$("game-message");if(el){el.textContent=text;el.classList.toggle("error",!!isError)}}
+function renderGameLeaderboard(rows){
+ const podium=$("game-podium"),list=$("game-leaderboard-list");if(!podium||!list)return;
+ podium.innerHTML="";list.innerHTML="";
+ if(!rows.length){podium.innerHTML='<div class="empty">هنوز رکوردی ثبت نشده؛ اولین نفر باش!</div>';return}
+ const medals=["🥇","🥈","🥉"],classes=["first","second","third"];
+ rows.slice(0,3).forEach((r,i)=>{const card=document.createElement("div");card.className="game-podium-card "+classes[i];const medal=document.createElement("span");medal.className="game-medal";medal.textContent=medals[i];const name=document.createElement("b");name.textContent=r.display_name||"دانش‌آموز";const score=document.createElement("strong");score.textContent=fa(r.best_score);const unit=document.createElement("small");unit.textContent="کلیک";card.append(medal,name,score,unit);podium.append(card)});
+ rows.slice(3).forEach((r,i)=>{const li=document.createElement("li");const rank=document.createElement("span");rank.className="game-rank";rank.textContent=fa(i+4);const name=document.createElement("b");name.textContent=r.display_name||"دانش‌آموز";const score=document.createElement("strong");score.textContent=fa(r.best_score)+" کلیک";li.append(rank,name,score);list.append(li)});
+}
+async function loadGameLeaderboard(){
+ if(!currentUser)return;
+ const personal=await db.from("game_records").select("best_score").eq("user_id",currentUser.id).eq("game_key","tap-10s").maybeSingle();
+ if(personal.error)throw personal.error;
+ gameBest=Number(personal.data?.best_score||0);
+ $("game-personal-record").textContent=gameBest?fa(gameBest):"—";
+ const result=await db.from("game_records").select("user_id,best_score,updated_at").eq("game_key","tap-10s").order("best_score",{ascending:false}).order("updated_at",{ascending:true}).limit(20);
+ if(result.error)throw result.error;
+ const ids=[...new Set((result.data||[]).map(x=>x.user_id))];
+ let names={};
+ if(ids.length){const people=await db.from("public_profiles").select("id,display_name").in("id",ids);if(!people.error)for(const p of people.data||[])names[p.id]=p.display_name}
+ const rows=(result.data||[]).map(x=>({...x,display_name:names[x.user_id]||"دانش‌آموز"}));
+ renderGameLeaderboard(rows);
+}
+async function saveGameRecord(score){
+ if(score<=gameBest)return;
+ const {error}=await db.from("game_records").upsert({user_id:currentUser.id,game_key:"tap-10s",best_score:score,updated_at:new Date().toISOString()},{onConflict:"user_id,game_key"});
+ if(error)throw error;
+ gameBest=score;$("game-personal-record").textContent=fa(score);
+ setGameMessage("رکورد جدید ثبت شد؛ در جدول رقابت قرار گرفتی.");
+ await loadGameLeaderboard();
+}
+function finishTapGame(){
+ if(!gameActive)return;
+ gameActive=false;if(gameTimerHandle)clearInterval(gameTimerHandle);gameTimerHandle=null;
+ $("game-tap").disabled=true;$("game-start").disabled=false;$("game-start").textContent="دوباره بازی کن";$("game-timer").textContent="۰";
+ setGameMessage("زمان تمام شد؛ امتیاز این دور: "+fa(gameScore)+" کلیک.");
+ saveGameRecord(gameScore).catch(e=>setGameMessage("ثبت رکورد ناموفق بود: "+e.message,true));
+}
+function startTapGame(){
+ if(!currentUser){setGameMessage("برای بازی ابتدا وارد حساب شو.",true);return}
+ if(gameActive)return;
+ gameScore=0;gameActive=true;gameDeadline=performance.now()+10000;
+ $("game-score").textContent="۰";$("game-timer").textContent="۱۰";$("game-tap").disabled=false;$("game-start").disabled=true;
+ setGameMessage("شروع شد! سریع کلیک کن.");
+ gameTimerHandle=setInterval(()=>{const left=Math.max(0,gameDeadline-performance.now());$("game-timer").textContent=fa(Math.ceil(left/1000));if(left<=0)finishTapGame()},40);
+}
+$("game-start")?.addEventListener("click",startTapGame);
+$("game-tap")?.addEventListener("click",()=>{if(!gameActive)return;if(performance.now()>=gameDeadline){finishTapGame();return}gameScore++;$("game-score").textContent=fa(gameScore)});
+$("game-refresh")?.addEventListener("click",()=>loadGameLeaderboard().then(()=>setGameMessage("جدول رکوردها به‌روز شد.")).catch(e=>setGameMessage(e.message,true)));
