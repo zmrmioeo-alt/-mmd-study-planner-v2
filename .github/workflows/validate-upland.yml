@@ -37,8 +37,8 @@ jobs:
           const fs = require('fs');
           const html = fs.readFileSync('index.html','utf8');
           const js = fs.readFileSync('app.js','utf8');
-          const ids = new Set([...html.matchAll(/\\bid=[\"']([^\"']+)[\"']/g)].map(m=>m[1]));
-          const missing = [...js.matchAll(/\\$\\([\"']([^\"']+)[\"']\\)\\.addEventListener/g)].map(m=>m[1]).filter(id=>!ids.has(id));
+          const ids = new Set([...html.matchAll(/\bid=[\"']([^\"']+)[\"']/g)].map(m=>m[1]));
+          const missing = [...js.matchAll(/\$\([\"']([^\"']+)[\"']\)\\.addEventListener/g)].map(m=>m[1]).filter(id=>!ids.has(id));
           if (missing.length) { console.error('Missing listener targets:', [...new Set(missing)]); process.exit(1); }
           console.log('Static listener targets:', ids.size, 'HTML IDs; no missing targets');
           NODE
