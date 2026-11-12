@@ -12,9 +12,9 @@
   "theme_color": "#050a16",
   "icons": [
     {
-      "src": "./assets/upland-logo.webp",
-      "sizes": "320x320",
-      "type": "image/webp",
+      "src": "./assets/upland-logo-original.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
       "purpose": "any"
     }
   ]
