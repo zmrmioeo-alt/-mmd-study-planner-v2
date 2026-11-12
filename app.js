@@ -357,6 +357,7 @@ document.addEventListener("click",async e=>{
 let chatChannel=null,chatTargetUserId=null,messageNoticeChannel=null,chatTypingResetTimer=null;
 let notificationAudioContext=null,inAppNotifications=[];
 const notificationKey=()=> "mmd_inapp_notifications_"+(currentUser?.id||"guest");
+const notificationPrefKey=name=>"upland_"+name+"_"+(currentUser?.id||"guest");
 function loadInAppNotifications(){try{const saved=JSON.parse(localStorage.getItem(notificationKey())||"[]");inAppNotifications=Array.isArray(saved)?saved.slice(0,40):[]}catch(_){inAppNotifications=[]}renderNotificationCenter()}
 function saveInAppNotifications(){try{localStorage.setItem(notificationKey(),JSON.stringify(inAppNotifications.slice(0,40)))}catch(e){console.warn("Notification history could not be saved",e)}}
 function renderNotificationCenter(){
@@ -367,7 +368,7 @@ function renderNotificationCenter(){
  list.innerHTML=inAppNotifications.length?inAppNotifications.map(n=>'<button type="button" class="notification-item '+(n.read?"is-read":"is-unread")+'" data-notification-page="'+escapeHtml(n.page||"today")+'" data-notification-id="'+escapeHtml(n.id)+'" data-notification-chat-target="'+escapeHtml(n.chatTargetId||"")+'"><span class="notification-item-dot"></span><span class="notification-item-copy"><b>'+escapeHtml(n.title)+'</b><small>'+escapeHtml(n.body)+'</small><time>'+escapeHtml(n.timeLabel||"")+'</time></span></button>').join(""):'<p class="notification-empty">هنوز اعلانی دریافت نکرده‌ای.</p>';
 }
 function addInAppNotification(title,body,tag,page="today",chatTargetId=null){
- if(!currentUser||localStorage.getItem("mmd_inapp_notifications")==="off")return;
+ if(!currentUser||localStorage.getItem(notificationPrefKey("inapp_notifications"))==="off")return;
  if(tag&&inAppNotifications.some(n=>n.id===tag))return;
  const now=new Date();
  inAppNotifications.unshift({id:tag||makeUUID(),title:String(title||"اعلان جدید").slice(0,120),body:String(body||"").slice(0,240),page,chatTargetId:chatTargetId||null,createdAt:now.toISOString(),timeLabel:new Intl.DateTimeFormat("fa-IR",{dateStyle:"short",timeStyle:"short"}).format(now),read:false});
@@ -384,11 +385,11 @@ $("notification-popup-close")?.addEventListener("click",closeNotificationPopup);
 $("notification-popup-dismiss")?.addEventListener("click",closeNotificationPopup);
 $("notification-popup-open")?.addEventListener("click",()=>{closeNotificationPopup();navigate(activeNotificationPopupPage,activeNotificationChatTarget)});
 async function notifyLiveEvent(title,body,tag,page,chatTargetId=null){
- if(localStorage.getItem("mmd_inapp_notifications")==="off")return;
+ if(localStorage.getItem(notificationPrefKey("inapp_notifications"))==="off")return;
  const isNew=!(tag&&inAppNotifications.some(n=>n.id===tag));
  addInAppNotification(title,body,tag,page,chatTargetId);
  if(isNew&&document.visibilityState==="visible"){playShortNotificationTone();showNotificationPopup(title,body,page,chatTargetId)}
- if(localStorage.getItem("mmd_browser_notifications")==="on"&&"Notification"in window&&Notification.permission==="granted"){
+ if(localStorage.getItem(notificationPrefKey("browser_notifications"))==="on"&&"Notification"in window&&Notification.permission==="granted"){
   try{const reg=await navigator.serviceWorker?.getRegistration();const targetUrl=page==="chat"&&chatTargetId?"./?page=chat&chatTarget="+encodeURIComponent(chatTargetId):"./?page="+encodeURIComponent(page||"today");if(reg)await reg.showNotification(title,{body,icon:"./assets/upland-logo-original.svg",badge:"./assets/upland-logo-original.svg",tag,renotify:true,data:{url:targetUrl}});else new Notification(title,{body,tag})}catch(err){console.debug("Browser notification unavailable",err)}
  }
 }
@@ -408,7 +409,7 @@ async function syncPushStatus(){
  const el=$("push-status"),btn=$("enable-push");if(!el)return;
  let devicePush=false;
  try{const reg=await navigator.serviceWorker?.getRegistration();devicePush=!!(await reg?.pushManager?.getSubscription())}catch(_){}
- const inAppEnabled=localStorage.getItem("mmd_inapp_notifications")!=="off";
+ const inAppEnabled=localStorage.getItem(notificationPrefKey("inapp_notifications"))!=="off";
  el.textContent=devicePush?"اعلان داخل سایت و اعلان پس‌زمینه این دستگاه فعال است.":(inAppEnabled?"اعلان داخل سایت فعال است؛ اعلان پس‌زمینه گوشی هنوز فعال نشده.":"اعلان‌ها در این دستگاه غیرفعال است.");
  if(btn)btn.textContent=devicePush?"غیرفعال‌کردن اعلان‌های گوشی":"فعال‌سازی اعلان‌های گوشی";
  const test=$("test-push");if(test)test.textContent="ارسال اعلان آزمایشی به گوشی";
@@ -421,7 +422,7 @@ async function enablePushNotifications(){
   if(existing){
    await pushApi("unsubscribe",{endpoint:existing.endpoint});
    await existing.unsubscribe();
-   localStorage.setItem("mmd_inapp_notifications","off");localStorage.setItem("mmd_browser_notifications","off");
+   localStorage.setItem(notificationPrefKey("inapp_notifications"),"off");localStorage.setItem(notificationPrefKey("browser_notifications"),"off");
    toast("اعلان‌های گوشی در این دستگاه غیرفعال شدند.");
   }else{
    if(!("serviceWorker"in navigator)||!("PushManager"in window))throw new Error("مرورگر یا حالت نصب‌شده از اعلان پس‌زمینه پشتیبانی نمی‌کند.");
@@ -431,7 +432,7 @@ async function enablePushNotifications(){
    const keyInfo=await pushApi("public_key");if(!keyInfo.publicKey)throw new Error("کلید عمومی اعلان روی سرور تنظیم نشده است.");
    const sub=await registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:pushKeyBytes(keyInfo.publicKey)});
    await pushApi("subscribe",{subscription:sub.toJSON()});
-   localStorage.setItem("mmd_inapp_notifications","on");localStorage.setItem("mmd_browser_notifications","on");
+   localStorage.setItem(notificationPrefKey("inapp_notifications"),"on");localStorage.setItem(notificationPrefKey("browser_notifications"),"on");
    toast("اعلان‌های گوشی برای این حساب فعال شد.");
   }
  }catch(err){toast(err.message||"فعال‌سازی اعلان انجام نشد.");}
