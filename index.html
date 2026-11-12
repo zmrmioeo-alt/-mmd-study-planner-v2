@@ -25,7 +25,7 @@
 <body>
   <div id="startup-overlay" class="startup-overlay hidden" role="status" aria-live="polite" aria-label="در حال به‌روزرسانی برنامه">
     <div class="startup-card">
-      <div class="startup-mark">UPLAND<label>مدت‌زمان (دقیقه)<input id="routine-duration" type="number" min="5" max="720" step="5" value="60" required></label></div>
+      <div class="startup-mark">UPLAND</div>
       <div class="startup-spinner" aria-hidden="true"></div>
       <h1>در حال به‌روزرسانی برنامه...</h1>
       <p id="startup-status">در حال دریافت آخرین اطلاعات حساب شما</p>
@@ -186,7 +186,7 @@
         <form id="routine-form" class="form-panel">
           <label>عنوان برنامه<input id="routine-title" required maxlength="120" placeholder="مثلاً مطالعه زبان"></label>
           <label>توضیحات<input id="routine-details" maxlength="250" placeholder="جزئیات اختیاری"></label>
-          <div class="form-row"><label>روز هفته<select id="routine-weekday"><option value="6">شنبه</option><option value="0">یکشنبه</option><option value="1">دوشنبه</option><option value="2">سه‌شنبه</option><option value="3">چهارشنبه</option><option value="4">پنجشنبه</option><option value="5">جمعه</option></select></label><label>ساعت<input id="routine-time" type="time"></label></div>
+          <div class="form-row"><label>روز هفته<select id="routine-weekday"><option value="6">شنبه</option><option value="0">یکشنبه</option><option value="1">دوشنبه</option><option value="2">سه‌شنبه</option><option value="3">چهارشنبه</option><option value="4">پنجشنبه</option><option value="5">جمعه</option></select></label><label>ساعت<input id="routine-time" type="time"></label><label>مدت‌زمان (دقیقه)<input id="routine-duration" type="number" min="5" max="720" step="5" value="60" required></label></div>
           <button class="primary" type="submit">افزودن به برنامه</button>
         </form>
         <div id="routine-list" class="routine-grid"></div>
