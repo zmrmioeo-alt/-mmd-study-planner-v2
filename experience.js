@@ -48,6 +48,12 @@ function enhanceChat(){
    try{
     stream=await navigator.mediaDevices.getUserMedia({audio:true});chunks=[];recorder=new MediaRecorder(stream);recordStarted=Date.now();
     recorder.ondataavailable=e=>{if(e.data?.size)chunks.push(e.data)};
+    recorder.onerror=()=>{
+     if(recordLimit)clearTimeout(recordLimit);recordLimit=null;
+     stream?.getTracks().forEach(t=>t.stop());stream=null;
+     record.textContent="● ضبط صدا";record.classList.remove("recording");
+     if(recordState)recordState.textContent="ضبط صدا به‌دلیل خطای میکروفون متوقف شد؛ دوباره تلاش کن.";
+    };
     recorder.onstop=()=>{
      if(recordLimit)clearTimeout(recordLimit);recordLimit=null;
      const elapsed=Math.round((Date.now()-recordStarted)/1000);
@@ -58,7 +64,8 @@ function enhanceChat(){
       if(!input)throw new Error("بخش پیوست پیام در دسترس نیست.");
       if(!window.DataTransfer)throw new Error("این مرورگر افزودن خودکار فایل صوتی را پشتیبانی نمی‌کند.");
       if(!blob.size)throw new Error("صدایی ضبط نشد؛ دوباره تلاش کن.");
-      const file=new File([blob],"upland-voice-"+Date.now()+".webm",{type:blob.type});
+      const mime=String(blob.type||"audio/webm").toLowerCase(),extension=mime.includes("mp4")?"m4a":mime.includes("ogg")?"ogg":mime.includes("wav")?"wav":"webm";
+      const file=new File([blob],"upland-voice-"+Date.now()+"."+extension,{type:blob.type||"audio/webm"});
       const transfer=new DataTransfer();transfer.items.add(file);input.files=transfer.files;
       input.dispatchEvent(new Event("change",{bubbles:true}));
       const textInput=$("chat-input");if(textInput)textInput.value=textInput.value.trim();
