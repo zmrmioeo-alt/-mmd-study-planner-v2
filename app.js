@@ -408,20 +408,20 @@ async function syncPushStatus(){
 async function enablePushNotifications(){
  const btn=$("enable-push");if(btn)btn.disabled=true;
  try{
-  const enabled=localStorage.getItem("mmd_inapp_notifications")!=="off";
-  if(enabled){
-   const reg=await navigator.serviceWorker?.getRegistration(),sub=await reg?.pushManager?.getSubscription();
-   if(sub){await pushApi("unsubscribe",{endpoint:sub.endpoint});await sub.unsubscribe()}
+  const reg=await navigator.serviceWorker?.getRegistration();
+  const existing=await reg?.pushManager?.getSubscription();
+  if(existing){
+   await pushApi("unsubscribe",{endpoint:existing.endpoint});
+   await existing.unsubscribe();
    localStorage.setItem("mmd_inapp_notifications","off");localStorage.setItem("mmd_browser_notifications","off");
-   toast("اعلان‌ها در این دستگاه غیرفعال شدند.");
+   toast("اعلان‌های گوشی در این دستگاه غیرفعال شدند.");
   }else{
    if(!("serviceWorker"in navigator)||!("PushManager"in window))throw new Error("مرورگر یا حالت نصب‌شده از اعلان پس‌زمینه پشتیبانی نمی‌کند.");
    if(!("Notification"in window))throw new Error("این مرورگر از اعلان گوشی پشتیبانی نمی‌کند.");
    const permission=await Notification.requestPermission();if(permission!=="granted")throw new Error("اجازه نمایش اعلان داده نشد.");
-   const reg=await navigator.serviceWorker.register("./service-worker.js");await navigator.serviceWorker.ready;
+   const registration=await navigator.serviceWorker.register("./service-worker.js");await navigator.serviceWorker.ready;
    const keyInfo=await pushApi("public_key");if(!keyInfo.publicKey)throw new Error("کلید عمومی اعلان روی سرور تنظیم نشده است.");
-   let sub=await reg.pushManager.getSubscription();
-   if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:pushKeyBytes(keyInfo.publicKey)});
+   const sub=await registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:pushKeyBytes(keyInfo.publicKey)});
    await pushApi("subscribe",{subscription:sub.toJSON()});
    localStorage.setItem("mmd_inapp_notifications","on");localStorage.setItem("mmd_browser_notifications","on");
    toast("اعلان‌های گوشی برای این حساب فعال شد.");
