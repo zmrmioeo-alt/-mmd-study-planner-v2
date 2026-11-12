@@ -5,7 +5,7 @@ self.addEventListener("install",event=>{event.waitUntil(caches.open(CACHE_NAME).
 self.addEventListener("activate",event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE_NAME).map(key=>caches.delete(key)))).then(()=>self.clients.claim()))});
 self.addEventListener("push",event=>{
  let payload={};try{payload=event.data?event.data.json():{}}catch(_){payload={body:event.data?.text()||"پیام جدید"}}
- const title=payload.title||"پیام جدید در UP LAND";
+ const title=payload.title||"پیام جدید در UPLAND";
  event.waitUntil(self.registration.showNotification(title,{body:payload.body||"یک پیام جدید دریافت کردی.",icon:"./assets/upland-icon.svg",badge:"./assets/upland-icon-192.svg",tag:payload.tag||"mmd-message",renotify:true,vibrate:[100,50,100],data:{url:payload.url||"./"}}));
 });
 self.addEventListener("notificationclick",event=>{
