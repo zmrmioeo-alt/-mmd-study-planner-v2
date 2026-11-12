@@ -129,3 +129,62 @@ body{font-family:"Vazirmatn",Tahoma,sans-serif!important}
 @media(max-width:900px){#app-view .main{padding:14px 12px 36px!important}#app-view .topbar{padding:13px 14px!important;margin-bottom:18px!important}#app-view .sidebar{box-shadow:0 20px 60px #0009!important}#app-view .welcome-panel{border-radius:18px!important}#app-view .stats-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important}#app-view .stat-card{padding:13px 10px!important}#app-view .stat-card b{font-size:22px!important}#app-view .form-panel{padding:16px!important}#app-view .chat-layout{grid-template-columns:1fr!important}#app-view .chat-bubble{max-width:88%!important}}
 @media(max-width:520px){#app-view .topbar{align-items:flex-start!important;gap:8px!important}#app-view .topbar-actions{gap:6px!important}#app-view .date-pill{font-size:10px!important;padding:7px 9px!important}#app-view .section-head{gap:10px!important;align-items:flex-start!important}#app-view .section-head .primary,#app-view .section-head .secondary{white-space:nowrap!important;font-size:11px!important;padding:9px 10px!important}#app-view .stats-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}#app-view .stat-card span{font-size:10px!important}#app-view .stat-card b{font-size:19px!important}#ux-feed-tools{padding:9px;gap:6px}#ux-feed-tools .ux-tool-chip{font-size:10px;padding:7px 9px}#ux-feed-count{width:100%;text-align:left}#app-view .community-post{padding:13px!important}}
 @media(prefers-reduced-motion:reduce){#app-view .page{animation:none!important}}
+
+
+/* UPLAND 2.5.13 — logo visibility and mobile layout corrections */
+.brand-mark,
+#app-view .brand-mark.small,
+.brand-mark.small {
+  background-image:url("./assets/upland-logo-original.svg")!important;
+  background-position:center!important;
+  background-repeat:no-repeat!important;
+  background-size:contain!important;
+  background-color:#07152b!important;
+  color:transparent!important;
+  font-size:0!important;
+}
+.brand-mark::before,
+.brand-mark::after,
+#app-view .brand-mark.small::after {
+  content:none!important;
+  display:none!important;
+}
+.brand-mark.small {flex:0 0 auto!important}
+img,video,canvas,svg {max-width:100%}
+input,select,textarea,button {max-width:100%;min-width:0}
+.app-shell,.app-shell>* ,.main,.main>* {min-width:0}
+.main {width:100%;max-width:100%;overflow-x:clip}
+.main .form-row,.main .planner-hours-grid,.main .planner-week-grid,
+.main .chat-layout,.main .community-feed {min-width:0;max-width:100%}
+.main .welcome-panel,.main .topbar,.main .topbar-actions,
+.main .post-comment-form,.main .chat-compose {min-width:0;max-width:100%}
+.main .post-body,.main p,.main h1,.main h2,.main h3,
+.main label,.main button,.main a {overflow-wrap:anywhere}
+@media(max-width:850px){
+  #app-view.app-shell {display:grid!important;grid-template-columns:minmax(0,1fr)!important;grid-template-areas:none!important;width:100%!important;max-width:100vw!important;overflow-x:clip!important}
+  #app-view>.main {grid-column:1/-1!important;width:100%!important;min-width:0!important;max-width:100%!important;padding:12px 12px 30px!important}
+  #app-view>.sidebar {max-width:calc(100vw - 24px)!important}
+  #app-view .topbar {display:flex!important;flex-wrap:wrap!important;align-items:center!important;gap:10px!important;width:100%!important}
+  #app-view .topbar-title {min-width:0!important;flex:1 1 170px!important}
+  #app-view .topbar-actions {display:flex!important;flex:0 1 auto!important;flex-wrap:wrap!important;gap:7px!important}
+  #app-view .welcome-panel {flex-wrap:wrap!important;gap:14px!important;min-width:0!important;padding:22px!important}
+  #app-view .stats-grid {grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}
+  #app-view .stat-card {min-width:0!important;padding:14px!important}
+  #app-view .form-row,#app-view .routine-grid {grid-template-columns:minmax(0,1fr)!important}
+  #app-view .chat-layout {grid-template-columns:minmax(0,1fr)!important;width:100%!important}
+  #app-view .chat-inbox,#app-view .chat-window,#app-view .chat-messages {min-width:0!important;width:100%!important}
+  #app-view .chat-compose {display:flex!important;flex-wrap:wrap!important;align-items:stretch!important}
+  #app-view .chat-compose textarea {flex:1 1 100%!important;width:100%!important}
+  #app-view .chat-compose button,#app-view .chat-compose .chat-attach {flex:0 1 auto!important}
+  #app-view .planner-hours-row {grid-template-columns:52px minmax(0,1fr) minmax(0,1fr)!important}
+  #app-view .community-feed {grid-template-columns:minmax(0,1fr)!important}
+}
+@media(max-width:560px){
+  #app-view>.main {padding-inline:10px!important}
+  #app-view .stats-grid {grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #app-view .topbar {padding:10px!important}
+  #app-view .topbar-title-row {min-width:0!important;flex-wrap:wrap!important}
+  #app-view .post-card,#app-view .form-panel,#app-view .stat-card {padding:12px!important}
+  #app-view .planner-hours-row {grid-template-columns:minmax(0,1fr)!important}
+  #app-view .chat-bubble {max-width:90%!important}
+}
