@@ -9,7 +9,10 @@ const version = JSON.parse(read("version.json"));
 const manifest = JSON.parse(read("manifest.webmanifest"));
 
 assert.match(version.version, /^\d+\.\d+\.\d+$/);
-assert.equal(version.release, "staging-preview", "This branch must remain a preview");
+assert.ok(["staging-preview", "production"].includes(version.release), "Release must be staging-preview or production");
+if (process.env.GITHUB_REF_NAME === "main") {
+  assert.equal(version.release, "production", "The main branch must contain a production release");
+}
 const normalizedHtml = html.replace(/[۰-۹]/g, (digit) => "۰۱۲۳۴۵۶۷۸۹".indexOf(digit));
 assert.ok(normalizedHtml.includes("نسخه " + version.version), "Visible footer version must match version.json");
 assert.equal(manifest.name, "UPLAND");
