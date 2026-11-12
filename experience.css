@@ -28,3 +28,9 @@ input,textarea,select{background:#071327!important;color:#f0f6ff!important;borde
 
 #app-view .brand-mark.small{background-size:68px 68px!important;background-position:center top!important;overflow:hidden!important}
 #chat-peer-status{color:#84bdff!important}
+
+/* Fixed weekly commitments inside the planner */
+#smart-plan-output .planner-fixed{border:1px solid #2878c9!important;background:linear-gradient(120deg,#102d50,#0b1b32)!important;box-shadow:inset -3px 0 #20b9ff!important}
+#smart-plan-output .planner-fixed .planner-task-top b{color:#a9dcff!important}
+#smart-plan-output .planner-fixed small{color:#8faed0!important}
+#smart-plan-output .planner-rest{border-color:#315078!important;background:#0b1729!important}
