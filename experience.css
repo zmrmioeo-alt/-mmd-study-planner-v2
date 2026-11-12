@@ -266,3 +266,38 @@ input,select,textarea,button {max-width:100%;min-width:0}
   #app-view .task-item{align-items:flex-start!important}
   #app-view .chat-compose button{flex:1 1 auto!important}
 }
+
+
+/* UPLAND 2.5.15 — mobile card geometry and dedicated Hamkelasi workspace */
+#app-view, #app-view *{box-sizing:border-box}
+#app-view .stat-card,#app-view .form-panel,#app-view .routine-card,#app-view .task-item,#app-view .post-card,#app-view .chat-inbox,#app-view .chat-window{height:auto;min-height:0}
+#app-view .stats-grid{align-items:stretch}
+#app-view .stat-card{display:flex;flex-direction:column;justify-content:center;gap:5px;min-height:88px}
+.hamkelasi-page-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;width:100%;min-width:0}
+.hamkelasi-consent-card,.hamkelasi-import-card{display:flex;flex-direction:column;gap:13px;width:100%;min-width:0;margin:0}
+.hamkelasi-consent-card .ai-sync-settings,.hamkelasi-import-card .hamkelasi-import-panel{width:100%;min-width:0;margin:0;padding:0;border:0;background:transparent;box-shadow:none}
+.hamkelasi-consent-card .ai-sync-actions{display:flex;flex-wrap:wrap;gap:9px}
+.hamkelasi-consent-card .ai-sync-actions button{flex:1 1 140px;min-width:0}
+.hamkelasi-import-card .hamkelasi-import-panel label{display:block;width:100%}
+.hamkelasi-import-card input[type=file]{width:100%;max-width:100%}
+.hamkelasi-notice{margin-top:14px;padding:15px 17px;border:1px solid #29476d;border-radius:15px;background:#0a172b;color:#c7d8ed;line-height:1.9}
+.hamkelasi-notice b{color:#8ccaff}.hamkelasi-notice p{margin:5px 0 0}
+@media(max-width:850px){
+ #app-view .stats-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important}
+ #app-view .stat-card{padding:10px!important;min-height:78px!important;border-radius:14px!important}
+ #app-view .stat-card span{font-size:11px!important;line-height:1.5!important}
+ #app-view .stat-card b{font-size:clamp(18px,5vw,23px)!important;line-height:1.2!important}
+ #app-view .section-head{align-items:flex-start!important;flex-wrap:wrap!important}
+ #app-view .section-head>*{min-width:0!important;max-width:100%!important}
+ #app-view .form-panel,#app-view .post-card,#app-view .routine-card,#app-view .task-item{width:100%!important;max-width:100%!important}
+ #app-view .settings-block{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:12px!important}
+ #app-view .settings-block>*{min-width:0!important;max-width:100%!important}
+ .hamkelasi-page-grid{grid-template-columns:minmax(0,1fr)!important;gap:11px!important}
+ .hamkelasi-notice{padding:12px!important;font-size:12px!important}
+}
+@media(max-width:360px){
+ #app-view .stats-grid{gap:5px!important}
+ #app-view .stat-card{padding:8px 5px!important;min-height:72px!important}
+ #app-view .stat-card span{font-size:10px!important}
+ #app-view .stat-card b{font-size:18px!important}
+}
