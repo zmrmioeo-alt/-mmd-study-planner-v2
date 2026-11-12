@@ -25,3 +25,6 @@ input,textarea,select{background:#071327!important;color:#f0f6ff!important;borde
 @media(max-width:640px){.ux-active-members{align-items:flex-start;flex-direction:column;gap:10px}.ux-active-list{width:100%}#ux-chat-tools{align-items:stretch}#ux-chat-tools input{flex-basis:100%}}
 
 .routine-card-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.routine-state{font-size:10px;padding:5px 9px;border-radius:999px;background:#103c70;color:#a9d7ff;border:1px solid #2a72b5}.routine-paused{opacity:.68;border-style:dashed!important}.routine-paused .routine-state{background:#2a3141;color:#a9b4c4;border-color:#4b5669}.routine-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}.routine-actions button{font-size:12px;padding:7px 11px!important}
+
+#app-view .brand-mark.small{background-size:68px 68px!important;background-position:center top!important;overflow:hidden!important}
+#chat-peer-status{color:#84bdff!important}
