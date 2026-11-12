@@ -2,6 +2,7 @@
 const SUPABASE_URL = "https://tbmxbtbayqgfvdlmeuaz.supabase.co";
 const SUPABASE_KEY = "sb_publishable_n89FjocOtomNmAReFaP-vg_PMFbVow3";
 const ADMIN_FUNCTION = SUPABASE_URL + "/functions/v1/admin-manage";
+const HAMKELASI_CONSENT_FUNCTION = SUPABASE_URL + "/functions/v1/hamkelasi-consent";
 const MANAGEMENT_ADMIN_IDS = new Set(["d32c5ceb-ca91-46c8-978c-fb3d33c45eca","9abd24a9-9fc4-48f9-8046-c45b27a52ec0","397bef6c-9fb3-4ab2-9a45-723b014c38f4","f6e434ad-3940-437a-82cf-777eecfbd512"]);
 const isManagementAdmin = () => !!currentUser && MANAGEMENT_ADMIN_IDS.has(currentUser.id);
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -256,7 +257,7 @@ async function enterApp(user){
   if(profile?.is_approved===false){show("app-view",false);show("auth-view",false);show("pending-approval-view",true);watchApprovalStatus();return;}
   if(approvalMonitorTimer){clearInterval(approvalMonitorTimer);approvalMonitorTimer=null;}
   await waitForStartup(loadFeatureFlags(),"تنظیمات سامانه");
-  const startupResults=await Promise.allSettled([waitForStartup(loadTasks(),"وظایف"),waitForStartup(loadRoutines(),"برنامه ثابت"),waitForStartup(loadSettings(),"تنظیمات شخصی"),waitForStartup(loadAnnouncements(),"اطلاعیه‌ها"),waitForStartup(loadHumorFeed(),"بخش همتانه",7000)]);const startupNames=["وظایف","برنامه ثابت","تنظیمات","اطلاعیه‌ها","بخش همتانه"];const startupErrors=startupResults.map((r,i)=>r.status==="rejected"?startupNames[i]+": "+(r.reason?.message||"خطای دریافت اطلاعات"):null).filter(Boolean);if(startupResults[0].status==="rejected")tasks=[];if(startupResults[1].status==="rejected")routines=[];if(startupResults[2].status==="rejected")settings={};if(startupResults[3].status==="rejected")window.__announcements=[];renderAll();promptHamkelasiConsentIfNeeded();syncSmartPlanner();try{startAnnouncementRealtime()}catch(e){console.warn("Announcement realtime unavailable",e)}startMessageRealtime().catch(e=>console.warn("Message realtime unavailable",e));try{startChatRealtime()}catch(e){console.warn("Chat realtime unavailable",e)}try{startCommunityRealtime()}catch(e){console.warn("Community realtime unavailable",e)}checkAppUpdateNotice();notifyUnreadMessagesOnEntry().catch(e=>console.warn("Unread message check unavailable",e));startUpdateMonitor();const notificationParams=new URLSearchParams(location.search);if(notificationParams.get("page")==="chat"){const target=notificationParams.get("chatTarget");if(target)navigate("chat",target);else navigate("chat")}if(startupErrors.length){console.error("Some startup data failed:",startupErrors);toast("برنامه باز شد، اما دریافت بعضی اطلاعات ناموفق بود: "+startupErrors.join(" | "))}
+  const startupResults=await Promise.allSettled([waitForStartup(loadTasks(),"وظایف"),waitForStartup(loadRoutines(),"برنامه ثابت"),waitForStartup(loadSettings(),"تنظیمات شخصی"),waitForStartup(loadAnnouncements(),"اطلاعیه‌ها"),waitForStartup(loadHumorFeed(),"بخش همتانه",7000)]);const startupNames=["وظایف","برنامه ثابت","تنظیمات","اطلاعیه‌ها","بخش همتانه"];const startupErrors=startupResults.map((r,i)=>r.status==="rejected"?startupNames[i]+": "+(r.reason?.message||"خطای دریافت اطلاعات"):null).filter(Boolean);if(startupResults[0].status==="rejected")tasks=[];if(startupResults[1].status==="rejected")routines=[];if(startupResults[2].status==="rejected")settings={};if(startupResults[3].status==="rejected")window.__announcements=[];renderAll();await promptHamkelasiConsentIfNeeded();syncSmartPlanner();try{startAnnouncementRealtime()}catch(e){console.warn("Announcement realtime unavailable",e)}startMessageRealtime().catch(e=>console.warn("Message realtime unavailable",e));try{startChatRealtime()}catch(e){console.warn("Chat realtime unavailable",e)}try{startCommunityRealtime()}catch(e){console.warn("Community realtime unavailable",e)}checkAppUpdateNotice();notifyUnreadMessagesOnEntry().catch(e=>console.warn("Unread message check unavailable",e));startUpdateMonitor();const notificationParams=new URLSearchParams(location.search);if(notificationParams.get("page")==="chat"){const target=notificationParams.get("chatTarget");if(target)navigate("chat",target);else navigate("chat")}if(startupErrors.length){console.error("Some startup data failed:",startupErrors);toast("برنامه باز شد، اما دریافت بعضی اطلاعات ناموفق بود: "+startupErrors.join(" | "))}
  }catch(err){console.error("App loading failed:",err);show("app-view",false);show("auth-view",true);show("login-card",true);message("auth-message","خطا در ورود: "+(err.message||"خطای نامشخص"),true);throw err}
  finally{show("startup-overlay",false);enteringUserId=null}
 }
@@ -792,37 +793,59 @@ document.addEventListener("click",async e=>{
  const b=e.target.closest("[data-plan-save]");if(!b)return;const id=b.dataset.planSave,date=document.querySelector("[data-plan-day='"+id+"']")?.value,time=document.querySelector("[data-plan-time='"+id+"']")?.value;if(!date||!time)return;await movePlannerTask(id,date,time)
 });
 
-function hamkelasiConsentKey(){return "upland_hamkelasi_consent_v1_"+(currentUser?.id||"guest")}
+let hamkelasiConsentState = null;
+async function callHamkelasiConsent(method="GET",state=null){
+ const {data:{session}}=await db.auth.getSession();
+ if(!session?.access_token)throw new Error("نشست ورود معتبر نیست.");
+ const response=await fetch(HAMKELASI_CONSENT_FUNCTION,{
+  method,
+  headers:{"Content-Type":"application/json","Authorization":"Bearer "+session.access_token,"apikey":SUPABASE_KEY},
+  ...(method==="POST"?{body:JSON.stringify({state})}:{})
+ });
+ const result=await response.json().catch(()=>({}));
+ if(!response.ok)throw new Error(result.error==="invalid_session"?"نشست ورود منقضی شده است.":result.error||"ثبت اجازه انجام نشد.");
+ return result.consent||null;
+}
 function renderHamkelasiConsent(){
- const state=localStorage.getItem(hamkelasiConsentKey());
+ const state=hamkelasiConsentState?.consent_state||null;
  const status=$("hamkelasi-consent-status");if(!status)return;
- status.textContent=state==="granted"?"اجازهٔ اولیه روی این دستگاه ثبت شده است؛ اتصال خودکار هنوز فعال نیست.":state==="declined"?"فعلاً اجازه نداده‌اید؛ هر زمان از همین بخش می‌توانید آن را فعال کنید.":"هنوز اجازه‌ای ثبت نشده است.";
- $("hamkelasi-consent-grant").disabled=state==="granted";
- $("hamkelasi-consent-revoke").disabled=state!=="granted";
+ status.textContent=state==="accepted"?"اجازهٔ شما ثبت شده است؛ اتصال همکلاسی هنوز فعال نشده است.":state==="declined"?"فعلاً اجازه نداده‌اید؛ هر زمان خواستید می‌توانید فعالش کنید.":state==="revoked"?"اجازهٔ دستیار لغو شده است.":"وضعیت اجازه هنوز دریافت نشده است.";
+ $("hamkelasi-consent-grant").disabled=state==="accepted";
+ $("hamkelasi-consent-revoke").disabled=state!=="accepted";
 }
 function closeHamkelasiConsent(){show("hamkelasi-consent-modal",false)}
-function promptHamkelasiConsentIfNeeded(){
+async function promptHamkelasiConsentIfNeeded(){
  if(!currentUser)return;
- if(!localStorage.getItem(hamkelasiConsentKey()))show("hamkelasi-consent-modal",true);
+ try{
+  hamkelasiConsentState=await callHamkelasiConsent("GET");
+  renderHamkelasiConsent();
+  if(!hamkelasiConsentState)show("hamkelasi-consent-modal",true);
+ }catch(error){
+  console.warn("Hamkelasi consent status unavailable",error);
+  const status=$("hamkelasi-consent-status");if(status)status.textContent="اتصال به سرویس اجازه برقرار نشد؛ بعداً دوباره تلاش کنید.";
+ }
 }
-$("hamkelasi-consent-accept").addEventListener("click",()=>{
+async function saveHamkelasiConsent(state){
  if(!currentUser)return;
- localStorage.setItem(hamkelasiConsentKey(),"granted");closeHamkelasiConsent();renderHamkelasiConsent();
- toast("اجازهٔ اولیه ثبت شد؛ همگام‌سازی تا آماده‌شدن اتصال امن غیرفعال می‌ماند.");
+ const buttons=["hamkelasi-consent-accept","hamkelasi-consent-decline","hamkelasi-consent-grant","hamkelasi-consent-revoke"];
+ buttons.forEach(id=>{if($(id))$(id).disabled=true});
+ try{
+  hamkelasiConsentState=await callHamkelasiConsent("POST",state);
+  renderHamkelasiConsent();
+  return true;
+ }catch(error){toast(error.message||"ثبت اجازه ناموفق بود.");renderHamkelasiConsent();return false}
+}
+$("hamkelasi-consent-accept").addEventListener("click",async()=>{
+ if(await saveHamkelasiConsent("accepted")){closeHamkelasiConsent();toast("اجازهٔ شما به‌صورت امن در حساب UP LAND ثبت شد؛ همگام‌سازی تا آماده‌شدن اتصال مجاز فعال نمی‌شود.")}
 });
-$("hamkelasi-consent-decline").addEventListener("click",()=>{
- if(!currentUser)return;
- localStorage.setItem(hamkelasiConsentKey(),"declined");closeHamkelasiConsent();renderHamkelasiConsent();
+$("hamkelasi-consent-decline").addEventListener("click",async()=>{
+ if(await saveHamkelasiConsent("declined"))closeHamkelasiConsent();
 });
-$("hamkelasi-consent-grant").addEventListener("click",()=>{
- if(!currentUser)return;
- localStorage.setItem(hamkelasiConsentKey(),"granted");renderHamkelasiConsent();
- toast("اجازهٔ اولیه ثبت شد؛ همگام‌سازی تا آماده‌شدن اتصال امن غیرفعال می‌ماند.");
+$("hamkelasi-consent-grant").addEventListener("click",async()=>{
+ if(await saveHamkelasiConsent("accepted"))toast("اجازهٔ دستیار ثبت شد؛ اتصال همکلاسی هنوز فعال نشده است.");
 });
-$("hamkelasi-consent-revoke").addEventListener("click",()=>{
- if(!currentUser)return;
- localStorage.removeItem(hamkelasiConsentKey());renderHamkelasiConsent();
- toast("اجازهٔ دستیار لغو شد.");
+$("hamkelasi-consent-revoke").addEventListener("click",async()=>{
+ if(await saveHamkelasiConsent("revoked"))toast("اجازهٔ دستیار لغو شد.");
 });
 $("settings-form").addEventListener("submit",async e=>{e.preventDefault();const row={user_id:currentUser.id,sleep_hours:$("sleep-hours").value?Number($("sleep-hours").value):null,wake_time:$("wake-time").value||null,theme:$("appearance").value,accent_theme:$("accent-theme").value,appearance:$("appearance").value,season_theme:$("season-theme").value,humor_enabled:$("humor-enabled").checked};const {error}=await db.from("planner_settings").upsert(row,{onConflict:"user_id"});if(error){toast(error.message);return}settings=row;profile.display_name=$("display-name").value.trim()||"کاربر";const {error:pe}=await db.from("profiles").update({display_name:profile.display_name}).eq("id",currentUser.id);if(pe){toast(pe.message);return} $("user-name").textContent=profile.display_name;$("user-avatar").textContent="👤";applyTheme(row.accent_theme,row.appearance,row.season_theme);updateHumor();toast("تنظیمات ذخیره شد.")});
 function applyTheme(accent="emerald",appearance="light",season="auto"){const m=new Date().getMonth()+1;const detected=m>=3&&m<=5?"spring":m>=6&&m<=8?"summer":m>=9&&m<=11?"autumn":"winter";document.body.dataset.theme=accent;document.body.dataset.appearance=appearance;document.body.dataset.season=season==="auto"?detected:season;document.body.classList.toggle("light",appearance==="light"||(appearance==="system"&&matchMedia("(prefers-color-scheme: light)").matches));document.documentElement.dataset.font="vazirmatn"}
