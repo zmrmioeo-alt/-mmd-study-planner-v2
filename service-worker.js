@@ -1,7 +1,17 @@
-const CACHE_NAME="upland-shell-v103";
+const CACHE_NAME="upland-shell-v104";
 const CORE=["./","./index.html","./install.html","./app.js","./planner-edit.js","./stickers.js","./style.css","./upland.css","./experience.css","./experience.js","./assets/upland-logo-original.svg","./assets/upland-install-icon.svg","./manifest.webmanifest","./version.json"];
 self.addEventListener("message",event=>{if(event.data?.type==="SKIP_WAITING")self.skipWaiting()});
-self.addEventListener("install",event=>{event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(CORE)).then(()=>self.skipWaiting()))});
+self.addEventListener("install",event=>{
+ event.waitUntil((async()=>{
+  const cache=await caches.open(CACHE_NAME);
+  // Cache each asset independently: one missing optional file must not cancel PWA installation.
+  await Promise.all(CORE.map(async url=>{
+   try{const response=await fetch(url,{cache:"reload"});if(response.ok)await cache.put(url,response);}
+   catch(error){console.warn("UPLAND cache skipped:",url,error);}
+  }));
+  await self.skipWaiting();
+ })());
+});
 self.addEventListener("activate",event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key!==CACHE_NAME).map(key=>caches.delete(key)))).then(()=>self.clients.claim()))});
 self.addEventListener("push",event=>{
  let payload={};try{payload=event.data?event.data.json():{}}catch(_){payload={body:event.data?.text()||"پیام جدید"}}
