@@ -876,11 +876,13 @@ function parseHamkelasiPortalSnapshot(snapshot){
 }
 async function syncHamkelasiFromNative(){
  const status=$("hamkelasi-import-message"),button=$("hamkelasi-native-sync");
- if(!window.Capacitor?.Plugins?.HamkelasiPortal){if(status)status.textContent="این قابلیت فقط در نسخهٔ نصب‌شدهٔ اندروید فعال است.";return}
+ if(!window.Capacitor?.Plugins?.HamkelasiPortal){if(status)status.textContent="ورود با اطلاعات حساب فقط در نسخهٔ نصب‌شدهٔ اندروید فعال است.";return}
  if((await callHamkelasiConsent("GET"))?.consent_state!=="accepted"){toast("ابتدا اجازهٔ دستیار همکلاسی را ثبت کنید.");show("hamkelasi-consent-modal",true);return}
- if(button)button.disabled=true;if(status)status.textContent="در حال بازکردن محیط داخلی همکلاسی…";
- try{const result=await window.Capacitor.Plugins.HamkelasiPortal.openPortal();const snapshot=JSON.parse(result.snapshot||"{}");const items=parseHamkelasiPortalSnapshot(snapshot);
-  if(!items.length){if(status)status.textContent="جدول تکالیف قابل تشخیص نبود؛ پس از ورود، صفحهٔ فهرست تکالیف را باز کن و دوباره تلاش کن.";return}
+ const username=prompt("نام کاربری همکلاسی خودت را وارد کن:");if(username===null||!username.trim())return;
+ const password=prompt("رمز عبور همکلاسی را وارد کن:");if(password===null||!password)return;
+ if(button)button.disabled=true;if(status)status.textContent="در حال بازکردن همکلاسی و تکمیل فرم ورود…";
+ try{const result=await window.Capacitor.Plugins.HamkelasiPortal.openPortal({username:username.trim(),password});const snapshot=JSON.parse(result.snapshot||"{}");const items=parseHamkelasiPortalSnapshot(snapshot);
+  if(!items.length){if(status)status.textContent="پنجرهٔ همکلاسی باز شد. اگر فرم ورود هنوز نمایش داده می‌شود، وارد حساب شو؛ سپس صفحهٔ تکالیف را باز کن و دکمهٔ دریافت تکالیف را بزن.";return}
   if(status)status.textContent=items.length+" تکلیف شناسایی شد؛ در حال انتقال…";const imported=await importHamkelasiTasks(items);
   if(status)status.textContent=new Intl.NumberFormat("fa-IR").format(imported.synced||imported.imported||items.length)+" تکلیف منتقل شد.";toast("همگام‌سازی همکلاسی انجام شد.");
  }catch(error){if(status)status.textContent=error?.message||"همگام‌سازی انجام نشد."}finally{if(button)button.disabled=false}
