@@ -283,13 +283,15 @@
         </section>
         <div class="game-layout">
           <section class="game-card">
-            <div class="game-card-head"><span class="game-chip">چالش ۱۰ ثانیه‌ای</span><span class="game-live-dot">● رقابت زنده</span></div>
-            <p class="game-instruction">بعد از شروع، در ۱۰ ثانیه تا می‌توانی روی دکمه بزن.</p>
+            <div class="game-card-head"><span class="game-chip">چالش ۱۰ ثانیه‌ای</span><span class="game-live-dot"><i></i> رقابت بین دانش‌آموزان</span></div>
+            <p class="game-instruction">۳ ثانیه آماده شو؛ بعد در ۱۰ ثانیه هرچقدر می‌توانی سریع و دقیق ضربه بزن.</p>
             <div class="game-stats"><div><small>زمان باقی‌مانده</small><strong id="game-timer">۱۰</strong></div><div><small>امتیاز این دور</small><strong id="game-score">۰</strong></div></div>
-            <button id="game-start" class="primary game-start" type="button">شروع بازی</button>
-            <button id="game-tap" class="game-tap" type="button" disabled>بزن!</button>
-            <p id="game-message" class="game-message" role="status">برای ثبت رکورد، بازی را شروع کن.</p>
-            <div class="game-personal-record">بهترین رکورد تو <strong id="game-personal-record">—</strong> <span>کلیک</span></div>
+            <div class="game-progress" aria-label="پیشرفت زمان بازی"><span id="game-progress-fill"></span></div>
+            <div class="game-progress-caption"><span>شروع</span><span>۱۰ ثانیه</span><span>پایان</span></div>
+            <button id="game-start" class="primary game-start" type="button">شروع چالش</button>
+            <button id="game-tap" class="game-tap" type="button" disabled><span>بزن!</span><small>هر ضربه = یک امتیاز</small></button>
+            <p id="game-message" class="game-message" role="status" aria-live="polite">برای ثبت رکورد، چالش را شروع کن.</p>
+            <div class="game-personal-record"><span>رکورد شخصی تو</span><strong id="game-personal-record">—</strong><small>ضربه</small></div>
           </section>
           <section class="game-leaderboard">
             <div class="game-leaderboard-head"><div><p class="eyebrow">HALL OF FAME</p><h3>جدول رکوردها</h3></div><span class="game-chip">۱۰ ثانیه</span></div>
