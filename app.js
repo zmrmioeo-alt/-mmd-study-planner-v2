@@ -1469,16 +1469,17 @@ boot().catch(err=>{console.error(err);show("app-view",false);show("auth-view",tr
 })();
 
 
-/* UPLAND ARCADE — shared ten-second tap leaderboard */
-let gameActive=false,gameScore=0,gameDeadline=0,gameTimerHandle=null,gameBest=0;
+/* UPLAND ARCADE — refined ten-second tap challenge */
+let gameActive=false,gameScore=0,gameDeadline=0,gameTimerHandle=null,gameCountdownHandle=null,gameBest=0;
 function setGameMessage(text,isError=false){const el=$("game-message");if(el){el.textContent=text;el.classList.toggle("error",!!isError)}}
+function setGameProgress(value){const fill=$("game-progress-fill");if(fill)fill.style.width=Math.max(0,Math.min(100,value))+"%"}
 function renderGameLeaderboard(rows){
  const podium=$("game-podium"),list=$("game-leaderboard-list");if(!podium||!list)return;
  podium.innerHTML="";list.innerHTML="";
- if(!rows.length){podium.innerHTML='<div class="empty">هنوز رکوردی ثبت نشده؛ اولین نفر باش!</div>';return}
+ if(!rows.length){podium.innerHTML='<div class="empty">هنوز رکوردی ثبت نشده؛ اولین قهرمان تو باش!</div>';return}
  const medals=["🥇","🥈","🥉"],classes=["first","second","third"];
- rows.slice(0,3).forEach((r,i)=>{const card=document.createElement("div");card.className="game-podium-card "+classes[i];const medal=document.createElement("span");medal.className="game-medal";medal.textContent=medals[i];const name=document.createElement("b");name.textContent=r.display_name||"دانش‌آموز";const score=document.createElement("strong");score.textContent=fa(r.best_score);const unit=document.createElement("small");unit.textContent="کلیک";card.append(medal,name,score,unit);podium.append(card)});
- rows.slice(3).forEach((r,i)=>{const li=document.createElement("li");const rank=document.createElement("span");rank.className="game-rank";rank.textContent=fa(i+4);const name=document.createElement("b");name.textContent=r.display_name||"دانش‌آموز";const score=document.createElement("strong");score.textContent=fa(r.best_score)+" کلیک";li.append(rank,name,score);list.append(li)});
+ rows.slice(0,3).forEach((r,i)=>{const card=document.createElement("div");card.className="game-podium-card "+classes[i];const medal=document.createElement("span");medal.className="game-medal";medal.textContent=medals[i];const name=document.createElement("b");name.textContent=r.display_name||"دانش‌آموز";const score=document.createElement("strong");score.textContent=fa(r.best_score);const unit=document.createElement("small");unit.textContent="ضربه";card.append(medal,name,score,unit);podium.append(card)});
+ rows.slice(3).forEach((r,i)=>{const li=document.createElement("li");const rank=document.createElement("span");rank.className="game-rank";rank.textContent=fa(i+4);const name=document.createElement("b");name.textContent=r.display_name||"دانش‌آموز";const score=document.createElement("strong");score.textContent=fa(r.best_score)+" ضربه";li.append(rank,name,score);list.append(li)});
 }
 async function loadGameLeaderboard(){
  if(!currentUser)return;
@@ -1488,37 +1489,53 @@ async function loadGameLeaderboard(){
  $("game-personal-record").textContent=gameBest?fa(gameBest):"—";
  const result=await db.from("game_records").select("user_id,best_score,updated_at").eq("game_key","tap-10s").order("best_score",{ascending:false}).order("updated_at",{ascending:true}).limit(20);
  if(result.error)throw result.error;
- const ids=[...new Set((result.data||[]).map(x=>x.user_id))];
- let names={};
+ const ids=[...new Set((result.data||[]).map(x=>x.user_id))];let names={};
  if(ids.length){const people=await db.from("public_profiles").select("id,display_name").in("id",ids);if(!people.error)for(const p of people.data||[])names[p.id]=p.display_name}
- const rows=(result.data||[]).map(x=>({...x,display_name:names[x.user_id]||"دانش‌آموز"}));
- renderGameLeaderboard(rows);
+ renderGameLeaderboard((result.data||[]).map(x=>({...x,display_name:names[x.user_id]||"دانش‌آموز"})));
 }
 async function saveGameRecord(score){
  if(score<=gameBest)return;
  const {error}=await db.from("game_records").upsert({user_id:currentUser.id,game_key:"tap-10s",best_score:score,updated_at:new Date().toISOString()},{onConflict:"user_id,game_key"});
  if(error)throw error;
  gameBest=score;$("game-personal-record").textContent=fa(score);
- setGameMessage("رکورد جدید ثبت شد؛ در جدول رقابت قرار گرفتی.");
+ setGameMessage("رکورد شخصی جدید ثبت شد؛ در جدول رقابت قرار گرفتی.");
  await loadGameLeaderboard();
 }
 function finishTapGame(){
  if(!gameActive)return;
  gameActive=false;if(gameTimerHandle)clearInterval(gameTimerHandle);gameTimerHandle=null;
- $("game-tap").disabled=true;$("game-start").disabled=false;$("game-start").textContent="دوباره بازی کن";$("game-timer").textContent="۰";
- setGameMessage("زمان تمام شد؛ امتیاز این دور: "+fa(gameScore)+" کلیک.");
+ $("game-tap").disabled=true;$("game-start").disabled=false;$("game-start").textContent="تلاش دوباره";$("game-timer").textContent="۰";setGameProgress(0);
+ setGameMessage("پایان چالش؛ امتیاز این دور: "+fa(gameScore)+" ضربه.");
  saveGameRecord(gameScore).catch(e=>setGameMessage("ثبت رکورد ناموفق بود: "+e.message,true));
 }
 function startTapGame(){
  if(!currentUser){setGameMessage("برای بازی ابتدا وارد حساب شو.",true);return}
- if(gameActive)return;
- gameScore=0;gameActive=true;gameDeadline=performance.now()+10000;
- $("game-score").textContent="۰";$("game-timer").textContent="۱۰";$("game-tap").disabled=false;$("game-start").disabled=true;
- setGameMessage("شروع شد! سریع کلیک کن.");
- gameTimerHandle=setInterval(()=>{const left=Math.max(0,gameDeadline-performance.now());$("game-timer").textContent=fa(Math.ceil(left/1000));if(left<=0)finishTapGame()},40);
+ if(gameActive||gameCountdownHandle)return;
+ gameScore=0;$("game-score").textContent="۰";$("game-timer").textContent="۳";$("game-tap").disabled=true;$("game-start").disabled=true;$("game-start").textContent="آماده شو…";setGameProgress(100);
+ let count=3;setGameMessage("آماده شو؛ چالش تا "+fa(count)+" ثانیهٔ دیگر شروع می‌شود.");
+ gameCountdownHandle=setInterval(()=>{
+  count--;
+  if(count>0){$("game-timer").textContent=fa(count);setGameMessage("آماده شو؛ "+fa(count)+"…");return}
+  clearInterval(gameCountdownHandle);gameCountdownHandle=null;
+  gameActive=true;gameDeadline=performance.now()+10000;$("game-timer").textContent="۱۰";$("game-tap").disabled=false;$("game-start").textContent="در حال بازی";setGameMessage("شروع شد! سریع ضربه بزن.");setGameProgress(100);
+  gameTimerHandle=setInterval(()=>{
+   const left=Math.max(0,gameDeadline-performance.now());
+   $("game-timer").textContent=fa(Math.ceil(left/1000));setGameProgress(left/100);
+   if(left<=0)finishTapGame();
+  },30);
+ },1000);
 }
 $("game-start")?.addEventListener("click",startTapGame);
-$("game-tap")?.addEventListener("click",()=>{if(!gameActive)return;if(performance.now()>=gameDeadline){finishTapGame();return}gameScore++;$("game-score").textContent=fa(gameScore)});
+$("game-tap")?.addEventListener("click",()=>{
+ if(!gameActive)return;
+ if(performance.now()>=gameDeadline){finishTapGame();return}
+ gameScore++;$("game-score").textContent=fa(gameScore);
+});
+document.addEventListener("visibilitychange",()=>{
+ if(!document.hidden)return;
+ if(gameCountdownHandle){clearInterval(gameCountdownHandle);gameCountdownHandle=null;$("game-start").disabled=false;$("game-start").textContent="شروع چالش";$("game-timer").textContent="۱۰";setGameProgress(100);setGameMessage("چالش شروع نشد؛ هر وقت آماده‌ای دوباره شروع کن.")}
+ else if(gameActive)finishTapGame();
+});
 $("game-refresh")?.addEventListener("click",()=>loadGameLeaderboard().then(()=>setGameMessage("جدول رکوردها به‌روز شد.")).catch(e=>setGameMessage(e.message,true)));
 
 
