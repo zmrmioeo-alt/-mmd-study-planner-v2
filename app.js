@@ -845,6 +845,7 @@ async function generateWeeklyPlan(persist=true){
  weeklyPlan.sort((a,b)=>a.date.localeCompare(b.date)||new Date(a.start)-new Date(b.start));
  if(persist){try{await savePlannerData()}catch(err){toast("ذخیره برنامه انجام نشد: "+err.message)}}
  renderWeeklyPlan();
+ syncLocalStudyReminders(false).catch(e=>console.warn("Planner reminder sync failed",e));
  const assigned=new Map();for(const p of weeklyPlan)assigned.set(String(p.task_id),(assigned.get(String(p.task_id))||0)+Number(p.duration||0));
  const missed=tasks.filter(t=>t.status==="pending"&&(!t.estimated_minutes||(assigned.get(String(t.id))||0)<Number(t.estimated_minutes)));
  if(missed.length)toast("برنامه ساخته شد؛ "+fa(missed.length)+" کار به دلیل نبود مدت‌زمان یا ظرفیت کافی کامل زمان‌بندی نشد.");
