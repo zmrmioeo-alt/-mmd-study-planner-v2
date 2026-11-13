@@ -96,6 +96,22 @@ jobs:
       - name: Generate Android project
         run: npx cap add android
 
+      - name: Apply official UPLAND launcher icon
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y imagemagick librsvg2-bin
+          rsvg-convert -w 512 -h 512 assets/upland-install-icon.svg > /tmp/upland-icon.png
+          for spec in "mdpi 48" "hdpi 72" "xhdpi 96" "xxhdpi 144" "xxxhdpi 192"; do
+            set -- $spec
+            density="$1"
+            size="$2"
+            dir="android/app/src/main/res/mipmap-$density"
+            mkdir -p "$dir"
+            convert /tmp/upland-icon.png -resize ${size}x${size} "$dir/ic_launcher.png"
+            convert /tmp/upland-icon.png -resize ${size}x${size} "$dir/ic_launcher_round.png"
+            convert /tmp/upland-icon.png -resize $((size*2))x$((size*2)) -gravity center -background none -extent $((size*2))x$((size*2)) "$dir/ic_launcher_foreground.png"
+          done
+
       - name: Sync Capacitor
         run: npx cap sync android
 
