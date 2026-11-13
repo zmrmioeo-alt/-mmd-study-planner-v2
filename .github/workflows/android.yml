@@ -152,6 +152,12 @@ jobs:
               @PluginMethod
               public void openPortal(PluginCall call) {
                   if (dialog != null && dialog.isShowing()) { call.reject("پنجرهٔ همکلاسی از قبل باز است."); return; }
+                  final String suppliedUsername = call.getString("username", "");
+                  String suppliedPassword = call.getString("password", "");
+                  if (suppliedUsername.trim().isEmpty() || suppliedPassword.isEmpty()) { call.reject("نام کاربری و رمز همکلاسی را وارد کنید."); return; }
+                  final String usernameJson = JSONObject.quote(suppliedUsername.trim());
+                  final String passwordJson = JSONObject.quote(suppliedPassword);
+                  suppliedPassword = null;
                   activeCall = call;
                   getActivity().runOnUiThread(() -> {
                       LinearLayout root = new LinearLayout(getContext()); root.setOrientation(LinearLayout.VERTICAL); root.setBackgroundColor(Color.WHITE);
@@ -162,7 +168,7 @@ jobs:
                       webView = new WebView(getContext()); WebSettings settings=webView.getSettings(); settings.setJavaScriptEnabled(true); settings.setDomStorageEnabled(true); settings.setDatabaseEnabled(true); settings.setLoadWithOverviewMode(true); settings.setUseWideViewPort(true); settings.setJavaScriptCanOpenWindowsAutomatically(false); settings.setSupportMultipleWindows(false);
                       CookieManager.getInstance().setAcceptCookie(true); if(Build.VERSION.SDK_INT>=21) CookieManager.getInstance().setAcceptThirdPartyCookies(webView,true);
                       webView.setWebChromeClient(new WebChromeClient());
-                      webView.setWebViewClient(new WebViewClient(){ @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request){return false;} @Override public void onPageFinished(WebView view,String url){if(address!=null)address.setText(url);} });
+                      webView.setWebViewClient(new WebViewClient(){ @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request){return false;} @Override public void onPageFinished(WebView view,String url){if(address!=null)address.setText(url); if(url!=null && (url.startsWith("https://hemmatsch.ir") || url.startsWith("http://hemmatsch.ir"))){String fill="(function(){var u="+usernameJson+",p="+passwordJson+";var fields=Array.from(document.querySelectorAll('input')).filter(function(x){return x.type!=='hidden'&&x.type!=='submit'&&x.type!=='button'&&x.type!=='checkbox'});var pass=fields.find(function(x){return x.type==='password'});var user=fields.find(function(x){return x!==pass&&(x.autocomplete==='username'||/user|login|national|code|نام|کد|شناسه/i.test((x.name||'')+' '+(x.id||'')+' '+(x.placeholder||'')))})||fields.find(function(x){return x!==pass});function set(el,val){if(!el)return;var proto=el.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:HTMLInputElement.prototype;var d=Object.getOwnPropertyDescriptor(proto,'value');if(d&&d.set)d.set.call(el,val);else el.value=val;el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));}set(user,u);set(pass,p);return !!(user&&pass);})()";view.evaluateJavascript(fill,null);}} });
                       root.addView(webView,new LinearLayout.LayoutParams(-1,0,1));
                       LinearLayout actions=new LinearLayout(getContext()); actions.setPadding(12,8,12,8);
                       Button sync=new Button(getContext()); sync.setText("گرفتن تکالیف از این صفحه"); Button close=new Button(getContext()); close.setText("بستن");
