@@ -33,7 +33,7 @@ button:disabled{opacity:.55;cursor:wait}a.secondary,button.secondary{background:
 <p id="update-note">برای بررسی نسخه تازه، دکمه زیر را بزن.</p>
 <button id="check-update" type="button">بررسی و دریافت آخرین نسخه</button>
 <a class="btn" href="https://github.com/zmrmioeo-alt/-mmd-study-planner-v2/releases/latest/download/UPLAND-latest.apk" rel="noopener">دانلود و نصب نسخه اندروید (APK)</a>
-<button id="install" type="button">نصب نسخه وب روی صفحه اصلی</button>
+<button id="install" type="button">نصب اپلیکیشن روی گوشی</button>
 <button id="enable-notifications" class="secondary" type="button">فعال‌سازی اعلان به‌روزرسانی</button>
 <a class="btn secondary" href="./">ورود به برنامه</a>
 <div class="steps" id="install-help">اگر پنجره نصب باز نشد:<br>۱. این صفحه را در Chrome باز کن.<br>۲. منوی سه‌نقطه را بزن.<br>۳. گزینه «Install app» یا «افزودن به صفحه اصلی» را انتخاب کن.</div>
@@ -43,6 +43,8 @@ button:disabled{opacity:.55;cursor:wait}a.secondary,button.secondary{background:
 "use strict";
 let deferredPrompt=null;
 let swRegistration=null;
+let installEventSeen=false;
+let installAttempted=false;
 const $=id=>document.getElementById(id);
 const status=$("status");
 const installButton=$("install");
@@ -67,9 +69,17 @@ async function registerWorker(){
 window.addEventListener("beforeinstallprompt",event=>{
  event.preventDefault();
  deferredPrompt=event;
+ installEventSeen=true;
  installButton.disabled=false;
  installButton.textContent="نصب اپلیکیشن روی گوشی";
  $("install-help").classList.add("hidden");
+ status.textContent="برنامه آماده نصب است.";
+});
+window.addEventListener("pageshow",()=>{
+ if(isStandalone()){
+  installButton.disabled=true;
+  installButton.textContent="اپلیکیشن نصب شده است";
+ }
 });
 window.addEventListener("appinstalled",()=>{
  deferredPrompt=null;
@@ -81,27 +91,34 @@ window.addEventListener("appinstalled",()=>{
 
 installButton.addEventListener("click",async()=>{
  if(isStandalone()){
-  status.textContent="اپلیکیشن هم‌اکنون در حالت نصب‌شده اجرا شده است.";
+  status.textContent="اپلیکیشن هم‌اکنون نصب شده است.";
   installButton.disabled=true;
   installButton.textContent="اپلیکیشن نصب شده است";
   return;
  }
  if(!deferredPrompt){
-  status.textContent="نصب خودکار در این مرورگر در دسترس نیست. از منوی سه‌نقطه Chrome گزینه «Install app» یا «افزودن به صفحه اصلی» را انتخاب کن.";
   $("install-help").classList.remove("hidden");
+  status.textContent=installEventSeen
+   ?"مرورگر هنوز امکان نمایش پنجره نصب را نمی‌دهد؛ راهنمای نصب دستی را دنبال کن."
+   :"برای این مرورگر پنجره نصب خودکار ارائه نشده؛ از منوی Chrome گزینه «افزودن به صفحه اصلی» را انتخاب کن.";
   return;
  }
+ const promptEvent=deferredPrompt;
+ deferredPrompt=null;
+ installAttempted=true;
  installButton.disabled=true;
  try{
-  await deferredPrompt.prompt();
-  const choice=await deferredPrompt.userChoice;
-  status.textContent=choice.outcome==="accepted"?"درخواست نصب پذیرفته شد.":"درخواست نصب لغو شد.";
+  await promptEvent.prompt();
+  const choice=await promptEvent.userChoice;
+  status.textContent=choice.outcome==="accepted"
+   ?"درخواست نصب پذیرفته شد؛ آیکون برنامه را در صفحه اصلی بررسی کن."
+   :"نصب لغو شد؛ هر زمان خواستی دوباره از همین صفحه اقدام کن.";
  }catch(error){
-  status.textContent="پنجره نصب باز نشد. از منوی سه‌نقطه Chrome اقدام کن.";
+  status.textContent="پنجره نصب باز نشد؛ از منوی Chrome گزینه «افزودن به صفحه اصلی» را انتخاب کن.";
   $("install-help").classList.remove("hidden");
  }finally{
-  deferredPrompt=null;
   installButton.disabled=false;
+  installButton.textContent="تلاش دوباره برای نصب";
  }
 });
 
@@ -153,7 +170,15 @@ readVersion().catch(()=>{
  $("version-number").textContent="نامشخص";
  status.textContent="دریافت شماره نسخه ممکن نشد.";
 });
-registerWorker().catch(error=>console.warn("UPLAND service worker:",error));
+registerWorker().then(()=>{
+ if(!isStandalone()&&!deferredPrompt){
+  status.textContent="برای نصب، از منوی سه‌نقطه Chrome گزینه «افزودن به صفحه اصلی» را هم می‌توانی انتخاب کنی.";
+ }
+}).catch(error=>{
+ console.warn("UPLAND service worker:",error);
+ status.textContent="آماده‌سازی نصب خودکار کامل نشد؛ نصب دستی از منوی Chrome همچنان در دسترس است.";
+ $("install-help").classList.remove("hidden");
+});
 if("serviceWorker" in navigator){
  navigator.serviceWorker.addEventListener("controllerchange",()=>{
   if(!sessionStorage.getItem("upland_sw_reloaded")){
