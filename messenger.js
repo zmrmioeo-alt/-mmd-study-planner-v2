@@ -6,7 +6,8 @@ const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const fa=n=>new Intl.NumberFormat("fa-IR").format(n);
 const avatar=(url,name)=>url?'<img src="'+esc(url)+'" alt="">':'<span>'+esc((name||"M").slice(0,1))+'</span>';
-function toastM(s){if(typeof toast==="function")toast(s);else alert(s)}\nfunction showLoadError(err){const msg="بارگذاری گروه‌ها و کانال‌ها ناموفق بود: "+(err?.message||err);if($("mmd-spaces-status"))$("mmd-spaces-status").textContent=msg;if($("mmd-settings-spaces-status"))$("mmd-settings-spaces-status").textContent=msg;console.error(msg,err)}
+function toastM(s){if(typeof toast==="function")toast(s);else alert(s)}
+function showLoadError(err){const msg="بارگذاری گروه‌ها و کانال‌ها ناموفق بود: "+(err?.message||err);if($("mmd-spaces-status"))$("mmd-spaces-status").textContent=msg;if($("mmd-settings-spaces-status"))$("mmd-settings-spaces-status").textContent=msg;console.error(msg,err)}
 async function loadMessengerSpaces(){
  if(!currentUser)return;
  const box=$("mmd-spaces-list");if(!box)return;
