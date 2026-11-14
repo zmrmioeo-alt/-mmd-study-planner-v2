@@ -34,11 +34,11 @@ function switchTab(t){
 async function openSpace(id){
  const {data:s,error}=await db.from("messenger_spaces").select("*").eq("id",id).single();if(error)throw error;
  const {data:members,error:me}=await db.from("messenger_members").select("space_id,user_id,member_role").eq("space_id",id);if(me)throw me;
- const joined=(members||[]).some(m=>m.user_id===currentUser.id),view=$("mmd-space-view");view.classList.remove("hidden");
+ const joined=(members||[]).some(m=>m.user_id===currentUser.id),view=$("mmd-space-view");view.classList.remove("hidden");$("mmd-spaces-panel").classList.add("space-open");
  if(!joined){
   view.innerHTML='<button class="secondary" id="mmd-space-back">← بازگشت</button><div class="mmd-space-hero"><div class="mmd-space-avatar large">'+avatar(s.avatar_url,s.name)+'</div><h3>'+esc(s.name)+'</h3><p>'+esc(s.description||"")+'</p><span>فضای عمومی</span></div><button class="primary" id="mmd-space-join">عضویت</button>';
-  $("mmd-space-back").onclick=()=>view.classList.add("hidden");
-  $("mmd-space-join").onclick=async()=>{const r=await db.from("messenger_members").insert({space_id:id,user_id:currentUser.id,member_role:"member"});if(r.error)throw r.error;openSpace(id);};
+  $("mmd-space-back").onclick=()=>{view.classList.add("hidden");$("mmd-spaces-panel").classList.remove("space-open")};
+  $("mmd-space-join").onclick=async()=>{const b=$("mmd-space-join");b.disabled=true;try{const r=await db.from("messenger_members").insert({space_id:id,user_id:currentUser.id,member_role:"member"});if(r.error)throw r.error;await openSpace(id)}catch(x){toastM("عضویت ناموفق بود: "+x.message)}finally{b.disabled=false}};
   return;
  }
  opened=s;
@@ -92,5 +92,5 @@ function bind(){
  $("mmd-owned-spaces")?.addEventListener("click",e=>{const b=e.target.closest("[data-mmd-manage]");if(b){if(typeof navigate==="function")navigate("chat");switchTab("discover");openSpace(b.dataset.mmdManage).catch(x=>{toastM(x.message);showLoadError(x)})}});
 }
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",bind);else bind();
-window.loadMessengerSpaces=loadMessengerSpaces;
+window.loadMessengerSpaces=()=>loadMessengerSpaces().catch(showLoadError);
 })();
