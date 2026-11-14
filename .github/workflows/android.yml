@@ -288,7 +288,24 @@ jobs:
           s = p.read_text()
           permission = '    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />'
           if permission not in s:
-              s = s.replace("<application", permission + "\\n    <application", 1)
+              s = s.replace("<application", permission + "\n    <application", 1)
+          p.write_text(s)
+          PY
+
+      - name: Configure Android version code
+        run: |
+          VERSION=$(node -p "require('./version.json').version")
+          VERSION_CODE=$(python3 -c "v='$VERSION'.split('.'); print(int(v[0])*10000+int(v[1])*100+int(v[2]))")
+          python3 - "$VERSION_CODE" <<'PY'
+          from pathlib import Path
+          import re,sys
+          p=Path("android/app/build.gradle")
+          s=p.read_text()
+          code=sys.argv[1]
+          if re.search(r'versionCode\s+\d+',s):
+              s=re.sub(r'versionCode\s+\d+',f'versionCode {code}',s,count=1)
+          else:
+              s=re.sub(r'(defaultConfig\s*\{)',r'\1\n        versionCode '+code,s,count=1)
           p.write_text(s)
           PY
 
