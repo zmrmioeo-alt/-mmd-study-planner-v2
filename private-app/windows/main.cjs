@@ -46,7 +46,7 @@ ipcMain.handle('mmd:hamkelasi:analyze',async()=>{
         const matrix = trs.map(tr => Array.from(tr.querySelectorAll(':scope > th, :scope > td')).map(c => (c.innerText || c.textContent || '').trim()));
         if (!matrix.length) return [];
         const headers = matrix[0] || [];
-        return matrix.slice(1).map(cells => Object.fromEntries(cells.map((v,i) => [headers[i] || ('ستون ' + (i+1)), v])).filter(([,v]) => v));
+        return matrix.slice(1).map(cells => Object.fromEntries(cells.map((v,i) => [headers[i] || ('ستون ' + (i+1)), v]).filter(([,v]) => v)));
       }
       const roleRows = Array.from(root.querySelectorAll('[role="row"]'));
       if (!roleRows.length) return [];
