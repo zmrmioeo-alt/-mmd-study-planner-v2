@@ -6,10 +6,10 @@ const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const fa=n=>new Intl.NumberFormat("fa-IR").format(n);
 const avatar=(url,name)=>url?'<img src="'+esc(url)+'" alt="">':'<span>'+esc((name||"M").slice(0,1))+'</span>';
-function toastM(s){if(typeof toast==="function")toast(s);else alert(s)}
+function toastM(s){if(typeof toast==="function")toast(s);else alert(s)}\nfunction showLoadError(err){const msg="بارگذاری گروه‌ها و کانال‌ها ناموفق بود: "+(err?.message||err);if($("mmd-spaces-status"))$("mmd-spaces-status").textContent=msg;if($("mmd-settings-spaces-status"))$("mmd-settings-spaces-status").textContent=msg;console.error(msg,err)}
 async function loadMessengerSpaces(){
  if(!currentUser)return;
- const box=$("mmd-spaces-list");if(!box)return;$("chat-content").classList.toggle("hidden",tab!=="direct");$("mmd-spaces-panel").classList.toggle("hidden",tab==="direct");
+ const box=$("mmd-spaces-list");if(!box)return;
  box.innerHTML='<div class="empty">در حال دریافت...</div>';
  const [sr,mr]=await Promise.all([
   db.from("messenger_spaces").select("id,name,description,space_type,visibility,avatar_url,owner_id,created_at").order("created_at",{ascending:false}),
@@ -19,7 +19,7 @@ async function loadMessengerSpaces(){
  const spaces=sr.data||[],mine=new Set((mr.data||[]).map(x=>x.space_id));
  const rows=tab==="discover"?spaces.filter(x=>x.visibility==="public"):spaces.filter(x=>x.space_type===tab&&mine.has(x.id));
  $("mmd-spaces-title").textContent=({group:"گروه‌های من",channel:"کانال‌های من",discover:"فضاهای عمومی"})[tab]||"";
- box.innerHTML=rows.length?rows.map(s=>'<article class="mmd-space-card"><div class="mmd-space-avatar">'+avatar(s.avatar_url,s.name)+'</div><div class="mmd-space-card-main"><b>'+esc(s.name)+'</b><small>'+(s.space_type==="group"?"گروه":"کانال")+' · '+(s.visibility==="public"?"عمومی":"خصوصی")+'</small><p>'+esc(s.description||"بدون توضیحات")+'</p></div><button class="secondary" type="button" data-mmd-open="'+s.id+'">'+(mine.has(s.id)?"ورود":"مشاهده")+'</button></article>').join(""):'<div class="mmd-empty"><strong>موردی پیدا نشد</strong><p>'+(tab==="discover"?"هنوز فضای عمومی ساخته نشده است.":"برای ساخت گروه یا کانال به تنظیمات برو.")+'</p></div>';
+ if($("mmd-spaces-status"))$("mmd-spaces-status").textContent="";if($("mmd-settings-spaces-status"))$("mmd-settings-spaces-status").textContent="";box.innerHTML=rows.length?rows.map(s=>'<article class="mmd-space-card"><div class="mmd-space-avatar">'+avatar(s.avatar_url,s.name)+'</div><div class="mmd-space-card-main"><b>'+esc(s.name)+'</b><small>'+(s.space_type==="group"?"گروه":"کانال")+' · '+(s.visibility==="public"?"عمومی":"خصوصی")+'</small><p>'+esc(s.description||"بدون توضیحات")+'</p></div><button class="secondary" type="button" data-mmd-open="'+s.id+'">'+(mine.has(s.id)?"ورود":"مشاهده")+'</button></article>').join(""):'<div class="mmd-empty"><strong>موردی پیدا نشد</strong><p>'+(tab==="discover"?"هنوز فضای عمومی ساخته نشده است.":"برای ساخت گروه یا کانال به تنظیمات برو.")+'</p></div>';
  const owned=spaces.filter(s=>s.owner_id===currentUser.id);
  $("mmd-owned-spaces").innerHTML=owned.length?'<h4>فضاهای ساخته‌شده توسط شما</h4>'+owned.map(s=>'<div class="mmd-owned-row"><span>'+esc(s.name)+' <small>'+(s.space_type==="group"?"گروه":"کانال")+'</small></span><button class="secondary" data-mmd-manage="'+s.id+'" type="button">مدیریت اعضا</button></div>').join(""):'<p class="hint">هنوز گروه یا کانالی نساخته‌ای.</p>';
 }
@@ -29,7 +29,7 @@ function switchTab(t){
  $("chat-content").classList.toggle("hidden",t!=="direct");
  $("mmd-spaces-panel").classList.toggle("hidden",t==="direct");
  $("mmd-space-view").classList.add("hidden");
- if(t!=="direct")loadMessengerSpaces().catch(e=>toastM("خطا: "+e.message));
+ if(t!=="direct")loadMessengerSpaces().catch(showLoadError);
 }
 async function openSpace(id){
  const {data:s,error}=await db.from("messenger_spaces").select("*").eq("id",id).single();if(error)throw error;
@@ -51,7 +51,7 @@ async function openSpace(id){
  const names=new Map((pr.data||[]).map(p=>[p.id,p.display_name||"کاربر"]));
  const mine=(members||[]).find(m=>m.user_id===currentUser.id),admin=["owner","admin"].includes(mine?.member_role),canSend=s.space_type==="group"||admin;
  view.innerHTML='<div class="mmd-space-view-head"><button class="secondary" id="mmd-space-back">← فهرست</button><div class="mmd-space-avatar">'+avatar(s.avatar_url,s.name)+'</div><div><b>'+esc(s.name)+'</b><small>'+(s.space_type==="group"?"گروه":"کانال")+' · '+fa(ids.length)+' عضو</small></div><button class="secondary" id="mmd-space-info">اعضا</button></div><div class="mmd-space-messages" id="mmd-space-messages">'+((mr.data||[]).length?(mr.data||[]).map(m=>'<div class="mmd-message '+(m.sender_id===currentUser.id?"mine":"")+'"><small>'+esc(names.get(m.sender_id)||"کاربر")+'</small><p>'+esc(m.body)+'</p><time>'+new Intl.DateTimeFormat("fa-IR",{hour:"2-digit",minute:"2-digit",month:"short",day:"numeric"}).format(new Date(m.created_at))+'</time></div>').join(""):'<div class="empty">هنوز پیامی منتشر نشده است.</div>')+'</div>'+(canSend?'<form id="mmd-space-send" class="mmd-space-send"><textarea id="mmd-space-input" rows="2" maxlength="4000" required placeholder="'+(s.space_type==="channel"?"متن پست کانال...":"پیام گروه...")+'"></textarea><button class="primary">ارسال</button></form>':'<p class="hint">فقط مدیران کانال می‌توانند پست منتشر کنند.</p>')+'<div id="mmd-space-members" class="mmd-space-members hidden"></div>';
- $("mmd-space-back").onclick=()=>{opened=null;view.classList.add("hidden");loadMessengerSpaces()};
+ $("mmd-space-back").onclick=()=>{opened=null;view.classList.add("hidden");$("mmd-spaces-panel").classList.remove("space-open");loadMessengerSpaces()};
  $("mmd-space-info").onclick=()=>showMembers(s,members,names,admin);
  if(canSend)$("mmd-space-send").onsubmit=async e=>{e.preventDefault();const body=$("mmd-space-input").value.trim();if(!body)return;const b=e.submitter;b.disabled=true;try{const r=await db.from("messenger_messages").insert({space_id:id,sender_id:currentUser.id,body});if(r.error)throw r.error;await openSpace(id)}catch(x){toastM("ارسال ناموفق: "+x.message)}finally{b.disabled=false}};
  $("mmd-space-messages").scrollTop=$("mmd-space-messages").scrollHeight;
@@ -87,9 +87,9 @@ function bind(){
  $("mmd-space-modal-close")?.addEventListener("click",()=>$("mmd-space-modal").classList.add("hidden"));
  $("mmd-space-modal")?.addEventListener("click",e=>{if(e.target===$("mmd-space-modal"))$("mmd-space-modal").classList.add("hidden")});
  $("mmd-space-avatar")?.addEventListener("change",e=>{const f=e.target.files[0];$("mmd-avatar-preview").innerHTML=f?'<img src="'+URL.createObjectURL(f)+'" alt="پیش‌نمایش">':"تصویر انتخاب نشده"});
- $("mmd-spaces-refresh")?.addEventListener("click",()=>loadMessengerSpaces().catch(e=>toastM(e.message)));
- $("mmd-spaces-list")?.addEventListener("click",e=>{const b=e.target.closest("[data-mmd-open]");if(b)openSpace(b.dataset.mmdOpen).catch(x=>toastM("خطا: "+x.message))});
- $("mmd-owned-spaces")?.addEventListener("click",e=>{const b=e.target.closest("[data-mmd-manage]");if(b){if(typeof navigate==="function")navigate("chat");switchTab("discover");openSpace(b.dataset.mmdManage).catch(x=>toastM(x.message))}});
+ $("mmd-spaces-refresh")?.addEventListener("click",()=>loadMessengerSpaces().catch(showLoadError));
+ $("mmd-spaces-list")?.addEventListener("click",e=>{const b=e.target.closest("[data-mmd-open]");if(b)openSpace(b.dataset.mmdOpen).catch(x=>{toastM("خطا: "+x.message);showLoadError(x)})});
+ $("mmd-owned-spaces")?.addEventListener("click",e=>{const b=e.target.closest("[data-mmd-manage]");if(b){if(typeof navigate==="function")navigate("chat");switchTab("discover");openSpace(b.dataset.mmdManage).catch(x=>{toastM(x.message);showLoadError(x)})}});
 }
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",bind);else bind();
 window.loadMessengerSpaces=loadMessengerSpaces;
