@@ -70,3 +70,13 @@
  #page-chat .chat-compose .chat-attach{width:38px;padding:8px 3px;font-size:11px}
  #page-chat .mmd-toolbar-actions{grid-template-columns:1fr 1fr 38px}
 }
+
+#page-chat .mmd-spaces-panel.space-open .mmd-spaces-toolbar,
+#page-chat .mmd-spaces-panel.space-open #mmd-spaces-list,
+#page-chat .mmd-spaces-panel.space-open #mmd-spaces-status{display:none}
+#page-chat .mmd-spaces-panel.space-open .mmd-space-view{display:flex;flex-direction:column}
+@media(max-width:700px){
+ #page-chat .mmd-spaces-panel.space-open{padding:8px}
+ #page-chat .mmd-spaces-panel.space-open .mmd-space-view{min-height:calc(100dvh - 205px)}
+ #page-chat .mmd-space-send{flex:0 0 auto}
+}
