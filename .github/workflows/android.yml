@@ -13,6 +13,8 @@ on:
       - 'upland.css'
       - 'experience.css'
       - 'experience.js'
+      - 'messenger.js'
+      - 'messenger.css'
       - 'planner-edit.js'
       - 'stickers.js'
       - 'assets/**'
@@ -57,6 +59,7 @@ jobs:
           node --check app.js
           node --check service-worker.js
           node --check experience.js
+          node --check messenger.js
           node --check planner-edit.js
           node --check stickers.js
 
