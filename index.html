@@ -154,16 +154,7 @@
         <div class="section-head"><div><p class="eyebrow">WEEKLY SMART SCHEDULER</p><h2>برنامه‌ریز هوشمند هفتگی</h2><p class="muted">ابتدا ساعت حضور و وقت آزاد هر روز را مشخص کن؛ سپس کارها با رعایت مهلت، اولویت و مدت‌زمان واقعی چیده می‌شوند.</p></div></div>
         <div class="form-panel planner-availability-panel">
           <div class="section-head"><div><h3>ساعت آزاد هر روز</h3><p class="muted">اگر در روزی وقت نداری، هر دو ساعت را خالی بگذار.</p></div></div>
-          <div class="planner-hours-grid">
-            
-            <div class="planner-hours-row"><b>شنبه</b><label>از ساعت<input id="availability-start-6" type="time"></label><label>تا ساعت<input id="availability-end-6" type="time"></label></div>
-            <div class="planner-hours-row"><b>یکشنبه</b><label>از ساعت<input id="availability-start-0" type="time"></label><label>تا ساعت<input id="availability-end-0" type="time"></label></div>
-            <div class="planner-hours-row"><b>دوشنبه</b><label>از ساعت<input id="availability-start-1" type="time"></label><label>تا ساعت<input id="availability-end-1" type="time"></label></div>
-            <div class="planner-hours-row"><b>سه‌شنبه</b><label>از ساعت<input id="availability-start-2" type="time"></label><label>تا ساعت<input id="availability-end-2" type="time"></label></div>
-            <div class="planner-hours-row"><b>چهارشنبه</b><label>از ساعت<input id="availability-start-3" type="time"></label><label>تا ساعت<input id="availability-end-3" type="time"></label></div>
-            <div class="planner-hours-row"><b>پنجشنبه</b><label>از ساعت<input id="availability-start-4" type="time"></label><label>تا ساعت<input id="availability-end-4" type="time"></label></div>
-            <div class="planner-hours-row"><b>جمعه</b><label>از ساعت<input id="availability-start-5" type="time"></label><label>تا ساعت<input id="availability-end-5" type="time"></label></div>
-          </div>
+          <div class="planner-hours-grid" id="planner-hours-grid"></div>
           <div class="planner-actions"><button class="secondary" id="planner-save-hours" type="button">ذخیره ساعت‌های آزاد</button><button class="primary" id="smart-generate" type="button">ساخت / به‌روزرسانی برنامه هفته</button></div>
         </div>
         <div class="form-panel"><h3>روش زمان‌بندی</h3><p class="muted">مهلت تحویل، روز انجام کار محسوب نمی‌شود. سیستم تلاش می‌کند تکلیف را دو روز زودتر تمام کند؛ اگر یک تکلیف در یک روز جا نشود، آن را بر اساس زمان آزاد به چند بخش در روزهای مختلف تقسیم می‌کند. اگر ظرفیت کافی نباشد، کمبود زمان را نشان می‌دهد. کارهای انجام‌شده و جابه‌جایی‌های دستی حفظ می‌شوند.</p><button class="secondary" id="smart-clear" type="button">پاک‌کردن برنامه‌های خودکار</button></div>
