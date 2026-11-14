@@ -1,9 +1,7 @@
 {
-  "appId": "com.mmd.studyplanner",
-  "appName": "UPLAND",
+  "appId": "com.mmd.privatehub",
+  "appName": "MMD شخصی",
   "webDir": "www",
   "bundledWebRuntime": false,
-  "android": {
-    "allowMixedContent": false
-  }
+  "android": { "allowMixedContent": false }
 }
