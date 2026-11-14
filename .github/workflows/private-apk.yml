@@ -46,6 +46,12 @@ jobs:
           git add downloads/MMD-Personal.apk
           git commit -m "Publish private MMD APK download" || exit 0
           git push origin HEAD:mmd-private-apk
+      - name: Publish APK as a direct release download
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view mmd-private-latest >/dev/null 2>&1 || gh release create mmd-private-latest --title "MMD Personal APK" --notes "Latest private Android APK build." --target mmd-private-apk
+          gh release upload mmd-private-latest android/app/build/outputs/apk/debug/app-debug.apk --clobber
       - name: Upload private APK
         uses: actions/upload-artifact@v4
         with:
