@@ -1,4 +1,4 @@
-const CACHE_NAME="upland-shell-v110";
+const CACHE_NAME="upland-shell-v111";
 const CORE=["./","./index.html","./install.html","./app.js","./planner-edit.js","./stickers.js","./style.css","./upland.css","./experience.css","./experience.js","./messenger.js","./messenger.css","./assets/upland-logo-original.svg","./assets/upland-install-icon.svg","./manifest.webmanifest","./version.json"];
 self.addEventListener("message",event=>{if(event.data?.type==="SKIP_WAITING")self.skipWaiting()});
 self.addEventListener("install",event=>{
