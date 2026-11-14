@@ -25,6 +25,7 @@ on:
       - 'service-worker.js'
       - 'install.html'
       - 'version.json'
+      - 'private-app/**'
       - '.github/workflows/android.yml'
 
 permissions:
@@ -95,6 +96,11 @@ jobs:
           mkdir -p www/assets
           cp index.html app.js style.css upland.css experience.css experience.js planner-edit.js stickers.js version.json manifest.webmanifest service-worker.js install.html privacy.html www/
           cp -R assets/. www/assets/
+          if [ "${GITHUB_REF_NAME}" = "mmd-private-apk" ]; then
+            cp private-app/index.html www/index.html
+            cp private-app/private.css www/private.css
+            cp private-app/private.js www/private.js
+          fi
 
       - name: Generate Android project
         run: npx cap add android
@@ -336,18 +342,3 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      - name: Publish APK release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v${{ steps.release.outputs.version }}
-          name: UPLAND ${{ steps.release.outputs.version }}
-          target_commitish: main
-          body: |
-            نسخه نصب‌شدنی اندروید UPLAND
-
-            ${{ github.event.head_commit.message }}
-          files: |
-            UPLAND-${{ steps.release.outputs.version }}.apk
-            UPLAND-latest.apk
-          make_latest: true
-          fail_on_unmatched_files: true
