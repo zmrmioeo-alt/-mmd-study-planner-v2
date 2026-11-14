@@ -1,0 +1,42 @@
+name: Build private MMD Windows app
+on:
+  push:
+    branches: [mmd-private-apk]
+    paths:
+      - 'private-app/**'
+      - '.github/workflows/private-windows.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install desktop dependencies
+        working-directory: private-app/windows
+        run: npm install
+      - name: Build Windows installer and portable app
+        working-directory: private-app/windows
+        run: npm run build
+      - name: Upload Windows builds
+        uses: actions/upload-artifact@v4
+        with:
+          name: MMD-Personal-Windows
+          path: |
+            private-app/windows/dist/*.exe
+          if-no-files-found: error
+          retention-days: 30
+      - name: Publish Windows downloads
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          gh release view mmd-private-windows-latest 2>$null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create mmd-private-windows-latest --title "MMD Personal for Windows" --notes "Latest Windows installer and portable build." --target mmd-private-apk
+          }
+          gh release upload mmd-private-windows-latest private-app/windows/dist/*.exe --clobber
