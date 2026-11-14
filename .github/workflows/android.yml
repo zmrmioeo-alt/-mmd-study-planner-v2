@@ -194,10 +194,103 @@ jobs:
           public class MainActivity extends BridgeActivity {
               @Override public void onCreate(Bundle savedInstanceState) {
                   registerPlugin(HamkelasiPortalPlugin.class);
+                  registerPlugin(ApkUpdaterPlugin.class);
                   super.onCreate(savedInstanceState);
               }
           }
           JAVA
+          cat > android/app/src/main/java/com/mmd/studyplanner/ApkUpdaterPlugin.java <<'JAVA'
+          package com.mmd.studyplanner;
+          import android.app.DownloadManager;
+          import android.content.BroadcastReceiver;
+          import android.content.Context;
+          import android.content.Intent;
+          import android.content.IntentFilter;
+          import android.net.Uri;
+          import android.os.Build;
+          import android.os.Environment;
+          import android.provider.Settings;
+          import com.getcapacitor.JSObject;
+          import com.getcapacitor.Plugin;
+          import com.getcapacitor.PluginCall;
+          import com.getcapacitor.PluginMethod;
+          import com.getcapacitor.annotation.CapacitorPlugin;
+          import java.util.concurrent.atomic.AtomicBoolean;
+          @CapacitorPlugin(name = "ApkUpdater")
+          public class ApkUpdaterPlugin extends Plugin {
+              private BroadcastReceiver receiver;
+              private long downloadId = -1;
+              @PluginMethod
+              public void installLatest(PluginCall call) {
+                  if (Build.VERSION.SDK_INT >= 26 && !getContext().getPackageManager().canRequestPackageInstalls()) {
+                      Intent settings = new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                          Uri.parse("package:" + getContext().getPackageName()));
+                      getActivity().startActivity(settings);
+                      JSObject result = new JSObject(); result.put("permissionRequired", true);
+                      call.resolve(result); return;
+                  }
+                  try {
+                      if (downloadId != -1) { call.reject("دریافت نسخه جدید از قبل در حال انجام است."); return; }
+                      DownloadManager manager = (DownloadManager)getContext().getSystemService(Context.DOWNLOAD_SERVICE);
+                      DownloadManager.Request request = new DownloadManager.Request(Uri.parse(
+                          "https://github.com/zmrmioeo-alt/-mmd-study-planner-v2/releases/latest/download/UPLAND-latest.apk"));
+                      request.setTitle("به‌روزرسانی UPLAND");
+                      request.setDescription("در حال دریافت نسخه جدید برنامه");
+                      request.setMimeType("application/vnd.android.package-archive");
+                      request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+                      request.setDestinationInExternalFilesDir(getContext(), Environment.DIRECTORY_DOWNLOADS, "UPLAND-latest.apk");
+                      downloadId = manager.enqueue(request);
+                      final long expectedId = downloadId;
+                      receiver = new BroadcastReceiver() {
+                          @Override public void onReceive(Context context, Intent intent) {
+                              if (!DownloadManager.ACTION_DOWNLOAD_COMPLETE.equals(intent.getAction()) ||
+                                  intent.getLongExtra(DownloadManager.EXTRA_DOWNLOAD_ID, -1) != expectedId) return;
+                              try {
+                                  DownloadManager.Query query = new DownloadManager.Query().setFilterById(expectedId);
+                                  android.database.Cursor cursor = manager.query(query);
+                                  boolean success = false;
+                                  if (cursor != null) {
+                                      if (cursor.moveToFirst()) success = cursor.getInt(cursor.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS)) == DownloadManager.STATUS_SUCCESSFUL;
+                                      cursor.close();
+                                  }
+                                  Uri apkUri = manager.getUriForDownloadedFile(expectedId);
+                                  if (!success || apkUri == null) throw new Exception("دریافت فایل APK کامل نشد.");
+                                  Intent install = new Intent(Intent.ACTION_VIEW);
+                                  install.setDataAndType(apkUri, "application/vnd.android.package-archive");
+                                  install.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                                  getContext().startActivity(install);
+                              } catch (Exception error) {
+                                  android.widget.Toast.makeText(getContext(), "نصب نسخه جدید ناموفق بود: " + error.getMessage(), android.widget.Toast.LENGTH_LONG).show();
+                              } finally {
+                                  try { getContext().unregisterReceiver(this); } catch (Exception ignored) {}
+                                  receiver = null; downloadId = -1;
+                              }
+                          }
+                      };
+                      IntentFilter filter = new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
+                      if (Build.VERSION.SDK_INT >= 33) getContext().registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED);
+                      else getContext().registerReceiver(receiver, filter);
+                      JSObject result = new JSObject(); result.put("permissionRequired", false); result.put("downloadStarted", true);
+                      call.resolve(result);
+                  } catch (Exception error) {
+                      downloadId = -1; call.reject("امکان شروع دریافت APK وجود ندارد: " + error.getMessage());
+                  }
+              }
+              @Override protected void handleOnDestroy() {
+                  if (receiver != null) { try { getContext().unregisterReceiver(receiver); } catch (Exception ignored) {} receiver = null; }
+                  super.handleOnDestroy();
+              }
+          }
+          JAVA
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("android/app/src/main/AndroidManifest.xml")
+          s = p.read_text()
+          permission = '    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />'
+          if permission not in s:
+              s = s.replace("<application", permission + "\\n    <application", 1)
+          p.write_text(s)
+          PY
 
       - name: Build installable APK
         working-directory: android
