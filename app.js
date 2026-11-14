@@ -625,11 +625,14 @@ function plannerDateAt(offset){const d=plannerWeekStart();d.setDate(d.getDate()+
 function plannerDateKey(d){return [d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-")}
 function plannerOffsetForDate(d){return Math.round((new Date(d.getFullYear(),d.getMonth(),d.getDate())-plannerWeekStart())/86400000)}
 const plannerDailyRestTotal=60,plannerDailyRestParts=6,plannerDailyRestPart=10;
-function plannerAvailabilitySlots(day){
+function plannerAvailabilityEditorSlots(day){
  const raw=weeklyAvailability[String(day)];
  if(!raw)return [];
  const slots=Array.isArray(raw)?raw:Array.isArray(raw.slots)?raw.slots:(raw.start&&raw.end?[{start:raw.start,end:raw.end}]:[]);
- return slots.filter(x=>x&&x.start&&x.end&&plannerMinutes(x.start)<plannerMinutes(x.end)).slice(0,3);
+ return slots.slice(0,3);
+}
+function plannerAvailabilitySlots(day){
+ return plannerAvailabilityEditorSlots(day).filter(x=>x&&x.start&&x.end&&plannerMinutes(x.start)<plannerMinutes(x.end));
 }
 function plannerRestIntervals(day,dateKey,exceptPlanId=null){
  const slots=plannerAvailabilitySlots(day);if(!slots.length)return [];
@@ -681,7 +684,7 @@ function plannerTimeLabel(date){return new Intl.DateTimeFormat("fa-IR",{hour:"2-
 function renderPlannerAvailability(){
  const host=$("planner-hours-grid");if(!host)return;
  host.innerHTML=plannerDayOrder.map(day=>{
-  const slots=plannerAvailabilitySlots(day);
+  const slots=plannerAvailabilityEditorSlots(day);
   const rows=Array.from({length:Math.max(1,slots.length)},(_,i)=>{const slot=slots[i]||{};
    return '<div class="planner-slot-row"><label>از ساعت<input type="time" data-availability-start="'+day+'" value="'+(slot.start||"")+'"></label><label>تا ساعت<input type="time" data-availability-end="'+day+'" value="'+(slot.end||"")+'"></label><button type="button" class="icon-btn" data-availability-remove="'+day+'" data-slot-index="'+i+'" '+(slots.length<=1&&i===0?'disabled':'')+'>حذف</button></div>';
   }).join("");
@@ -881,8 +884,8 @@ async function generateWeeklyPlan(persist=true){
 }
 $("planner-hours-grid").addEventListener("click",e=>{
  const add=e.target.closest("[data-availability-add]"),remove=e.target.closest("[data-availability-remove]");
- if(add){const day=Number(add.dataset.availabilityAdd),slots=plannerAvailabilitySlots(day);if(slots.length>=3)return;slots.push({start:"",end:""});weeklyAvailability[String(day)]={slots};renderPlannerAvailability();return}
- if(remove){const day=Number(remove.dataset.availabilityRemove),index=Number(remove.dataset.slotIndex),slots=plannerAvailabilitySlots(day).filter((_,i)=>i!==index);if(slots.length)weeklyAvailability[String(day)]={slots};else delete weeklyAvailability[String(day)];renderPlannerAvailability()}
+ if(add){const day=Number(add.dataset.availabilityAdd),slots=plannerAvailabilityEditorSlots(day);if(slots.length>=3)return;slots.push({start:"",end:""});weeklyAvailability[String(day)]={slots};renderPlannerAvailability();return}
+ if(remove){const day=Number(remove.dataset.availabilityRemove),index=Number(remove.dataset.slotIndex),slots=plannerAvailabilityEditorSlots(day).filter((_,i)=>i!==index);if(slots.length)weeklyAvailability[String(day)]={slots};else delete weeklyAvailability[String(day)];renderPlannerAvailability()}
 });
 $("planner-save-hours").addEventListener("click",async()=>{const b=$("planner-save-hours");b.disabled=true;try{await saveWeeklyAvailability();await generateWeeklyPlan(true);toast("ساعت‌های آزاد ذخیره شد.")}catch(err){toast(err.message)}finally{b.disabled=false}});
 $("smart-generate").addEventListener("click",async()=>{try{await saveWeeklyAvailability();await generateWeeklyPlan(true)}catch(err){toast(err.message)}});
