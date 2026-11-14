@@ -211,7 +211,7 @@ $("signup-form").addEventListener("submit",async e=>{
  finally{if(submit)submit.disabled=false;}
 });
 $("pending-logout").addEventListener("click",()=>db.auth.signOut());
-const UPLAND_BUNDLED_VERSION="2.5.34";
+const UPLAND_BUNDLED_VERSION="2.5.35";
 const compareUplandVersions=(remote,local)=>{const a=String(remote).split(".").map(x=>Number(x)||0),b=String(local).split(".").map(x=>Number(x)||0);for(let i=0;i<Math.max(a.length,b.length);i++){const d=(a[i]||0)-(b[i]||0);if(d)return d;}return 0;};
 const isNativeUplandApp=()=>!!(window.Capacitor?.isNativePlatform?.());
 const uplandVersionFeed=()=>isNativeUplandApp()?"https://zmrmioeo-alt.github.io/-mmd-study-planner-v2/version.json":"./version.json";
