@@ -6,6 +6,9 @@ on:
       - 'private-app/**'
       - '.github/workflows/private-windows.yml'
   workflow_dispatch:
+concurrency:
+  group: private-windows-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: write
 jobs:
