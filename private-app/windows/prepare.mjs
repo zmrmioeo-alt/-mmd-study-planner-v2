@@ -1,0 +1,10 @@
+import { cp, mkdir, rm } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
+const here=path.dirname(fileURLToPath(import.meta.url));
+const source=path.resolve(here,'..');
+const target=path.join(here,'app');
+await rm(target,{recursive:true,force:true});
+await mkdir(target,{recursive:true});
+for (const name of ['index.html','private.css','private.js']) await cp(path.join(source,name),path.join(target,name));
+console.log('Private MMD web app prepared for Windows packaging.');
