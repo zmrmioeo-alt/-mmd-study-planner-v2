@@ -37,9 +37,10 @@ async function openSpace(id){
  const {data:members,error:me}=await db.from("messenger_members").select("space_id,user_id,member_role").eq("space_id",id);if(me)throw me;
  const joined=(members||[]).some(m=>m.user_id===currentUser.id),view=$("mmd-space-view");view.classList.remove("hidden");$("mmd-spaces-panel").classList.add("space-open");
  if(!joined){
-  view.innerHTML='<button class="secondary" id="mmd-space-back">← بازگشت</button><div class="mmd-space-hero"><div class="mmd-space-avatar large">'+avatar(s.avatar_url,s.name)+'</div><h3>'+esc(s.name)+'</h3><p>'+esc(s.description||"")+'</p><span>فضای عمومی</span></div><button class="primary" id="mmd-space-join">عضویت</button>';
-  $("mmd-space-back").onclick=()=>{view.classList.add("hidden");$("mmd-spaces-panel").classList.remove("space-open")};
-  $("mmd-space-join").onclick=async()=>{const b=$("mmd-space-join");b.disabled=true;try{const r=await db.from("messenger_members").insert({space_id:id,user_id:currentUser.id,member_role:"member"});if(r.error)throw r.error;await openSpace(id)}catch(x){toastM("عضویت ناموفق بود: "+x.message)}finally{b.disabled=false}};
+  const isPublic=s.visibility==="public";
+  view.innerHTML='<button class="secondary" id="mmd-space-back">← بازگشت</button><div class="mmd-space-hero"><div class="mmd-space-avatar large">'+avatar(s.avatar_url,s.name)+'</div><h3>'+esc(s.name)+'</h3><p>'+esc(s.description||"")+'</p><span>'+(isPublic?"فضای عمومی":"فضای خصوصی")+'</span><p>'+(isPublic?"برای دیدن پیام‌ها ابتدا عضو شو.":"این فضا خصوصی است و فقط با دعوت مدیر می‌توانی عضو شوی.")+'</p></div>'+(isPublic?'<button class="primary" id="mmd-space-join">عضویت و ورود</button>':'');
+  $("mmd-space-back").onclick=()=>{view.classList.add("hidden");$("mmd-spaces-panel").classList.remove("space-open");loadMessengerSpaces().catch(showLoadError)};
+  if(isPublic)$("mmd-space-join").onclick=async()=>{const b=$("mmd-space-join");b.disabled=true;try{const r=await db.from("messenger_members").insert({space_id:id,user_id:currentUser.id,member_role:"member"});if(r.error)throw r.error;await openSpace(id)}catch(x){toastM("عضویت ناموفق بود: "+x.message)}finally{b.disabled=false}};
   return;
  }
  opened=s;
@@ -72,16 +73,17 @@ function showCreate(kind){
  createKind=kind;$("mmd-space-modal-title").textContent=kind==="group"?"ایجاد گروه جدید":"ایجاد کانال جدید";$("mmd-space-submit").textContent=kind==="group"?"ساخت گروه":"ساخت کانال";$("mmd-space-form").reset();$("mmd-avatar-preview").textContent="تصویر انتخاب نشده";$("mmd-space-form-message").textContent="";$("mmd-space-modal").classList.remove("hidden");
 }
 async function createSpace(e){
- e.preventDefault();const name=$("mmd-space-name").value.trim(),file=$("mmd-space-avatar").files[0],btn=$("mmd-space-submit");if(name.length<2)return;btn.disabled=true;
+ e.preventDefault();const name=$("mmd-space-name").value.trim(),file=$("mmd-space-avatar").files[0],btn=$("mmd-space-submit");if(name.length<2){$("mmd-space-form-message").textContent="نام باید دست‌کم ۲ نویسه باشد.";return;}btn.disabled=true;$("mmd-space-form-message").textContent="در حال ساخت...";
  try{
   let avatar_url=null;
   if(file){if(file.size>5*1024*1024)throw Error("تصویر باید کمتر از ۵ مگابایت باشد.");const ext=(file.name.split(".").pop()||"jpg").toLowerCase(),path=currentUser.id+"/"+crypto.randomUUID()+"."+ext;const up=await db.storage.from("messenger-avatars").upload(path,file,{contentType:file.type});if(up.error)throw up.error;avatar_url=db.storage.from("messenger-avatars").getPublicUrl(path).data.publicUrl;}
   const {data:s,error}=await db.from("messenger_spaces").insert({name,description:$("mmd-space-description").value.trim(),space_type:createKind,visibility:$("mmd-space-visibility").value,avatar_url,owner_id:currentUser.id}).select().single();if(error)throw error;
-  const m=await db.from("messenger_members").insert({space_id:s.id,user_id:currentUser.id,member_role:"owner"});if(m.error)throw m.error;
+  const m=await db.from("messenger_members").insert({space_id:s.id,user_id:currentUser.id,member_role:"owner"});if(m.error){await db.from("messenger_spaces").delete().eq("id",s.id);throw m.error;}
   $("mmd-space-modal").classList.add("hidden");toastM(createKind==="group"?"گروه ساخته شد.":"کانال ساخته شد.");switchTab(createKind);await loadMessengerSpaces();await openSpace(s.id);
  }catch(x){$("mmd-space-form-message").textContent="خطا: "+x.message}finally{btn.disabled=false}
 }
 function bind(){
+ if(!$("mmd-spaces-panel")||!$("mmd-space-modal"))return;
  document.querySelectorAll("[data-mmd-tab]").forEach(b=>b.addEventListener("click",()=>switchTab(b.dataset.mmdTab)));
  document.querySelectorAll("[data-mmd-create]").forEach(b=>b.addEventListener("click",()=>showCreate(b.dataset.mmdCreate)));
  $("mmd-space-form")?.addEventListener("submit",createSpace);
