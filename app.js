@@ -211,7 +211,7 @@ $("signup-form").addEventListener("submit",async e=>{
  finally{if(submit)submit.disabled=false;}
 });
 $("pending-logout").addEventListener("click",()=>db.auth.signOut());
-const UPLAND_BUNDLED_VERSION="2.5.36";
+const UPLAND_BUNDLED_VERSION="2.5.37";
 const compareUplandVersions=(remote,local)=>{const a=String(remote).split(".").map(x=>Number(x)||0),b=String(local).split(".").map(x=>Number(x)||0);for(let i=0;i<Math.max(a.length,b.length);i++){const d=(a[i]||0)-(b[i]||0);if(d)return d;}return 0;};
 const isNativeUplandApp=()=>!!(window.Capacitor?.isNativePlatform?.());
 const uplandVersionFeed=()=>isNativeUplandApp()?"https://zmrmioeo-alt.github.io/-mmd-study-planner-v2/version.json":"./version.json";
@@ -1460,8 +1460,53 @@ async function checkMmdRelease(showNotice=true){
  }catch(error){console.warn("MMD release check failed",error)}
 }
 
+async function checkAndApplyStartupUpdate(){
+ if(isNativeUplandApp())return false;
+ try{
+  if("serviceWorker" in navigator){
+   const reg=await navigator.serviceWorker.register("./service-worker.js",{updateViaCache:"none"});
+   await reg.update();
+   if(reg.waiting)reg.waiting.postMessage({type:"SKIP_WAITING"});
+   const installing=reg.installing;
+   if(installing&&installing.state!=="activated"){
+    await Promise.race([new Promise(resolve=>{
+     const done=()=>{if(installing.state==="activated"||installing.state==="redundant"){installing.removeEventListener("statechange",done);resolve();}};
+     installing.addEventListener("statechange",done);done();
+    }),new Promise(resolve=>setTimeout(resolve,6500))]);
+   }
+  }
+  const response=await fetch("./version.json?startup="+Date.now(),{cache:"no-store"});
+  if(!response.ok)return false;
+  const info=await response.json(),remote=String(info.version||"");
+  if(!remote||compareUplandVersions(remote,UPLAND_BUNDLED_VERSION)<=0)return false;
+  const key="mmd_update_reloaded_"+remote;
+  if(sessionStorage.getItem(key)==="1"){
+   sessionStorage.removeItem(key);
+   console.warn("UPLAND update reload already attempted for",remote);
+   return false;
+  }
+  sessionStorage.setItem(key,"1");
+  const overlay=$("startup-overlay");
+  if(overlay)overlay.classList.remove("hidden");
+  const status=$("startup-status");
+  if(status)status.textContent="نسخه جدید "+remote+" دریافت شد؛ در حال بارگذاری برنامه...";
+  const target=new URL("./",location.href);
+  target.searchParams.set("appVersion",remote);
+  target.searchParams.set("refresh",String(Date.now()));
+  location.replace(target.href);
+  await new Promise(resolve=>setTimeout(resolve,9000));
+  return true;
+ }catch(error){
+  console.warn("Automatic startup update check failed; opening current app",error);
+  return false;
+ }
+}
 checkMmdRelease().catch(()=>{});setInterval(()=>checkMmdRelease(),180000);
-boot().catch(err=>{console.error(err);show("app-view",false);show("auth-view",true);message("auth-message","خطا در راه‌اندازی: "+err.message,true)});
+(async()=>{
+ const redirected=await checkAndApplyStartupUpdate();
+ if(redirected)return;
+ boot().catch(err=>{console.error(err);show("app-view",false);show("auth-view",true);message("auth-message","خطا در راه‌اندازی: "+err.message,true)});
+})();
 
 /* Hamkelasi export bridge: local parsing, consent-gated import, no passwords. */
 (()=>{
