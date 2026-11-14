@@ -1,4 +1,4 @@
-const CACHE_NAME="upland-shell-v111";
+const CACHE_NAME="upland-shell-v112";
 const CORE=["./","./index.html","./install.html","./app.js","./planner-edit.js","./stickers.js","./style.css","./upland.css","./experience.css","./experience.js","./messenger.js","./messenger.css","./assets/upland-logo-original.svg","./assets/upland-install-icon.svg","./manifest.webmanifest","./version.json"];
 self.addEventListener("message",event=>{if(event.data?.type==="SKIP_WAITING")self.skipWaiting()});
 self.addEventListener("install",event=>{
@@ -26,7 +26,7 @@ self.addEventListener("notificationclick",event=>{
 self.addEventListener("fetch",event=>{
  const request=event.request;
  if(request.method!=="GET"||new URL(request.url).origin!==self.location.origin)return;
- event.respondWith(fetch(request).then(response=>{
+ event.respondWith(fetch(request,{cache:"no-store"}).then(response=>{
   if(response&&response.ok){const copy=response.clone();caches.open(CACHE_NAME).then(cache=>cache.put(request,copy));}
   return response;
  }).catch(async()=>{
