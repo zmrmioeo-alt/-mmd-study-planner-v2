@@ -625,25 +625,39 @@ function plannerDateAt(offset){const d=plannerWeekStart();d.setDate(d.getDate()+
 function plannerDateKey(d){return [d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-")}
 function plannerOffsetForDate(d){return Math.round((new Date(d.getFullYear(),d.getMonth(),d.getDate())-plannerWeekStart())/86400000)}
 const plannerDailyRestTotal=60,plannerDailyRestParts=6,plannerDailyRestPart=10;
+function plannerAvailabilitySlots(day){
+ const raw=weeklyAvailability[String(day)];
+ if(!raw)return [];
+ const slots=Array.isArray(raw)?raw:Array.isArray(raw.slots)?raw.slots:(raw.start&&raw.end?[{start:raw.start,end:raw.end}]:[]);
+ return slots.filter(x=>x&&x.start&&x.end&&plannerMinutes(x.start)<plannerMinutes(x.end)).slice(0,3);
+}
 function plannerRestIntervals(day,dateKey,exceptPlanId=null){
- const avail=weeklyAvailability[String(day)];if(!avail)return [];
- const start=plannerLocalDateTime(dateKey,avail.start),end=plannerLocalDateTime(dateKey,avail.end),spanMinutes=(end-start)/60000;
- if(spanMinutes<plannerDailyRestTotal)return [];
+ const slots=plannerAvailabilitySlots(day);if(!slots.length)return [];
+ const slotRanges=slots.map(x=>({start:plannerLocalDateTime(dateKey,x.start),end:plannerLocalDateTime(dateKey,x.end)}));
+ const first=slotRanges[0].start,last=slotRanges[slotRanges.length-1].end,spanMinutes=(last-first)/60000;
  const blocks=[
   ...routines.filter(r=>r.active!==false&&Number(r.weekday)===Number(day)&&r.scheduled_time).map(r=>{
    const st=plannerLocalDateTime(dateKey,String(r.scheduled_time).slice(0,5)),mins=Math.max(5,Math.min(720,Number(r.duration_minutes)||60));
    return {start:st,end:new Date(st.getTime()+mins*60000)};
   }),
   ...planEntriesForDate(dateKey,exceptPlanId).map(p=>({start:new Date(p.start),end:new Date(p.end)}))
- ].filter(x=>x.end>start&&x.start<end).map(x=>({start:new Date(Math.max(x.start.getTime(),start.getTime())),end:new Date(Math.min(x.end.getTime(),end.getTime()))})).sort((a,b)=>a.start-b.start);
- const gaps=[];let cursor=new Date(start);
- for(const block of blocks){if(block.start>cursor)gaps.push({start:new Date(cursor),end:new Date(block.start)});if(block.end>cursor)cursor=new Date(block.end)}
- if(cursor<end)gaps.push({start:new Date(cursor),end:new Date(end)});
+ ].sort((a,b)=>a.start-b.start);
+ const gaps=[];
+ for(const range of slotRanges){
+  let cursor=new Date(range.start);
+  for(const block of blocks){
+   if(block.end<=range.start||block.start>=range.end)continue;
+   const bs=new Date(Math.max(block.start.getTime(),range.start.getTime())),be=new Date(Math.min(block.end.getTime(),range.end.getTime()));
+   if(bs>cursor)gaps.push({start:new Date(cursor),end:bs});
+   if(be>cursor)cursor=be;
+  }
+  if(cursor<range.end)gaps.push({start:new Date(cursor),end:new Date(range.end)});
+ }
  const totalFree=gaps.reduce((n,g)=>n+(g.end-g.start)/60000,0);if(totalFree<plannerDailyRestTotal)return [];
- const parts=plannerDailyRestParts,partMinutes=plannerDailyRestTotal/parts,result=[];
- for(let i=0;i<parts;i++){
-  const target=start.getTime()+spanMinutes*((i+1)/(parts+1));
-  const choices=gaps.map((g,index)=>({g,index,capacity:(g.end-g.start)/60000})).filter(x=>x.capacity>=partMinutes);
+ const partMinutes=plannerDailyRestTotal/plannerDailyRestParts,result=[];
+ for(let i=0;i<plannerDailyRestParts;i++){
+  const target=first.getTime()+spanMinutes*((i+1)/(plannerDailyRestParts+1));
+  const choices=gaps.map((g,index)=>({g,index})).filter(x=>(x.g.end-x.g.start)/60000>=partMinutes);
   if(!choices.length)break;
   choices.sort((a,b)=>Math.abs((a.g.start.getTime()+a.g.end.getTime())/2-target)-Math.abs((b.g.start.getTime()+b.g.end.getTime())/2-target));
   const chosen=choices[0],g=chosen.g,latest=g.end.getTime()-partMinutes*60000;
@@ -665,8 +679,14 @@ function plannerMinutes(value){if(!value)return null;const [h,m]=value.split(":"
 function plannerLocalDateTime(dateKey,time){const [y,m,d]=dateKey.split("-").map(Number),[h,mi]=time.split(":").map(Number);return new Date(y,m-1,d,h,mi,0,0)}
 function plannerTimeLabel(date){return new Intl.DateTimeFormat("fa-IR",{hour:"2-digit",minute:"2-digit"}).format(date)}
 function renderPlannerAvailability(){
- const order=plannerDayOrder;
- order.forEach(day=>{const a=weeklyAvailability[String(day)]||{};const s=$("availability-start-"+day),e=$("availability-end-"+day);if(s)s.value=a.start||"";if(e)e.value=a.end||""});
+ const host=$("planner-hours-grid");if(!host)return;
+ host.innerHTML=plannerDayOrder.map(day=>{
+  const slots=plannerAvailabilitySlots(day);
+  const rows=Array.from({length:Math.max(1,slots.length)},(_,i)=>{const slot=slots[i]||{};
+   return '<div class="planner-slot-row"><label>از ساعت<input type="time" data-availability-start="'+day+'" value="'+(slot.start||"")+'"></label><label>تا ساعت<input type="time" data-availability-end="'+day+'" value="'+(slot.end||"")+'"></label><button type="button" class="icon-btn" data-availability-remove="'+day+'" data-slot-index="'+i+'" '+(slots.length<=1&&i===0?'disabled':'')+'>حذف</button></div>';
+  }).join("");
+  return '<section class="planner-hours-day"><b>'+plannerDayNames[day]+'</b><div class="planner-slots" data-availability-slots="'+day+'">'+rows+'</div><button type="button" class="secondary planner-add-slot" data-availability-add="'+day+'" '+(slots.length>=3?'disabled':'')+'>＋ افزودن بازه</button></section>';
+ }).join("");
 }
 async function savePlannerData(){
  const row={user_id:currentUser.id,sleep_hours:settings.sleep_hours??null,wake_time:settings.wake_time||null,theme:settings.theme||"light",accent_theme:settings.accent_theme||"emerald",appearance:settings.appearance||settings.theme||"light",humor_enabled:!!settings.humor_enabled,season_theme:settings.season_theme||"auto",weekly_availability:weeklyAvailability,weekly_plan:weeklyPlan};
@@ -675,10 +695,17 @@ async function savePlannerData(){
 async function saveWeeklyAvailability(){
  const next={};
  for(const day of plannerDayOrder){
-  const start=$("availability-start-"+day).value,end=$("availability-end-"+day).value;
-  if(!start&&!end)continue;
-  if(!start||!end||plannerMinutes(start)>=plannerMinutes(end))throw new Error("برای "+plannerDayNames[day]+" ساعت شروع و پایان معتبر وارد کنید.");
-  next[String(day)]={start,end};
+  const starts=[...document.querySelectorAll('[data-availability-start="'+day+'"]')],ends=[...document.querySelectorAll('[data-availability-end="'+day+'"]')],slots=[];
+  for(let i=0;i<Math.max(starts.length,ends.length);i++){
+   const start=starts[i]?.value||"",end=ends[i]?.value||"";
+   if(!start&&!end)continue;
+   if(!start||!end||plannerMinutes(start)>=plannerMinutes(end))throw new Error("بازه "+(i+1)+" در روز "+plannerDayNames[day]+" معتبر نیست.");
+   slots.push({start,end});
+  }
+  slots.sort((a,b)=>plannerMinutes(a.start)-plannerMinutes(b.start));
+  for(let i=1;i<slots.length;i++)if(plannerMinutes(slots[i].start)<plannerMinutes(slots[i-1].end))throw new Error("بازه‌های "+plannerDayNames[day]+" نباید با هم هم‌پوشانی داشته باشند.");
+  if(slots.length>3)throw new Error("برای هر روز حداکثر سه بازه مجاز است.");
+  if(slots.length)next[String(day)]={slots};
  }
  weeklyAvailability=next;await savePlannerData();
 }
@@ -686,24 +713,22 @@ function planTaskById(id){return tasks.find(t=>String(t.id)===String(id))}
 function planEntriesForDate(dateKey,exceptId=null){return weeklyPlan.filter(p=>p.date===dateKey&&String(p.id||p.task_id)!==String(exceptId)).map(p=>({...p,startDate:new Date(p.start),endDate:new Date(p.end)})).sort((a,b)=>a.startDate-b.startDate)}
 function plannerFindSlot(day,dateKey,duration,exceptId=null){
  const todayKey=plannerDateKey(new Date());if(dateKey<todayKey)return null;
- const avail=weeklyAvailability[String(day)];if(!avail)return null;
- const dayStart=plannerLocalDateTime(dateKey,avail.start),dayEnd=plannerLocalDateTime(dateKey,avail.end);
- let cursor=new Date(dayStart);const now=new Date();
- if(dateKey===plannerDateKey(now)&&cursor<now){cursor=new Date(now);cursor.setMinutes(Math.ceil(cursor.getMinutes()/15)*15,0,0)}
- const occupied=plannerDayOccupancy(day,dateKey,exceptId);
- for(const item of occupied){
-  const buffer=item.rest?0:plannerBreakMinutes;
-  const protectedStart=new Date(item.startDate.getTime()-buffer*60000);
-  if(cursor<item.startDate){
-   const proposedEnd=new Date(cursor.getTime()+duration*60000);
-   if(proposedEnd<=protectedStart)break;
-   cursor=new Date(item.endDate.getTime()+(item.rest?0:plannerBreakMinutes*60000));
-  }else if(cursor<new Date(item.endDate.getTime()+buffer*60000)){
-   cursor=new Date(item.endDate.getTime()+buffer*60000);
+ const slots=plannerAvailabilitySlots(day);if(!slots.length)return null;
+ const occupied=plannerDayOccupancy(day,dateKey,exceptId),now=new Date();
+ for(const range of slots){
+  const dayStart=plannerLocalDateTime(dateKey,range.start),dayEnd=plannerLocalDateTime(dateKey,range.end);
+  let cursor=new Date(dayStart);
+  if(dateKey===todayKey&&cursor<now){cursor=new Date(now);cursor.setMinutes(Math.ceil(cursor.getMinutes()/15)*15,0,0)}
+  for(const item of occupied){
+   const buffer=item.rest?0:plannerBreakMinutes,protectedStart=new Date(item.startDate.getTime()-buffer*60000);
+   if(item.endDate<=cursor||item.startDate>=dayEnd)continue;
+   if(cursor<item.startDate&&cursor.getTime()+duration*60000<=Math.min(protectedStart.getTime(),dayEnd.getTime()))return {start:cursor,end:new Date(cursor.getTime()+duration*60000)};
+   cursor=new Date(Math.max(cursor.getTime(),item.endDate.getTime()+(item.rest?0:plannerBreakMinutes*60000)));
+   if(cursor>=dayEnd)break;
   }
+  if(cursor.getTime()+duration*60000<=dayEnd.getTime())return {start:cursor,end:new Date(cursor.getTime()+duration*60000)};
  }
- if(cursor.getTime()+duration*60000>dayEnd.getTime())return null;
- return {start:cursor,end:new Date(cursor.getTime()+duration*60000)};
+ return null;
 }
 function plannerDueOffset(task){
  if(!task.due_at)return 6;
@@ -729,7 +754,7 @@ function plannerChooseSlot(task,entries){
    const slot=plannerFindSlot(day,dateKey,duration);
    if(slot&&(!task.due_at||slot.end<=new Date(task.due_at))){
     const used=entries.filter(p=>p.date===dateKey).reduce((n,p)=>n+Number(p.duration||0),0);
-    const avail=weeklyAvailability[String(day)],capacity=plannerMinutes(avail.end)-plannerMinutes(avail.start);
+    const capacity=plannerAvailabilitySlots(day).reduce((n,x)=>n+plannerMinutes(x.end)-plannerMinutes(x.start),0);
     choices.push({dateKey,slot,ratio:capacity?used/capacity:1,offset});
    }
   }
@@ -747,8 +772,8 @@ function renderWeeklyPlan(){
  const groups=plannerDayOrder.map(day=>{
   const date=plannerDateAt((day-6+7)%7),key=plannerDateKey(date);
   const dayEntries=plannerDayOccupancy(day,key).filter(p=>p.routine||p.rest||tasksById.has(String(p.task_id)));
-  const a=weeklyAvailability[String(day)];
-  return '<section class="planner-day" data-plan-drop="'+key+'"><header><b>'+plannerDayNames[day]+'</b><span>'+jalaliDate(date)+'</span><small>'+(a?a.start+" تا "+a.end:"بدون زمان آزاد")+'</small></header><div class="planner-day-items">'+(dayEntries.length?dayEntries.map(p=>{
+  const a=plannerAvailabilitySlots(day),availabilityLabel=a.length?a.map(x=>x.start+" تا "+x.end).join("، "):"بدون زمان آزاد";
+  return '<section class="planner-day" data-plan-drop="'+key+'"><header><b>'+plannerDayNames[day]+'</b><span>'+jalaliDate(date)+'</span><small>'+availabilityLabel+'</small></header><div class="planner-day-items">'+(dayEntries.length?dayEntries.map(p=>{
    if(p.rest)return '<article class="planner-task planner-rest"><div class="planner-task-top"><b>استراحت</b><span>'+plannerTimeLabel(p.startDate)+' · '+fa(p.duration)+' دقیقه</span></div><small>زمان استراحت روزانه</small></article>';
    if(p.routine)return '<article class="planner-task planner-fixed"><div class="planner-task-top"><b>'+escapeHtml(p.title)+'</b><span>'+plannerTimeLabel(p.startDate)+' · '+plannerTimeLabel(p.endDate)+'</span></div><small>برنامه ثابت · زمان رزروشده</small></article>';
    const t=tasksById.get(String(p.task_id)),done=t?.status==="done",start=p.startDate,planKey=String(p.id||p.task_id);
@@ -756,7 +781,7 @@ function renderWeeklyPlan(){
    return '<article class="planner-task '+(done?"is-done":"")+'" draggable="'+(!done)+'" data-plan-key="'+escapeHtml(planKey)+'"><div class="planner-task-top"><b>'+escapeHtml(t?.title||"کار حذف‌شده")+'</b><span>'+plannerTimeLabel(start)+' · '+fa(p.duration)+' دقیقه'+part+'</span></div><small>مهلت: '+(t?.due_at?jalaliDate(t.due_at,true):"تعیین نشده")+(p.locked?" · جابه‌جایی دستی":"")+'</small><div class="planner-move-controls"><select aria-label="انتقال به روز" data-plan-day="'+escapeHtml(planKey)+'">'+plannerDayOrder.map(d=>{const dt=plannerDateAt((d-6+7)%7),k=plannerDateKey(dt);return '<option value="'+k+'" '+(k===key?"selected":"")+'>'+plannerDayNames[d]+'</option>'}).join("")+'</select><input aria-label="ساعت شروع" type="time" value="'+plannerTimeValue(start)+'" data-plan-time="'+escapeHtml(planKey)+'"><button type="button" class="secondary" data-plan-save="'+escapeHtml(planKey)+'" '+(done?"disabled":"")+'>تغییر زمان</button>'+(p.locked?'<button type="button" class="secondary" data-plan-unlock="'+escapeHtml(planKey)+'">خودکار</button>':"")+'</div></article>';
   }).join(""):'<p class="planner-empty">کاری برای این روز زمان‌بندی نشده است.</p>')+'</div></section>';
  }).join("");
- const invalidLocked=valid.filter(p=>p.locked).filter(p=>{const a=weeklyAvailability[String(new Date(p.date+"T12:00:00").getDay())],t=tasksById.get(String(p.task_id));if(!a)return true;const st=new Date(p.start),en=new Date(p.end),lo=plannerLocalDateTime(p.date,a.start),hi=plannerLocalDateTime(p.date,a.end);if(st<lo||en>hi||(t?.due_at&&en>new Date(t.due_at)))return true;return plannerDayOccupancy(new Date(p.date+"T12:00:00").getDay(),p.date,p.id||p.task_id).some(x=>st<new Date(x.endDate.getTime()+(x.rest?0:plannerBreakMinutes)*60000)&&en>new Date(x.startDate.getTime()-(x.rest?0:plannerBreakMinutes)*60000))});
+ const invalidLocked=valid.filter(p=>p.locked).filter(p=>{const slots=plannerAvailabilitySlots(new Date(p.date+"T12:00:00").getDay()),t=tasksById.get(String(p.task_id));if(!slots.length)return true;const st=new Date(p.start),en=new Date(p.end),inside=slots.some(a=>st>=plannerLocalDateTime(p.date,a.start)&&en<=plannerLocalDateTime(p.date,a.end));if(!inside||(t?.due_at&&en>new Date(t.due_at)))return true;return plannerDayOccupancy(new Date(p.date+"T12:00:00").getDay(),p.date,p.id||p.task_id).some(x=>st<new Date(x.endDate.getTime()+(x.rest?0:plannerBreakMinutes)*60000)&&en>new Date(x.startDate.getTime()-(x.rest?0:plannerBreakMinutes)*60000))});
  const conflictWarning=invalidLocked.length?'<section class="planner-unscheduled"><b>بررسی جابه‌جایی‌های دستی</b>'+invalidLocked.map(p=>'<p>'+escapeHtml(tasksById.get(String(p.task_id))?.title||"کار")+' — ساعت آزاد یا فاصله زمانی با برنامه جدید سازگار نیست؛ زمانش را اصلاح کن.</p>').join("")+'</section>':"";
  const warning=unscheduled.length?'<section class="planner-unscheduled"><b>نیازمند زمان‌بندی کامل</b>'+unscheduled.map(t=>{const done=assigned.get(String(t.id))||0,remaining=Math.max(0,Number(t.estimated_minutes||0)-done);return '<div class="planner-unscheduled-row"><p>'+escapeHtml(t.title)+' — '+(!t.estimated_minutes?"مدت‌زمان مشخص نشده":done?fa(done)+' از '+fa(t.estimated_minutes)+' دقیقه زمان‌بندی شد؛ '+fa(remaining)+' دقیقه باقی‌مانده':"زمان آزاد کافی تا مهلت پیدا نشد")+'</p>'+(!t.estimated_minutes?'<input type="number" min="5" max="1440" step="5" placeholder="دقیقه" aria-label="مدت‌زمان به دقیقه" data-plan-duration="'+escapeHtml(t.id)+'"><button type="button" class="secondary" data-plan-duration-save="'+escapeHtml(t.id)+'">ثبت مدت‌زمان</button>':"")+'</div>'}).join("")+'</section>':"";
  host.innerHTML='<div class="planner-week-grid">'+groups+'</div>'+conflictWarning+warning;
@@ -765,18 +790,23 @@ function renderWeeklyPlan(){
 }
 function plannerFindPartialSlot(day,dateKey,remaining,exceptPlanId=null){
  const todayKey=plannerDateKey(new Date());if(dateKey<todayKey)return null;
- const avail=weeklyAvailability[String(day)];if(!avail)return null;
- const dayStart=plannerLocalDateTime(dateKey,avail.start),dayEnd=plannerLocalDateTime(dateKey,avail.end);
- let cursor=new Date(dayStart);const now=new Date();
- if(dateKey===todayKey&&cursor<now){cursor=new Date(now);cursor.setMinutes(Math.ceil(cursor.getMinutes()/15)*15,0,0)}
- const occupied=plannerDayOccupancy(day,dateKey,exceptPlanId);
- const makeSlot=gapEnd=>{const gap=Math.floor((gapEnd-cursor)/60000),duration=Math.min(remaining,Math.floor(gap/5)*5);return duration>=5?{start:new Date(cursor),end:new Date(cursor.getTime()+duration*60000),duration}:null};
- for(const item of occupied){
-  const buffer=item.rest?0:plannerBreakMinutes;
-  if(cursor<item.startDate){const slot=makeSlot(new Date(item.startDate.getTime()-buffer*60000));if(slot)return slot;cursor=new Date(item.endDate.getTime()+buffer*60000)}
-  else if(cursor<new Date(item.endDate.getTime()+buffer*60000))cursor=new Date(item.endDate.getTime()+buffer*60000);
+ const slots=plannerAvailabilitySlots(day);if(!slots.length)return null;
+ const occupied=plannerDayOccupancy(day,dateKey,exceptPlanId),now=new Date();
+ const makeSlot=(cursor,gapEnd)=>{const gap=Math.floor((gapEnd-cursor)/60000),duration=Math.min(remaining,Math.floor(gap/5)*5);return duration>=5?{start:new Date(cursor),end:new Date(cursor.getTime()+duration*60000),duration}:null};
+ for(const range of slots){
+  const dayStart=plannerLocalDateTime(dateKey,range.start),dayEnd=plannerLocalDateTime(dateKey,range.end);
+  let cursor=new Date(dayStart);
+  if(dateKey===todayKey&&cursor<now){cursor=new Date(now);cursor.setMinutes(Math.ceil(cursor.getMinutes()/15)*15,0,0)}
+  for(const item of occupied){
+   const buffer=item.rest?0:plannerBreakMinutes,protectedStart=new Date(item.startDate.getTime()-buffer*60000);
+   if(item.endDate<=cursor||item.startDate>=dayEnd)continue;
+   if(cursor<item.startDate){const slot=makeSlot(cursor,new Date(Math.min(protectedStart.getTime(),dayEnd.getTime())));if(slot)return slot}
+   cursor=new Date(Math.max(cursor.getTime(),item.endDate.getTime()+(item.rest?0:plannerBreakMinutes*60000)));
+   if(cursor>=dayEnd)break;
+  }
+  const slot=makeSlot(cursor,dayEnd);if(slot)return slot;
  }
- return makeSlot(dayEnd);
+ return null;
 }
 function plannerChoosePartialSlot(task,entries,remaining,avoidDays=new Set()){
  const sets=plannerCandidateOffsets(task);
@@ -787,7 +817,7 @@ function plannerChoosePartialSlot(task,entries,remaining,avoidDays=new Set()){
    const slot=plannerFindPartialSlot(day,dateKey,remaining);
    if(slot&&(!task.due_at||slot.end<=new Date(task.due_at))){
     const used=entries.filter(p=>p.date===dateKey).reduce((n,p)=>n+Number(p.duration||0),0);
-    const avail=weeklyAvailability[String(day)],capacity=plannerMinutes(avail.end)-plannerMinutes(avail.start);
+    const capacity=plannerAvailabilitySlots(day).reduce((n,x)=>n+plannerMinutes(x.end)-plannerMinutes(x.start),0);
     choices.push({dateKey,slot,ratio:capacity?used/capacity:1,offset,avoided:avoidDays.has(dateKey)});
    }
   }
@@ -801,13 +831,12 @@ function plannerTimeValue(date){return String(date.getHours()).padStart(2,"0")+"
 async function movePlannerTask(planId,dateKey,time){
  const entry=weeklyPlan.find(p=>String(p.id||p.task_id)===String(planId));if(!entry)return;
  const task=planTaskById(entry.task_id);if(!task||task.status==="done")return;
- const date=new Date(dateKey+"T12:00:00"),day=date.getDay(),avail=weeklyAvailability[String(day)];
- if(!avail){toast("برای این روز ساعت آزاد تعریف نشده است.");return}
+ const date=new Date(dateKey+"T12:00:00"),day=date.getDay(),avail=plannerAvailabilitySlots(day);
+ if(!avail.length){toast("برای این روز ساعت آزاد تعریف نشده است.");return}
  const duration=Number(entry.duration);if(!duration){toast("مدت‌زمان این بخش مشخص نیست.");return}
  const chosen=time?{start:plannerLocalDateTime(dateKey,time)}:plannerFindSlot(day,dateKey,duration,planId);if(!chosen){toast("در این روز برای این بخش زمان پیوسته کافی وجود ندارد.");return}
  const start=chosen.start,end=new Date(start.getTime()+duration*60000);
- const dayStart=plannerLocalDateTime(dateKey,avail.start),dayEnd=plannerLocalDateTime(dateKey,avail.end);
- if(start<dayStart||end>dayEnd){toast("این زمان خارج از ساعت آزاد روز است.");return}
+ if(!avail.some(x=>start>=plannerLocalDateTime(dateKey,x.start)&&end<=plannerLocalDateTime(dateKey,x.end))){toast("این زمان خارج از بازه‌های آزاد روز است.");return}
  if(task.due_at&&end>new Date(task.due_at)){toast("این زمان بعد از مهلت تحویل قرار می‌گیرد.");return}
  const conflict=plannerDayOccupancy(day,dateKey,planId).some(p=>start<new Date(p.endDate.getTime()+(p.rest?0:plannerBreakMinutes)*60000)&&end>new Date(p.startDate.getTime()-(p.rest?0:plannerBreakMinutes)*60000));
  if(conflict){toast("این زمان با کار دیگری تداخل دارد یا فاصله استراحت را رعایت نمی‌کند.");return}
@@ -850,6 +879,11 @@ async function generateWeeklyPlan(persist=true){
  const missed=tasks.filter(t=>t.status==="pending"&&(!t.estimated_minutes||(assigned.get(String(t.id))||0)<Number(t.estimated_minutes)));
  if(missed.length)toast("برنامه ساخته شد؛ "+fa(missed.length)+" کار به دلیل نبود مدت‌زمان یا ظرفیت کافی کامل زمان‌بندی نشد.");
 }
+$("planner-hours-grid").addEventListener("click",e=>{
+ const add=e.target.closest("[data-availability-add]"),remove=e.target.closest("[data-availability-remove]");
+ if(add){const day=Number(add.dataset.availabilityAdd),slots=plannerAvailabilitySlots(day);if(slots.length>=3)return;slots.push({start:"",end:""});weeklyAvailability[String(day)]={slots};renderPlannerAvailability();return}
+ if(remove){const day=Number(remove.dataset.availabilityRemove),index=Number(remove.dataset.slotIndex),slots=plannerAvailabilitySlots(day).filter((_,i)=>i!==index);if(slots.length)weeklyAvailability[String(day)]={slots};else delete weeklyAvailability[String(day)];renderPlannerAvailability()}
+});
 $("planner-save-hours").addEventListener("click",async()=>{const b=$("planner-save-hours");b.disabled=true;try{await saveWeeklyAvailability();await generateWeeklyPlan(true);toast("ساعت‌های آزاد ذخیره شد.")}catch(err){toast(err.message)}finally{b.disabled=false}});
 $("smart-generate").addEventListener("click",async()=>{try{await saveWeeklyAvailability();await generateWeeklyPlan(true)}catch(err){toast(err.message)}});
 $("smart-clear").addEventListener("click",async()=>{if(!confirm("فقط برنامه‌های خودکار پاک شوند؟ زمان‌های دستی و کارهای انجام‌شده حفظ می‌شوند."))return;weeklyPlan=weeklyPlan.filter(p=>p.locked||planTaskById(p.task_id)?.status==="done");try{await savePlannerData();renderWeeklyPlan()}catch(err){toast(err.message)}});
