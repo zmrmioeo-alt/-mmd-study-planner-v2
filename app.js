@@ -211,7 +211,7 @@ $("signup-form").addEventListener("submit",async e=>{
  finally{if(submit)submit.disabled=false;}
 });
 $("pending-logout").addEventListener("click",()=>db.auth.signOut());
-const UPLAND_BUNDLED_VERSION="2.5.37";
+const UPLAND_BUNDLED_VERSION="2.5.38";
 const compareUplandVersions=(remote,local)=>{const a=String(remote).split(".").map(x=>Number(x)||0),b=String(local).split(".").map(x=>Number(x)||0);for(let i=0;i<Math.max(a.length,b.length);i++){const d=(a[i]||0)-(b[i]||0);if(d)return d;}return 0;};
 const isNativeUplandApp=()=>!!(window.Capacitor?.isNativePlatform?.());
 const uplandVersionFeed=()=>isNativeUplandApp()?"https://zmrmioeo-alt.github.io/-mmd-study-planner-v2/version.json":"./version.json";
@@ -231,7 +231,17 @@ async function checkAppUpdateNotice(){
   const wrap=document.createElement("section");wrap.className="form-panel";wrap.style.cssText="margin:0 0 18px;border:1px solid var(--accent);";
   const h=document.createElement("h3");h.textContent=title;const p=document.createElement("p");p.textContent=body;
   const b=document.createElement("button");b.className="primary";b.textContent="دریافت به‌روزرسانی";
-  b.addEventListener("click",async()=>{if(isNativeUplandApp()){window.open(uplandLatestApkUrl,"_blank");b.textContent="صفحه دریافت APK باز شد";return;}b.disabled=true;b.textContent="در حال دریافت...";try{const reg=await navigator.serviceWorker?.getRegistration();await reg?.update();if(reg?.waiting)reg.waiting.postMessage({type:"SKIP_WAITING"});setTimeout(()=>location.reload(),1200)}catch(e){b.disabled=false;b.textContent="تلاش دوباره";toast("به‌روزرسانی انجام نشد؛ از صفحه نصب اقدام کنید.")}});
+  b.addEventListener("click",async()=>{if(isNativeUplandApp()){
+   const updater=window.Capacitor?.Plugins?.ApkUpdater;
+   if(!updater){window.open(uplandLatestApkUrl,"_blank");b.textContent="صفحه دریافت APK باز شد";return;}
+   b.disabled=true;b.textContent="در حال بررسی مجوز اندروید...";
+   try{
+    const result=await updater.installLatest();
+    if(result?.permissionRequired){b.disabled=false;b.textContent="مجوز داده شد؛ برای نصب دوباره بزنید";toast("اندروید صفحه اجازه نصب برنامه‌های ناشناس را باز کرد. گزینه اجازه از این منبع را فعال کنید، به برنامه برگردید و دوباره همین دکمه را بزنید.");}
+    else{b.textContent="در حال دریافت APK؛ پس از دانلود نصب را تأیید کنید";}
+   }catch(error){b.disabled=false;b.textContent="تلاش دوباره برای به‌روزرسانی";toast("شروع نصب ناموفق بود: "+(error?.message||error));}
+   return;
+  }b.disabled=true;b.textContent="در حال دریافت...";try{const reg=await navigator.serviceWorker?.getRegistration();await reg?.update();if(reg?.waiting)reg.waiting.postMessage({type:"SKIP_WAITING"});setTimeout(()=>location.reload(),1200)}catch(e){b.disabled=false;b.textContent="تلاش دوباره";toast("به‌روزرسانی انجام نشد؛ از صفحه نصب اقدام کنید.")}});
   const n=document.createElement("button");n.className="secondary";n.textContent=localStorage.getItem("mmd_update_notifications")==="on"?"اعلان انتشار نسخه فعال است":"فعال‌سازی اعلان انتشار نسخه";
   n.addEventListener("click",async()=>{if(!("Notification"in window)){toast("این مرورگر از اعلان پشتیبانی نمی‌کند.");return}const permission=await Notification.requestPermission();if(permission==="granted"){localStorage.setItem("mmd_update_notifications","on");n.textContent="اعلان انتشار نسخه فعال شد";toast("از این پس هنگام بازکردن برنامه، انتشار نسخه جدید با اعلان اطلاع‌رسانی می‌شود.")}else toast("اجازه اعلان داده نشد.")});
   wrap.append(h,p,b,n);document.querySelector(".main")?.prepend(wrap);
