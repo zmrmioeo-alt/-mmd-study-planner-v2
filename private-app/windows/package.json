@@ -1,0 +1,42 @@
+{
+  "name": "mmd-personal-windows",
+  "version": "1.0.0",
+  "private": true,
+  "description": "MMD Personal desktop app",
+  "main": "main.cjs",
+  "scripts": {
+    "build": "node prepare.mjs && electron-builder --win nsis portable"
+  },
+  "devDependencies": {
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.mmd.privatehub",
+    "productName": "MMD Personal",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.cjs",
+      "app/**/*"
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "portable": {
+      "artifactName": "MMD-Personal-Portable-${version}.${ext}"
+    }
+  }
+}
