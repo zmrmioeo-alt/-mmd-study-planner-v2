@@ -82,15 +82,18 @@
 
 
   async function editAvailability(day){
-    const current=weeklyAvailability[String(day)]||{};
-    const form=openEditor('<h2 style="margin:0">ویرایش ساعت آزاد · '+dayNames[day]+'</h2>'+field("از ساعت","mmd-a-start",current.start||"","time")+field("تا ساعت","mmd-a-end",current.end||"","time")+'<p class="muted">برای غیرفعال‌کردن این روز، هر دو ساعت را خالی بگذار.</p>');
+    const current=plannerAvailabilitySlots(day);
+    const slotFields=Array.from({length:3},(_,i)=>{const x=current[i]||{};return '<div class="planner-edit-slot"><b>بازه '+(i+1)+'</b>'+field("از ساعت","mmd-a-start-"+i,x.start||"","time")+field("تا ساعت","mmd-a-end-"+i,x.end||"","time")+'</div>'}).join("");
+    const form=openEditor('<h2 style="margin:0">ویرایش ساعت آزاد · '+dayNames[day]+'</h2>'+slotFields+'<p class="muted">حداکثر سه بازه؛ برای حذف یک بازه هر دو ساعت آن را خالی بگذار.</p>');
     form.addEventListener("submit",async e=>{
       e.preventDefault();const btn=$("mmd-edit-submit");btn.disabled=true;
       try{
-        const start=$("mmd-a-start").value,end=$("mmd-a-end").value;
-        if((start&&!end)||(!start&&end)||(start&&end&&start>=end))throw new Error("ساعت شروع و پایان را درست وارد کن.");
-        const next={...weeklyAvailability};if(!start)delete next[String(day)];else next[String(day)]={start,end};
-        weeklyAvailability=next;await savePlannerData();await generateWeeklyPlan(true);renderProgramsHub();closeEditor();toast("ساعت آزاد به‌روزرسانی شد و برنامه دوباره چیده شد.");
+        const slots=[];
+        for(let i=0;i<3;i++){const start=$("mmd-a-start-"+i).value,end=$("mmd-a-end-"+i).value;if(!start&&!end)continue;if(!start||!end||start>=end)throw new Error("ساعت شروع و پایان بازه "+(i+1)+" را درست وارد کن.");slots.push({start,end})}
+        slots.sort((a,b)=>a.start.localeCompare(b.start));
+        for(let i=1;i<slots.length;i++)if(slots[i].start<slots[i-1].end)throw new Error("بازه‌ها نباید با هم هم‌پوشانی داشته باشند.");
+        const next={...weeklyAvailability};if(slots.length)next[String(day)]={slots};else delete next[String(day)];
+        weeklyAvailability=next;await savePlannerData();await generateWeeklyPlan(true);renderProgramsHub();closeEditor();toast("بازه‌های آزاد به‌روزرسانی شد و برنامه دوباره چیده شد.");
       }catch(err){$("mmd-edit-message").textContent=err.message||"ذخیره انجام نشد.";btn.disabled=false}
     });
   }
@@ -114,7 +117,7 @@
     const host=$("programs-hub-list");if(!host)return;
     const taskCards=tasks.map(t=>'<article class="task-item"><div class="task-main"><h3>'+esc(t.title)+'</h3><p>وظیفه و تکلیف · مهلت: '+esc(t.due_at?jalaliDate(t.due_at,true):"بدون مهلت")+' · مدت: '+esc(t.estimated_minutes||"—")+' دقیقه</p></div><span class="priority">'+(t.status==="done"?"انجام‌شده":t.status==="cancelled"?"لغوشده":"در انتظار")+'</span><div class="task-actions"><button class="secondary" type="button" data-task-edit="'+esc(t.id)+'">ویرایش</button><button class="icon-btn" type="button" data-task-delete="'+esc(t.id)+'">حذف</button></div></article>').join("");
     const routineCards=routines.map(r=>'<article class="routine-card"><b>'+esc(r.title)+'</b><small>برنامه ثابت · '+esc(dayNames[Number(r.weekday)]||"")+' · '+esc((r.scheduled_time||"").slice(0,5)||"بدون ساعت")+'</small><p class="muted">'+esc(r.details||"")+'</p><div class="task-actions"><button class="secondary" type="button" data-routine-edit="'+esc(r.id)+'">ویرایش</button><button class="icon-btn" type="button" data-routine-delete="'+esc(r.id)+'">حذف</button></div></article>').join("");
-    const availabilityCards=[6,0,1,2,3,4,5].map(day=>{const v=weeklyAvailability[String(day)]||{};return '<article class="routine-card"><b>'+dayNames[day]+'</b><small>زمان آزاد: '+esc(v.start||"تنظیم نشده")+' تا '+esc(v.end||"تنظیم نشده")+'</small><div class="task-actions"><button class="secondary" type="button" data-availability-edit="'+day+'">ویرایش ساعت آزاد</button><button class="icon-btn" type="button" data-availability-delete="'+day+'">حذف</button></div></article>'}).join("");
+    const availabilityCards=[6,0,1,2,3,4,5].map(day=>{const slots=plannerAvailabilitySlots(day),label=slots.length?slots.map(x=>x.start+" تا "+x.end).join("، "):"تنظیم نشده";return '<article class="routine-card"><b>'+dayNames[day]+'</b><small>زمان آزاد: '+esc(label)+'</small><div class="task-actions"><button class="secondary" type="button" data-availability-edit="'+day+'">ویرایش بازه‌ها</button><button class="icon-btn" type="button" data-availability-delete="'+day+'">حذف</button></div></article>'}).join("");
     const planCards=weeklyPlan.map(p=>{
       const t=tasks.find(x=>String(x.id)===String(p.task_id));if(!t)return "";
       const start=new Date(p.start);const time=Number.isNaN(start.getTime())?"":String(start.getHours()).padStart(2,"0")+":"+String(start.getMinutes()).padStart(2,"0");
