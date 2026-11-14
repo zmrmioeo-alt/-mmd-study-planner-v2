@@ -9,7 +9,7 @@ const avatar=(url,name)=>url?'<img src="'+esc(url)+'" alt="">':'<span>'+esc((nam
 function toastM(s){if(typeof toast==="function")toast(s);else alert(s)}
 async function loadMessengerSpaces(){
  if(!currentUser)return;
- const box=$("mmd-spaces-list");if(!box)return;
+ const box=$("mmd-spaces-list");if(!box)return;$("chat-content").classList.toggle("hidden",tab!=="direct");$("mmd-spaces-panel").classList.toggle("hidden",tab==="direct");
  box.innerHTML='<div class="empty">در حال دریافت...</div>';
  const [sr,mr]=await Promise.all([
   db.from("messenger_spaces").select("id,name,description,space_type,visibility,avatar_url,owner_id,created_at").order("created_at",{ascending:false}),
@@ -89,7 +89,7 @@ function bind(){
  $("mmd-space-avatar")?.addEventListener("change",e=>{const f=e.target.files[0];$("mmd-avatar-preview").innerHTML=f?'<img src="'+URL.createObjectURL(f)+'" alt="پیش‌نمایش">':"تصویر انتخاب نشده"});
  $("mmd-spaces-refresh")?.addEventListener("click",()=>loadMessengerSpaces().catch(e=>toastM(e.message)));
  $("mmd-spaces-list")?.addEventListener("click",e=>{const b=e.target.closest("[data-mmd-open]");if(b)openSpace(b.dataset.mmdOpen).catch(x=>toastM("خطا: "+x.message))});
- $("mmd-owned-spaces")?.addEventListener("click",e=>{const b=e.target.closest("[data-mmd-manage]");if(b){switchTab("discover");openSpace(b.dataset.mmdManage).catch(x=>toastM(x.message))}});
+ $("mmd-owned-spaces")?.addEventListener("click",e=>{const b=e.target.closest("[data-mmd-manage]");if(b){if(typeof navigate==="function")navigate("chat");switchTab("discover");openSpace(b.dataset.mmdManage).catch(x=>toastM(x.message))}});
 }
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",bind);else bind();
 window.loadMessengerSpaces=loadMessengerSpaces;
