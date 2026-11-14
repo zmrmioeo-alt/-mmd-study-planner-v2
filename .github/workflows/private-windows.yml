@@ -18,7 +18,7 @@ jobs:
           node-version: 20
       - name: Install desktop dependencies
         working-directory: private-app/windows
-        run: npm install
+        run: npm install --no-audit --no-fund --prefer-offline
       - name: Build Windows installer and portable app
         working-directory: private-app/windows
         run: npm run build
