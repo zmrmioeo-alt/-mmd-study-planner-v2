@@ -186,3 +186,9 @@ body.light input,body.light select,body.light textarea{background:#f9fbff!import
  #page-chat .mmd-messenger-tabs button{font-size:11px!important;padding:10px 3px!important}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+/* Unified navigation icon geometry */
+#main-nav .nav-icon{width:20px!important;height:20px!important;flex:0 0 20px!important;display:block!important;opacity:.86}
+#main-nav .nav-link.active .nav-icon{opacity:1}
+#main-nav .nav-link:hover .nav-icon{transform:scale(1.06)}
+@media(max-width:900px){#main-nav .nav-icon{width:21px!important;height:21px!important;flex-basis:21px!important}}
