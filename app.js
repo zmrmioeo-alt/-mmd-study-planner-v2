@@ -1,4 +1,12 @@
 /* MMD Study Planner - client application */
+// Always open the app at the top instead of restoring an old scroll position.
+try { if ("scrollRestoration" in history) history.scrollRestoration = "manual"; } catch (_) {}
+function resetInitialScrollPosition(){
+  document.documentElement.scrollTop = 0;
+  document.body.scrollTop = 0;
+  window.scrollTo(0, 0);
+}
+window.addEventListener("pageshow", () => requestAnimationFrame(resetInitialScrollPosition));
 const SUPABASE_URL = "https://tbmxbtbayqgfvdlmeuaz.supabase.co";
 const SUPABASE_KEY = "sb_publishable_n89FjocOtomNmAReFaP-vg_PMFbVow3";
 const ADMIN_FUNCTION = SUPABASE_URL + "/functions/v1/admin-manage";
@@ -276,7 +284,7 @@ async function enterApp(user){
   await waitForStartup(loadFeatureFlags(),"تنظیمات سامانه");
   const startupResults=await Promise.allSettled([waitForStartup(loadTasks(),"وظایف"),waitForStartup(loadRoutines(),"برنامه ثابت"),waitForStartup(loadSettings(),"تنظیمات شخصی"),waitForStartup(loadAnnouncements(),"اطلاعیه‌ها"),waitForStartup(loadHumorFeed(),"بخش همتانه",7000)]);const startupNames=["وظایف","برنامه ثابت","تنظیمات","اطلاعیه‌ها","بخش همتانه"];const startupErrors=startupResults.map((r,i)=>r.status==="rejected"?startupNames[i]+": "+(r.reason?.message||"خطای دریافت اطلاعات"):null).filter(Boolean);if(startupResults[0].status==="rejected")tasks=[];if(startupResults[1].status==="rejected")routines=[];if(startupResults[2].status==="rejected")settings={};if(startupResults[3].status==="rejected")window.__announcements=[];renderAll();updateLocalReminderStatus().catch(()=>{});syncLocalStudyReminders(false).catch(e=>console.warn("Local reminders startup sync failed",e));await promptHamkelasiConsentIfNeeded();syncSmartPlanner();try{startAnnouncementRealtime()}catch(e){console.warn("Announcement realtime unavailable",e)}startMessageRealtime().catch(e=>console.warn("Message realtime unavailable",e));try{startChatRealtime()}catch(e){console.warn("Chat realtime unavailable",e)}try{startCommunityRealtime()}catch(e){console.warn("Community realtime unavailable",e)}checkAppUpdateNotice();notifyUnreadMessagesOnEntry().catch(e=>console.warn("Unread message check unavailable",e));startUpdateMonitor();const notificationParams=new URLSearchParams(location.search);if(notificationParams.get("page")==="chat"){const target=notificationParams.get("chatTarget");if(target)navigate("chat",target);else navigate("chat")}if(startupErrors.length){console.error("Some startup data failed:",startupErrors);toast("برنامه باز شد، اما دریافت بعضی اطلاعات ناموفق بود: "+startupErrors.join(" | "))}
  }catch(err){console.error("App loading failed:",err);show("app-view",false);show("auth-view",true);show("login-card",true);message("auth-message","خطا در ورود: "+(err.message||"خطای نامشخص"),true);throw err}
- finally{show("startup-overlay",false);enteringUserId=null}
+ finally{show("startup-overlay",false);enteringUserId=null;resetInitialScrollPosition()}
 }
 async function loadFeatureFlags(){
  const {data,error}=await db.from("app_feature_flags").select("chat_enabled,humor_enabled,humor_requires_approval").eq("id",1).single();
