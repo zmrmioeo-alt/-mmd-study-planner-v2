@@ -73,14 +73,49 @@ function showCreate(kind){
  createKind=kind;$("mmd-space-modal-title").textContent=kind==="group"?"ایجاد گروه جدید":"ایجاد کانال جدید";$("mmd-space-submit").textContent=kind==="group"?"ساخت گروه":"ساخت کانال";$("mmd-space-form").reset();$("mmd-avatar-preview").textContent="تصویر انتخاب نشده";$("mmd-space-form-message").textContent="";$("mmd-space-modal").classList.remove("hidden");
 }
 async function createSpace(e){
- e.preventDefault();const name=$("mmd-space-name").value.trim(),file=$("mmd-space-avatar").files[0],btn=$("mmd-space-submit");if(name.length<2){$("mmd-space-form-message").textContent="نام باید دست‌کم ۲ نویسه باشد.";return;}btn.disabled=true;$("mmd-space-form-message").textContent="در حال ساخت...";
+ e.preventDefault();
+ const name=$("mmd-space-name").value.trim(),file=$("mmd-space-avatar").files[0],btn=$("mmd-space-submit"),status=$("mmd-space-form-message");
+ if(btn.dataset.busy==="1")return;
+ if(name.length<2){status.textContent="نام باید دست‌کم ۲ نویسه باشد.";return;}
+ btn.dataset.busy="1";btn.disabled=true;status.textContent="۱ از ۳: بررسی حساب کاربری...";
+ let createdId=null;
  try{
+  if(!currentUser?.id)throw Error("حساب کاربری شناسایی نشد؛ یک‌بار خارج شوید و دوباره وارد شوید.");
+  const sessionResult=await db.auth.getSession();
+  if(sessionResult.error)throw sessionResult.error;
+  const session=sessionResult.data?.session;
+  if(!session?.user?.id||session.user.id!==currentUser.id)throw Error("نشست ورود معتبر نیست؛ لطفاً دوباره وارد حساب شوید.");
   let avatar_url=null;
-  if(file){if(file.size>5*1024*1024)throw Error("تصویر باید کمتر از ۵ مگابایت باشد.");const ext=(file.name.split(".").pop()||"jpg").toLowerCase(),path=currentUser.id+"/"+crypto.randomUUID()+"."+ext;const up=await db.storage.from("messenger-avatars").upload(path,file,{contentType:file.type});if(up.error)throw up.error;avatar_url=db.storage.from("messenger-avatars").getPublicUrl(path).data.publicUrl;}
-  const {data:s,error}=await db.from("messenger_spaces").insert({name,description:$("mmd-space-description").value.trim(),space_type:createKind,visibility:$("mmd-space-visibility").value,avatar_url,owner_id:currentUser.id}).select().single();if(error)throw error;
-  const m=await db.from("messenger_members").insert({space_id:s.id,user_id:currentUser.id,member_role:"owner"});if(m.error){await db.from("messenger_spaces").delete().eq("id",s.id);throw m.error;}
-  $("mmd-space-modal").classList.add("hidden");toastM(createKind==="group"?"گروه ساخته شد.":"کانال ساخته شد.");switchTab(createKind);await loadMessengerSpaces();await openSpace(s.id);
- }catch(x){$("mmd-space-form-message").textContent="خطا: "+x.message}finally{btn.disabled=false}
+  if(file){
+   if(file.size>5*1024*1024)throw Error("تصویر باید کمتر از ۵ مگابایت باشد.");
+   status.textContent="۲ از ۳: بارگذاری تصویر...";
+   const ext=(file.name.split(".").pop()||"jpg").toLowerCase(),path=currentUser.id+"/"+crypto.randomUUID()+"."+ext;
+   const up=await db.storage.from("messenger-avatars").upload(path,file,{contentType:file.type});
+   if(up.error)throw up.error;
+   avatar_url=db.storage.from("messenger-avatars").getPublicUrl(path).data.publicUrl;
+  }
+  status.textContent="۲ از ۳: ثبت گروه یا کانال...";
+  const {data:s,error}=await db.from("messenger_spaces").insert({name,description:$("mmd-space-description").value.trim(),space_type:createKind,visibility:$("mmd-space-visibility").value,avatar_url,owner_id:currentUser.id}).select("id,name,description,space_type,visibility,avatar_url,owner_id,created_at").single();
+  if(error)throw error;
+  if(!s?.id)throw Error("فضا در پایگاه داده ثبت نشد؛ شناسه‌ای دریافت نشد.");
+  createdId=s.id;
+  status.textContent="۳ از ۳: ثبت سازنده به‌عنوان مدیر...";
+  const m=await db.from("messenger_members").insert({space_id:s.id,user_id:currentUser.id,member_role:"owner"});
+  if(m.error)throw m.error;
+  $("mmd-space-modal").classList.add("hidden");
+  toastM(createKind==="group"?"گروه ساخته شد.":"کانال ساخته شد.");
+  switchTab(createKind);
+  await loadMessengerSpaces();
+  await openSpace(s.id);
+ }catch(x){
+  console.error("MMD create space failed",x);
+  let msg=x?.message||String(x);
+  if(x?.code==="42501"||/row-level security|permission denied/i.test(msg))msg="دسترسی ساخت در پایگاه داده رد شد. نشست را تازه کنید و دوباره امتحان کنید. ("+msg+")";
+  status.textContent="ساخت انجام نشد: "+msg;
+  if(createdId)status.textContent+=" شناسه فضای ثبت‌شده: "+createdId+"؛ عضویت سازنده کامل نشد.";
+ }finally{
+  btn.disabled=false;delete btn.dataset.busy;
+ }
 }
 function bind(){
  if(!$("mmd-spaces-panel")||!$("mmd-space-modal"))return;
