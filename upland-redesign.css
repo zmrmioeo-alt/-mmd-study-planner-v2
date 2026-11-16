@@ -149,3 +149,8 @@ a{color:#315ff4}
  #page-chat .mmd-messenger-tabs button{font-size:10px!important}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+
+@media(max-width:850px){
+ #app-view>.sidebar,#app-view>.sidebar.menu-open{transform:none!important;translate:none!important}
+ #app-view>.sidebar.menu-open{z-index:130!important}
+}
