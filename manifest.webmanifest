@@ -8,8 +8,8 @@
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#050a16",
-  "theme_color": "#050a16",
+  "background_color": "#f3f7ff",
+  "theme_color": "#f3f7ff",
   "icons": [
     {
       "src": "./assets/upland-install-icon.svg",
