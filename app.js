@@ -13,7 +13,7 @@ const ADMIN_FUNCTION = SUPABASE_URL + "/functions/v1/admin-manage";
 const HAMKELASI_CONSENT_FUNCTION = SUPABASE_URL + "/functions/v1/hamkelasi-consent";
 const HAMKELASI_IMPORT_FUNCTION = SUPABASE_URL + "/functions/v1/hamkelasi-import";
 const MANAGEMENT_ADMIN_IDS = new Set(["d32c5ceb-ca91-46c8-978c-fb3d33c45eca","9abd24a9-9fc4-48f9-8046-c45b27a52ec0","397bef6c-9fb3-4ab2-9a45-723b014c38f4","f6e434ad-3940-437a-82cf-777eecfbd512","17b4aa61-7b56-4f05-a1b7-871eb5df40db"]);
-const isManagementAdmin = () => !!currentUser && MANAGEMENT_ADMIN_IDS.has(currentUser.id);
+const isManagementAdmin = () => !!currentUser && (MANAGEMENT_ADMIN_IDS.has(currentUser.id) || profile?.is_admin === true);
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
 function makeUUID(){if(window.crypto?.randomUUID)return window.crypto.randomUUID();const bytes=new Uint8Array(16);if(window.crypto?.getRandomValues)window.crypto.getRandomValues(bytes);else for(let i=0;i<16;i++)bytes[i]=Math.floor(Math.random()*256);bytes[6]=(bytes[6]&15)|64;bytes[8]=(bytes[8]&63)|128;const h=[...bytes].map(x=>x.toString(16).padStart(2,"0"));return h.slice(0,4).join("")+"-"+h.slice(4,6).join("")+"-"+h.slice(6,8).join("")+"-"+h.slice(8,10).join("")+"-"+h.slice(10).join("");}
@@ -329,7 +329,7 @@ async function loadProfile(){
  if(profile.is_approved===false){show("app-view",false);show("auth-view",false);show("pending-approval-view",true);return;}
  if(profile.is_banned){show("app-view",false);show("auth-view",false);show("expired-subscription-view",false);show("banned-account-view",true);$("banned-user-name").textContent=profile.display_name||"کاربر";return}
  $("user-name").textContent=profile.display_name||"کاربر";if(profile.avatar_path){const avatarUrl=db.storage.from("profile-avatars").getPublicUrl(profile.avatar_path).data.publicUrl+"?v="+Date.now();$("user-avatar").innerHTML='<img src="'+avatarUrl+'" alt="تصویر پروفایل">'}else{$("user-avatar").textContent="👤"}$("school-grade-chip").textContent=schoolProfileLabel(profile)||"پایه یا کلاس ثبت نشده";
- show("admin-nav",isManagementAdmin());show("announcement-admin-form",isManagementAdmin());show("chat-nav",profile.chat_enabled!==false||isManagementAdmin());
+ show("admin-nav",isManagementAdmin() || profile?.is_admin === true);show("announcement-admin-form",isManagementAdmin() || profile?.is_admin === true);show("chat-nav",profile.chat_enabled!==false||isManagementAdmin());
  if(isManagementAdmin()){$("subscription-label").textContent="مدیر سامانه";loadPendingUsers().catch(console.error);loadAdminHumor().catch(console.error);return;}
  const {data:subs,error:subError}=await db.from("subscriptions").select("starts_at,ends_at").eq("user_id",currentUser.id).order("ends_at",{ascending:false}).limit(1);
  if(subError)throw subError;
