@@ -329,7 +329,7 @@ async function loadProfile(){
  if(profile.is_approved===false){show("app-view",false);show("auth-view",false);show("pending-approval-view",true);return;}
  if(profile.is_banned){show("app-view",false);show("auth-view",false);show("expired-subscription-view",false);show("banned-account-view",true);$("banned-user-name").textContent=profile.display_name||"کاربر";return}
  $("user-name").textContent=profile.display_name||"کاربر";if(profile.avatar_path){const avatarUrl=db.storage.from("profile-avatars").getPublicUrl(profile.avatar_path).data.publicUrl+"?v="+Date.now();$("user-avatar").innerHTML='<img src="'+avatarUrl+'" alt="تصویر پروفایل">'}else{$("user-avatar").textContent="👤"}$("school-grade-chip").textContent=schoolProfileLabel(profile)||"پایه یا کلاس ثبت نشده";
- show("admin-nav",isManagementAdmin() || profile?.is_admin === true);show("announcement-admin-form",isManagementAdmin() || profile?.is_admin === true);show("chat-nav",profile.chat_enabled!==false||isManagementAdmin());
+ const canManageUsers=MANAGEMENT_ADMIN_IDS.has(currentUser.id)||profile?.is_admin===true;document.body.classList.toggle("management-admin",canManageUsers);$("admin-nav").classList.toggle("hidden",!canManageUsers);if(canManageUsers&&$("admin-nav").parentElement===$("main-nav"))$("main-nav").prepend($("admin-nav"));show("announcement-admin-form",canManageUsers);show("chat-nav",profile.chat_enabled!==false||canManageUsers);
  if(isManagementAdmin()){$("subscription-label").textContent="مدیر سامانه";loadPendingUsers().catch(console.error);loadAdminHumor().catch(console.error);return;}
  const {data:subs,error:subError}=await db.from("subscriptions").select("starts_at,ends_at").eq("user_id",currentUser.id).order("ends_at",{ascending:false}).limit(1);
  if(subError)throw subError;
