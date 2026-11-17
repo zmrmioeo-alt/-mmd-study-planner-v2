@@ -316,13 +316,13 @@
             <button id="game-start" class="primary game-start" type="button">شروع چالش</button>
             <button id="game-tap" class="game-tap" type="button" disabled><span>بزن!</span><small>هر ضربه = یک امتیاز</small></button>
             <p id="game-message" class="game-message" role="status" aria-live="polite">برای ثبت رکورد، چالش را شروع کن.</p>
-            <div class="game-personal-record"><span>رکورد شخصی تو</span><strong id="game-personal-record">—</strong><small>ضربه</small></div>
+            <div class="game-personal-record"><span>رکورد شخصی تو</span><strong id="game-personal-record">—</strong><small id="game-personal-unit">ضربه</small></div>
           </section>
           <section class="game-leaderboard">
-            <div class="game-leaderboard-head"><div><p class="eyebrow">HALL OF FAME</p><h3>جدول رکوردها</h3></div><span class="game-chip">۱۰ ثانیه</span></div>
+            <div class="game-leaderboard-head"><div><p class="eyebrow">HALL OF FAME</p><h3>جدول رتبه‌بندی همهٔ بازی‌ها</h3></div><label class="game-leaderboard-filter" for="game-leaderboard-game"><span>انتخاب بازی</span><select id="game-leaderboard-game" class="game-leaderboard-select"><option value="tap-10s">چالش ۱۰ ثانیه‌ای</option><option value="snake">کرم‌بازی</option><option value="orbit">مدار</option><option value="duel-speed">دوئل سرعت</option></select></label></div>
             <div id="game-podium" class="game-podium"><div class="empty">در حال دریافت رکوردها…</div></div>
             <ol id="game-leaderboard-list" class="game-leaderboard-list"><li class="empty">در حال دریافت رکوردها…</li></ol>
-            <p class="game-footnote">برای هر دانش‌آموز، بهترین رکورد ثبت می‌شود. سه نفر برتر همیشه بالای جدول هستند.</p>
+            <p class="game-footnote">رکورد برتر هر کاربر در هر بازی نمایش داده می‌شود. در دوئل سرعت، زمان کمتر رتبهٔ بالاتری دارد.</p>
           </section>
         </div>
         <div class="arcade-extra-grid">
@@ -348,7 +348,7 @@
           </section>
         </div>
       </section>
-      <footer> UPLAND <span>نسخه ۲.۵.۴۱</span> <a href="install.html" style="color:var(--accent)">نصب اپلیکیشن</a></footer>
+      <footer> UPLAND <span>نسخه ۲.۵.۴۲</span> <a href="install.html" style="color:var(--accent)">نصب اپلیکیشن</a></footer>
     </main>
     <nav id="mobile-dock" aria-label="میانبرهای اصلی">
       <button class="dock-link active" type="button" data-page="today"><svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg><span>خانه</span></button>
