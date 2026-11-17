@@ -1359,25 +1359,26 @@ async function loadAdminFiles(){
  if(profileResult.error)throw profileResult.error;
  const names=new Map((profileResult.data||[]).map(p=>[p.id,p.display_name||"کاربر"]));
  const rows=[];
- for(const m of msgResult.data||[]){
-  if(!m.media_path)continue;
+ const chatRows=await Promise.all((msgResult.data||[]).map(async m=>{
+  if(!m.media_path)return null;
   const signed=await db.storage.from("private-chat-media").createSignedUrl(m.media_path,3600);
-  if(signed.error||!signed.data?.signedUrl)continue;
+  if(signed.error||!signed.data?.signedUrl)return null;
   const kind=adminFileKind(m.media_type,m.media_path);
-  rows.push({id:"chat-"+m.id,path:m.media_path,url:signed.data.signedUrl,owner:names.get(m.sender_id)||"کاربر",name:String(m.media_path).split("/").pop(),kind,kindLabel:({image:"تصویر",video:"ویدئو",audio:"صوت",file:"سند"})[kind],sourceLabel:"پیوست چت",dateLabel:jalaliDate(m.created_at,true)});
- }
+  return {id:"chat-"+m.id,path:m.media_path,url:signed.data.signedUrl,owner:names.get(m.sender_id)||"کاربر",name:String(m.media_path).split("/").pop(),kind,kindLabel:({image:"تصویر",video:"ویدئو",audio:"صوت",file:"سند"})[kind],sourceLabel:"پیوست چت",dateLabel:jalaliDate(m.created_at,true),sortValue:new Date(m.created_at).getTime()};
+ }));
+ rows.push(...chatRows.filter(Boolean));
  let communityWarning="";
  try{
   const community=await callAdmin("list_humor_posts");
-  for(const p of community.posts||[]){
-   if(!p.media_path)continue;
+  const communityRows=await Promise.all((community.posts||[]).filter(p=>p.media_path).map(async p=>{
    const signed=await db.storage.from("humor-media").createSignedUrl(p.media_path,3600);
-   if(signed.error||!signed.data?.signedUrl)continue;
+   if(signed.error||!signed.data?.signedUrl)return null;
    const kind=adminFileKind(p.media_type,p.media_path);
-   rows.push({id:"community-"+p.id,path:p.media_path,url:signed.data.signedUrl,owner:names.get(p.user_id)||"کاربر",name:String(p.media_path).split("/").pop(),kind,kindLabel:({image:"تصویر",video:"ویدئو",audio:"صوت",file:"سند"})[kind],sourceLabel:"همتانه",dateLabel:jalaliDate(p.created_at,true)});
-  }
+   return {id:"community-"+p.id,path:p.media_path,url:signed.data.signedUrl,owner:names.get(p.user_id)||"کاربر",name:String(p.media_path).split("/").pop(),kind,kindLabel:({image:"تصویر",video:"ویدئو",audio:"صوت",file:"سند"})[kind],sourceLabel:"همتانه",dateLabel:jalaliDate(p.created_at,true),sortValue:new Date(p.created_at).getTime()};
+  }));
+  rows.push(...communityRows.filter(Boolean));
  }catch(err){communityWarning=" فایل‌های همتانه بارگذاری نشدند: "+err.message}
- rows.sort((a,b)=>b.dateLabel.localeCompare(a.dateLabel));
+ rows.sort((a,b)=>b.sortValue-a.sortValue);
  window.__adminFiles=rows;
  renderAdminFiles();
  message("admin-files-message","فایل‌ها به‌روزرسانی شدند."+communityWarning,!!communityWarning);
