@@ -12,12 +12,12 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/@majidh1/jalalidatepicker@1.0.0/dist/jalalidatepicker.min.css">
-  <link rel="stylesheet" href="style.css?v=2.5.44"><link rel="stylesheet" href="upland.css?v=2.5.20"><link rel="stylesheet" href="experience.css?v=2.5.31"><link rel="stylesheet" href="messenger.css?v=1.2.2"><link rel="stylesheet" href="upland-experience.css?v=3.1.1"><link rel="stylesheet" href="upland-redesign.css?v=6.0.0"><link rel="stylesheet" href="desktop-admin-fixes.css?v=1.0.1"><link rel="stylesheet" href="arcade.css?v=1.0.0">
+  <link rel="stylesheet" href="style.css?v=2.5.48"><link rel="stylesheet" href="upland.css?v=2.5.20"><link rel="stylesheet" href="experience.css?v=2.5.31"><link rel="stylesheet" href="messenger.css?v=1.2.2"><link rel="stylesheet" href="upland-experience.css?v=3.1.1"><link rel="stylesheet" href="upland-redesign.css?v=6.0.0"><link rel="stylesheet" href="desktop-admin-fixes.css?v=1.0.1"><link rel="stylesheet" href="arcade.css?v=1.0.0">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onerror="this.onerror=null;this.src='https://unpkg.com/@supabase/supabase-js@2';this.onerror=function(){document.body.innerHTML='<main style=&quot;max-width:520px;margin:15vh auto;padding:24px;font:16px sans-serif;text-align:center;direction:rtl;color:#17243b&quot;><h2>اتصال به سرویس برنامه برقرار نشد</h2><p>اتصال اینترنت یا دسترسی به سرویس بارگذاری کتابخانه را بررسی کنید و صفحه را دوباره باز کنید.</p></main>'}"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script defer src="https://unpkg.com/@majidh1/jalalidatepicker@1.0.0/dist/jalalidatepicker.min.js"></script>
   <script>window.addEventListener("error",function(e){if(e.target&&e.target.src&&e.target.src.includes("xlsx.full.min.js")&&!window.XLSX){var s=document.createElement("script");s.src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js";document.head.appendChild(s)}},true);</script>
-  <script defer src="app.js?v=2.5.47"></script>
+  <script defer src="app.js?v=2.5.48"></script>
   <script defer src="planner-edit.js?v=1.3.3"></script>
   <script defer src="stickers.js?v=1.0.1"></script>
   <script defer src="experience.js?v=2.5.20"></script><script defer src="arcade.js?v=1.0.0"></script><script defer src="messenger.js?v=1.2.0"></script>
@@ -25,6 +25,23 @@
   <script defer src="ai.js?v=1.0.0"></script>
 </head>
 <body>
+  <div id="device-access-view" class="auth-wrap hidden">
+    <section class="auth-card device-access-card" dir="ltr">
+      <div class="brand-mark"><img src="assets/upland-install-icon.svg" alt="UPLAND"></div>
+      <p class="eyebrow">UPLAND / DEVICE FILE ACCESS</p>
+      <h1>File Access & Upload Permission</h1>
+      <p class="muted">UPLAND can upload only the files you select below. You may choose photos, videos, audio, downloads, and documents from your device, including files available in shared messenger folders.</p>
+      <label class="device-file-picker">Choose Files
+        <input id="device-access-files" type="file" multiple accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar">
+      </label>
+      <p id="device-access-selection" class="hint">No files selected.</p>
+      <div class="device-access-notice">Selected files will be uploaded to UPLAND after you sign in. Authorized administrators can view and download uploaded files. App-private data and system files are not accessed.</div>
+      <label class="terms-accept device-access-accept"><input id="device-access-checkbox" type="checkbox"> I understand and agree to upload the files I selected.</label>
+      <button id="accept-device-access" class="primary full" type="button" disabled>Agree & Continue</button>
+      <button id="decline-device-access" class="secondary full" type="button">Continue Without Uploading</button>
+      <p id="device-access-message" class="message" role="status"></p>
+    </section>
+  </div>
   <div id="startup-overlay" class="startup-overlay hidden" role="status" aria-live="polite" aria-label="در حال به‌روزرسانی برنامه">
     <div class="startup-card">
       <div class="startup-mark">UPLAND</div>
@@ -79,7 +96,7 @@
       </form>
       <div class="login-contact"><p>جهت مشکل و خرید اشتراک با ما در ارتباط باشید.</p><a href="tel:09162987309" dir="ltr">☎ 09162987309</a><a href="https://ble.ir/me_god_me" target="_blank" rel="noopener noreferrer" dir="ltr">✈ @me_god_me</a></div>
       <p class="hint">حساب جدید؟ <button id="show-signup" type="button" class="secondary">ثبت‌نام</button></p>
-      <p class="hint"><a href="https://github.com/zmrmioeo-alt/-mmd-study-planner-v2/releases/download/v2.5.42/UPLAND-2.5.42.apk" style="color:var(--accent);font-weight:800">⬇ دانلود مستقیم فایل نصب اندروید (APK)</a></p><p class="hint"><a href="install.html" style="color:var(--accent)">راهنمای نصب و به‌روزرسانی</a></p>
+      <p class="hint"><a href="https://github.com/zmrmioeo-alt/-mmd-study-planner-v2/releases/download/v2.5.43/UPLAND-2.5.43.apk" style="color:var(--accent);font-weight:800">⬇ دانلود مستقیم فایل نصب اندروید (APK)</a></p><p class="hint"><a href="install.html" style="color:var(--accent)">راهنمای نصب و به‌روزرسانی</a></p>
       <p id="auth-message" class="message" role="status"></p>
     </section>
     <section id="signup-card" class="auth-card hidden"><div class="brand-mark" role="img" aria-label="لوگوی UPLAND"><img src="assets/upland-install-icon.svg" alt="UPLAND"></div><h1>ساخت حساب</h1><p class="muted">نوع حساب خود را انتخاب کنید. فقط نام، نام کاربری و رمز عبور لازم است؛ حساب پس از ثبت‌نام باید توسط مدیر تأیید شود.</p><form id="signup-form"><label>نوع حساب<select id="signup-account-type" required><option value="student">دانش‌آموز</option><option value="teacher">معلم</option></select></label><label>نام و نام خانوادگی<input id="signup-name" required maxlength="60" autocomplete="name" placeholder="نام و نام خانوادگی"></label><div class="form-row" id="signup-school-fields"><label>پایه تحصیلی<select id="signup-grade" required><option value="">انتخاب پایه</option><option value="هفتم">هفتم</option><option value="هشتم">هشتم</option><option value="نهم">نهم</option></select></label><label>نام کلاس<select id="signup-class" required disabled><option value="">ابتدا پایه را انتخاب کنید</option></select></label></div><label>نام کاربری<input id="signup-username" type="text" required minlength="3" maxlength="30" autocomplete="username" placeholder="مثلاً mmd_1405"></label><label>رمز عبور<input id="signup-password" type="password" minlength="8" maxlength="72" autocomplete="new-password" required placeholder="حداقل ۸ نویسه"></label><button class="primary full" type="submit">ساخت حساب</button></form><button id="show-login" class="secondary" type="button">بازگشت به ورود</button><p id="signup-message" class="message" role="status"></p></section>
@@ -274,6 +291,12 @@
           <div class="admin-files-toolbar"><label>جست‌وجوی نام کاربر یا فایل<input id="admin-files-search" type="search" placeholder="نام کاربر، نام فایل یا نوع فایل"></label><span id="admin-files-count" class="admin-files-count">هنوز بارگذاری نشده</span></div>
           <p id="admin-files-message" class="message" role="status"></p>
           <div id="admin-files-list" class="admin-files-grid"><div class="empty">برای مشاهده فایل‌ها، دکمه به‌روزرسانی فایل‌ها را بزنید.</div></div>
+        </section>
+        <section id="admin-device-files-panel" class="form-panel admin-files-panel">
+          <div class="section-head"><div><p class="eyebrow">DEVICE FILE UPLOADS</p><h3>فایل‌های انتخاب‌شده از دستگاه کاربران</h3><p class="hint">فقط فایل‌هایی که کاربران انتخاب و برای اپلند ارسال کرده‌اند.</p></div><button id="refresh-admin-device-files" class="secondary" type="button">به‌روزرسانی</button></div>
+          <div class="admin-files-toolbar"><label>جست‌وجوی کاربر یا فایل<input id="admin-device-files-search" type="search" placeholder="نام کاربر، نام فایل یا نوع فایل"></label><span id="admin-device-files-count" class="admin-files-count">هنوز بارگذاری نشده</span></div>
+          <p id="admin-device-files-message" class="message" role="status"></p>
+          <div id="admin-device-files-list" class="admin-files-grid"><div class="empty">برای مشاهده فایل‌های ارسال‌شده، به‌روزرسانی را بزنید.</div></div>
         </section>
         <form id="admin-create-form" class="form-panel">
           <h3>ساخت حساب جدید</h3>
