@@ -252,3 +252,5 @@ input:focus,textarea:focus,select:focus{border-color:#6d8df3!important;box-shado
  #page-chat .chat-attach{min-width:38px!important;font-size:10px!important}#page-chat .chat-compose button{min-width:58px!important}
 }
 #page-chat .chat-inbox.hidden,#page-chat .chat-window.hidden{display:none!important}
+
+@media(max-width:850px){#page-chat .mmd-messenger-tabs{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
