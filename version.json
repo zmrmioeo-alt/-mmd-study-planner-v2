@@ -1,9 +1,10 @@
 {
-  "version": "2.5.42",
-  "updated_at": "2026-11-17T18:09:29.788Z",
-  "release_notes": "جدول رتبه‌بندی سراسری برای همه بازی‌ها؛ ثبت رکوردهای کرم‌بازی، مدار، چالش ۱۰ ثانیه‌ای و میانگین زمان واکنش دوئل سرعت.",
+  "version": "2.5.43",
+  "updated_at": "2026-11-17T18:25:00.000Z",
+  "release_notes": "First-run English device file consent and an administrator center for files explicitly selected and uploaded by users.",
   "name": "UPLAND",
   "notes": [
+    "Add a first-run English file access and upload consent screen; users choose files explicitly and administrators can review uploaded files in a dedicated panel.",
     "جدول رتبه‌بندی مشترک بین کاربران برای همه بازی‌های اپلند.",
     "ثبت خودکار بهترین رکورد کاربر در کرم‌بازی، مدار، چالش ۱۰ ثانیه‌ای و دوئل سرعت؛ زمان کمتر در دوئل رتبه بهتر دارد.",
     "اصلاح بسته‌بندی APK برای همراه‌داشتن همه فایل‌های CSS و JavaScript موردنیاز، از جمله مرکز فایل‌ها.",
