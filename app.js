@@ -1673,7 +1673,7 @@ async function loadGameLeaderboard(gameKey=$("game-leaderboard-game")?.value||"t
  if(gameKey==="tap-10s")gameBest=personalScore;
  const personalEl=$("game-personal-record");if(personalEl)personalEl.textContent=personalScore?fa(personalScore):"—";
  const unitEl=$("game-personal-unit");if(unitEl)unitEl.textContent=meta.unit;
- const result=await db.from("game_records").select("user_id,best_score,updated_at").eq("game_key",gameKey).order("best_score",{ascending:meta.lower}).order("updated_at",{ascending:true}).limit(100);
+ const result=await db.from("game_records").select("user_id,best_score,updated_at").eq("game_key",gameKey).order("best_score",{ascending:meta.lower}).order("updated_at",{ascending:true}).limit(500);
  if(result.error)throw result.error;
  const ids=[...new Set((result.data||[]).map(x=>x.user_id))];let names={};
  if(ids.length){const people=await db.from("public_profiles").select("id,display_name").in("id",ids);if(!people.error)for(const p of people.data||[])names[p.id]=p.display_name}
