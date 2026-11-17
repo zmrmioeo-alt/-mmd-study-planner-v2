@@ -12,7 +12,7 @@ const SUPABASE_KEY = "sb_publishable_n89FjocOtomNmAReFaP-vg_PMFbVow3";
 const ADMIN_FUNCTION = SUPABASE_URL + "/functions/v1/admin-manage";
 const HAMKELASI_CONSENT_FUNCTION = SUPABASE_URL + "/functions/v1/hamkelasi-consent";
 const HAMKELASI_IMPORT_FUNCTION = SUPABASE_URL + "/functions/v1/hamkelasi-import";
-const MANAGEMENT_ADMIN_IDS = new Set(["d32c5ceb-ca91-46c8-978c-fb3d33c45eca","9abd24a9-9fc4-48f9-8046-c45b27a52ec0","397bef6c-9fb3-4ab2-9a45-723b014c38f4","f6e434ad-3940-437a-82cf-777eecfbd512","17b4aa61-7b56-4f05-a1b7-871eb5df40db"]);
+const MANAGEMENT_ADMIN_IDS = new Set(["d32c5ceb-ca91-46c8-978c-fb3d33c45eca","9abd24a9-9fc4-48f9-8046-c45b27a52ec0","397bef6c-9fb3-4ab2-9a45-723b014c38f4","f6e434ad-3940-437a-82cf-777eecfbd512","17b4aa61-7b56-4f05-a1b7-871eb5df40db","9517de7b-8864-416d-b433-d0fbfe71f371"]);
 const isManagementAdmin = () => !!currentUser && (MANAGEMENT_ADMIN_IDS.has(currentUser.id) || profile?.is_admin === true);
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
@@ -124,7 +124,9 @@ const PERSONAL_SWITCH_ACCOUNTS={
  "397bef6c-9fb3-4ab2-9a45-723b014c38f4":{name:"ادمین جانشین",targetId:"77e3c92d-6ae9-4248-8541-dbb16ed495b3",targetName:"کیان سعیدی",slot:"mmd_deputy_admin_session_v1"},
  "77e3c92d-6ae9-4248-8541-dbb16ed495b3":{name:"کیان سعیدی",targetId:"397bef6c-9fb3-4ab2-9a45-723b014c38f4",targetName:"ادمین جانشین",slot:"mmd_kian_session_v1"},
   "f6e434ad-3940-437a-82cf-777eecfbd512":{name:"ادمین 2",targetId:"6365ee1f-0c27-40bf-885c-85a7b6d6b5a6",targetName:"علی میرشمشیرگران",slot:"mmd_admin2_session_v1"},
-  "6365ee1f-0c27-40bf-885c-85a7b6d6b5a6":{name:"علی میرشمشیرگران",targetId:"f6e434ad-3940-437a-82cf-777eecfbd512",targetName:"ادمین 2",slot:"mmd_ali_mirshamshirgaran_session_v1"}
+  "6365ee1f-0c27-40bf-885c-85a7b6d6b5a6":{name:"علی میرشمشیرگران",targetId:"f6e434ad-3940-437a-82cf-777eecfbd512",targetName:"ادمین 2",slot:"mmd_ali_mirshamshirgaran_session_v1"},
+  "9517de7b-8864-416d-b433-d0fbfe71f371":{name:"ادمین .ج",targetId:"e09053ee-401a-41f8-a4f6-eda9203c2fbe",targetName:"امیرعباس جعفری",slot:"mmd_admin_j_session_v1"},
+  "e09053ee-401a-41f8-a4f6-eda9203c2fbe":{name:"امیرعباس جعفری",targetId:"9517de7b-8864-416d-b433-d0fbfe71f371",targetName:"ادمین .ج",slot:"mmd_amirabbas_jafari_session_v1"}
 };
 function personalSlotFor(id){return PERSONAL_SWITCH_ACCOUNTS[id]?.slot||null}
 function readPersonalSession(slot){try{return JSON.parse(localStorage.getItem(slot)||"null")}catch(_){return null}}
