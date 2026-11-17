@@ -11,8 +11,17 @@ on:
       - 'index.html'
       - 'style.css'
       - 'upland.css'
+      - 'upland-experience.css'
+      - 'upland-redesign.css'
+      - 'desktop-admin-fixes.css'
+      - 'arcade.css'
+      - 'ai.css'
       - 'experience.css'
+      - 'messenger.css'
       - 'experience.js'
+      - 'messenger.js'
+      - 'arcade.js'
+      - 'ai.js'
       - 'messenger.js'
       - 'messenger.css'
       - 'planner-edit.js'
@@ -93,7 +102,7 @@ jobs:
       - name: Prepare bundled web assets
         run: |
           mkdir -p www/assets
-          cp index.html app.js style.css upland.css experience.css experience.js planner-edit.js stickers.js version.json manifest.webmanifest service-worker.js install.html privacy.html www/
+          cp index.html app.js style.css upland.css experience.css messenger.css upland-experience.css upland-redesign.css desktop-admin-fixes.css arcade.css ai.css experience.js messenger.js arcade.js ai.js planner-edit.js stickers.js version.json manifest.webmanifest service-worker.js install.html privacy.html www/
           cp -R assets/. www/assets/
 
       - name: Generate Android project
