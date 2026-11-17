@@ -29,7 +29,7 @@ for (const [, attr] of html.matchAll(/\b(?:src|href)=["']([^"']+)["']/g)) {
   assert.ok(fs.existsSync(path.join(root, local)), `Missing local asset referenced by index.html: ${attr}`);
 }
 
-for (const file of ["app.js", "experience.js", "service-worker.js", "planner-edit.js", "stickers.js"]) {
+for (const file of ["app.js", "experience.js", "service-worker.js", "planner-edit.js", "stickers.js", "arcade.js", "arcade.css"]) {
   assert.ok(fs.existsSync(path.join(root, file)), `Missing runtime file: ${file}`);
 }
 
