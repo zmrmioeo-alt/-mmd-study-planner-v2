@@ -1,5 +1,5 @@
-const CACHE_NAME = "upland-shell-v130";
-const CORE=["./","./index.html","./install.html","./app.js","./planner-edit.js","./stickers.js","./style.css","./upland.css","./experience.css","./experience.js","./messenger.js","./messenger.css","./upland-experience.css","./upland-redesign.css","./assets/upland-logo-original.svg","./assets/upland-install-icon.svg","./manifest.webmanifest","./version.json"];
+const CACHE_NAME = "upland-shell-v131";
+const CORE=["./","./index.html","./install.html","./app.js","./ai.js","./ai.css","./planner-edit.js","./stickers.js","./style.css","./upland.css","./experience.css","./experience.js","./messenger.js","./messenger.css","./upland-experience.css","./upland-redesign.css","./assets/upland-logo-original.svg","./assets/upland-install-icon.svg","./manifest.webmanifest","./version.json"];
 self.addEventListener("message",event=>{if(event.data?.type==="SKIP_WAITING")self.skipWaiting()});
 self.addEventListener("install",event=>{
  event.waitUntil((async()=>{
