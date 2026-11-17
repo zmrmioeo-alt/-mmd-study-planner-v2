@@ -1,0 +1,32 @@
+/* UPLAND ARCADE EXTRA GAMES */
+.arcade-extra-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-top:20px;align-items:start}
+.arcade-extra-card{min-width:0;padding:20px;border:1px solid rgba(118,166,218,.2);border-radius:22px;background:linear-gradient(145deg,rgba(255,255,255,.96),rgba(237,246,255,.94));box-shadow:0 14px 35px rgba(31,76,130,.08)}
+.arcade-extra-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+.arcade-extra-head h3{margin:5px 0;font-size:20px;color:#142d4b}
+.arcade-extra-head p{margin:0;color:#6d819b;font-size:13px;line-height:1.8}
+.arcade-extra-pill{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:99px;background:#e1f4ff;color:#1672a9;font-size:11px;font-weight:800;white-space:nowrap}
+#snake-canvas{display:block;width:min(100%,360px);height:auto;aspect-ratio:1;margin:12px auto;border-radius:16px;border:1px solid rgba(99,177,218,.24);touch-action:none;background:#081b34}
+.arcade-game-stats{display:flex;justify-content:center;gap:12px;margin:10px 0}
+.arcade-game-stat{min-width:92px;padding:8px 13px;text-align:center;border-radius:13px;background:#edf5ff;color:#56718f}
+.arcade-game-stat small{display:block;font-size:11px}.arcade-game-stat strong{display:block;font-size:20px;color:#183a5f}
+.arcade-actions{display:flex;justify-content:center;gap:9px;flex-wrap:wrap;margin-top:12px}
+.arcade-actions button,.duel-actions button{min-height:42px;padding:9px 16px;border:0;border-radius:12px;font:inherit;font-weight:800;cursor:pointer}
+.arcade-actions .primary,.duel-actions .primary{background:#176bd1;color:white}
+.arcade-actions .secondary,.duel-actions .secondary{background:#eaf2fc;color:#24517f}
+.snake-pad{display:grid;grid-template-columns:repeat(3,42px);grid-template-rows:repeat(2,38px);justify-content:center;gap:5px;margin-top:12px}
+.snake-pad button{border:0;border-radius:10px;background:#e7f1ff;color:#1b4d7e;font-size:18px;font-weight:900;touch-action:manipulation}
+.snake-pad button[data-snake-dir=up]{grid-column:2;grid-row:1}.snake-pad button[data-snake-dir=left]{grid-column:1;grid-row:2}.snake-pad button[data-snake-dir=down]{grid-column:2;grid-row:2}.snake-pad button[data-snake-dir=right]{grid-column:3;grid-row:2}
+.arcade-status{min-height:26px;margin:10px 0 0;text-align:center;color:#4e6c8e;font-size:13px;line-height:1.8}
+.duel-room-code{margin:12px auto;padding:10px 14px;width:max-content;max-width:100%;border:1px dashed #78a9d9;border-radius:13px;background:#eff7ff;color:#174f87;font-size:24px;font-weight:900;letter-spacing:5px;direction:ltr}
+.duel-room-code.hidden{display:none}
+.duel-input{width:100%;min-height:44px;padding:10px 12px;border:1px solid #d7e4f2;border-radius:12px;background:white;color:#163858;font:inherit;text-align:center;letter-spacing:4px}
+.duel-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.duel-actions button{flex:1}
+#duel-hit{display:block;width:100%;min-height:130px;margin:18px 0 8px;border:0;border-radius:20px;background:linear-gradient(145deg,#ffb64b,#f47749);color:#fff;font-size:28px;font-weight:900;box-shadow:0 12px 24px rgba(222,112,53,.2);cursor:pointer;touch-action:manipulation}
+#duel-hit:disabled{background:linear-gradient(145deg,#dbe6f2,#c7d5e5);color:#7389a1;box-shadow:none;cursor:not-allowed}
+#duel-hit:not(:disabled){animation:duelPulse 1s ease-in-out infinite alternate}
+@keyframes duelPulse{from{filter:brightness(1)}to{filter:brightness(1.12);transform:scale(1.008)}}
+.duel-players{padding:10px 12px;border-radius:12px;background:#f0f6ff;color:#456585;text-align:center;font-size:13px}
+.duel-result{min-height:54px;padding:12px;border-radius:13px;background:#f8fbff;color:#1d466d;text-align:center;font-weight:800;line-height:1.9}
+@media(max-width:850px){.arcade-extra-grid{grid-template-columns:1fr}.arcade-extra-card{padding:16px}}
+@media(prefers-reduced-motion:reduce){#duel-hit:not(:disabled){animation:none}}
