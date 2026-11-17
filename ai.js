@@ -109,6 +109,7 @@
       const {data,error} = await db.functions.invoke("mmd-ai", {body:{conversationId:activeId,message}});
       if (error) {
         let details = null; try { details = await error.context?.json?.(); } catch (_) {}
+        await loadQuota().catch(() => {});
         throw new Error(details?.error || error.message || "ارسال پیام ناموفق بود.");
       }
       if (!data?.reply) throw new Error(data?.error || "پاسخی دریافت نشد.");
@@ -141,10 +142,10 @@
   document.addEventListener("click", async event => {
     if (event.target.closest('[data-page="ai"]')) { setTimeout(() => refreshAll().catch(e => setStatus(e.message,true)), 0); return; }
     if (event.target.closest("#ai-new-chat")) { newConversation(); return; }
+    const menu = event.target.closest("[data-ai-menu]");
+    if (menu) { event.stopPropagation(); try { await manageConversation(menu.dataset.aiMenu); } catch(e) { setStatus(e.message,true); } return; }
     const open = event.target.closest("[data-ai-open]");
     if (open) { try { await openConversation(open.dataset.aiOpen); } catch(e) { setStatus(e.message,true); } return; }
-    const menu = event.target.closest("[data-ai-menu]");
-    if (menu) { try { await manageConversation(menu.dataset.aiMenu); } catch(e) { setStatus(e.message,true); } return; }
     const copy = event.target.closest("[data-ai-copy]");
     if (copy) {
       try { await navigator.clipboard.writeText(decodeURIComponent(copy.dataset.aiCopy)); setStatus("پاسخ کپی شد."); }
