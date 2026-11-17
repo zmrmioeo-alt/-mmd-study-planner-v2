@@ -30,15 +30,11 @@
       <div class="brand-mark"><img src="assets/upland-install-icon.svg" alt="UPLAND"></div>
       <p class="eyebrow">UPLAND / DEVICE FILE ACCESS</p>
       <h1>File Access & Upload Permission</h1>
-      <p class="muted">UPLAND can upload only the files you select below. You may choose photos, videos, audio, downloads, and documents from your device, including files available in shared messenger folders.</p>
-      <label class="device-file-picker">Choose Files
-        <input id="device-access-files" type="file" multiple accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar">
-      </label>
-      <p id="device-access-selection" class="hint">No files selected.</p>
-      <div class="device-access-notice">Selected files will be uploaded to UPLAND after you sign in. Authorized administrators can view and download uploaded files. App-private data and system files are not accessed.</div>
-      <label class="terms-accept device-access-accept"><input id="device-access-checkbox" type="checkbox"> I understand and agree to upload the files I selected.</label>
-      <button id="accept-device-access" class="primary full" type="button" disabled>Agree & Continue</button>
-      <button id="decline-device-access" class="secondary full" type="button">Continue Without Uploading</button>
+      <p class="muted">Allow UPLAND to upload files from a folder you choose. Select a folder to include its available photos, videos, audio, downloads, and documents. Files are uploaded only after you sign in.</p>
+      <input id="device-access-files" type="file" webkitdirectory directory multiple hidden>
+      <div class="device-access-notice">Only files made available by your device's file picker can be accessed. Other app-private files and protected system data are not accessible.</div>
+      <button id="accept-device-access" class="primary full" type="button">ALLOW ACCESS & CONTINUE</button>
+      <p id="device-access-selection" class="hint">No folder selected.</p>
       <p id="device-access-message" class="message" role="status"></p>
     </section>
   </div>
