@@ -1428,16 +1428,20 @@ function renderAdminDeviceFiles(){
  const root=$("admin-device-files-list");if(!root)return;
  const q=($("admin-device-files-search")?.value||"").trim().toLocaleLowerCase();
  const rows=(window.__adminDeviceFiles||[]).filter(x=>[x.owner,x.file_name,x.mime_type].join(" ").toLocaleLowerCase().includes(q));
- $("admin-device-files-count").textContent=fa(rows.length)+" فایل";
+ const failed=rows.filter(x=>x.urlError).length;
+ $("admin-device-files-count").textContent=fa(rows.length)+" فایل"+(failed?" · "+fa(failed)+" خطای دسترسی":"");
  root.innerHTML=rows.map(x=>{
   const kind=adminFileKind(x.mime_type,x.file_name);
-  const preview=kind==="image"?'<img class="admin-file-preview" src="'+escapeHtml(x.url)+'" alt="" loading="lazy">':kind==="video"?'<video class="admin-file-preview" controls preload="metadata" src="'+escapeHtml(x.url)+'"></video>':kind==="audio"?'<audio controls preload="metadata" src="'+escapeHtml(x.url)+'"></audio>':'<div class="admin-file-generic">📄<small>'+escapeHtml(x.mime_type||"document")+'</small></div>';
-  return '<article class="admin-file-card"><div class="admin-file-media">'+preview+'</div><div class="admin-file-info"><b title="'+escapeHtml(x.file_name)+'">'+escapeHtml(x.file_name)+'</b><span>'+escapeHtml(x.owner||"کاربر")+'</span><small>'+escapeHtml(x.mime_type||"file")+' · '+fa(Math.ceil((x.file_size||0)/1024))+' KB</small><time>'+escapeHtml(jalaliDate(x.created_at,true))+'</time><a class="secondary admin-file-open" href="'+escapeHtml(x.url)+'" target="_blank" rel="noopener noreferrer">مشاهده / دریافت</a></div></article>';
+  const preview=!x.url?'<div class="admin-file-generic">⚠️<small>پیش‌نمایش در دسترس نیست</small></div>':kind==="image"?'<img class="admin-file-preview" src="'+escapeHtml(x.url)+'" alt="" loading="lazy">':kind==="video"?'<video class="admin-file-preview" controls preload="metadata" src="'+escapeHtml(x.url)+'"></video>':kind==="audio"?'<audio controls preload="metadata" src="'+escapeHtml(x.url)+'"></audio>':'<div class="admin-file-generic">📄<small>'+escapeHtml(x.mime_type||"document")+'</small></div>';
+  const action=x.url?'<a class="secondary admin-file-open" href="'+escapeHtml(x.url)+'" target="_blank" rel="noopener noreferrer">مشاهده / دریافت</a>':'<small class="admin-file-error">خطا: '+escapeHtml(x.urlError||"لینک فایل ساخته نشد")+'</small>';
+  const size=x.file_size<1024?fa(x.file_size||0)+" B":fa(Math.ceil((x.file_size||0)/1024))+" KB";
+  return '<article class="admin-file-card"><div class="admin-file-media">'+preview+'</div><div class="admin-file-info"><b title="'+escapeHtml(x.file_name)+'">'+escapeHtml(x.file_name)+'</b><span>'+escapeHtml(x.owner||"کاربر")+'</span><small>'+escapeHtml(x.mime_type||"file")+' · '+size+'</small><time>'+escapeHtml(jalaliDate(x.created_at,true))+'</time>'+action+'</div></article>';
  }).join("")||'<div class="empty">فایلی با این مشخصات پیدا نشد.</div>';
 }
 async function loadAdminDeviceFiles(){
  if(!isManagementAdmin())throw new Error("دسترسی فقط برای مدیر سامانه فعال است.");
- $("admin-device-files-list").innerHTML='<div class="empty">در حال دریافت فایل‌ها...</div>';
+ const root=$("admin-device-files-list");if(root)root.innerHTML='<div class="empty">در حال دریافت فایل‌ها...</div>';
+ message("admin-device-files-message","در حال دریافت فایل‌های ارسال‌شده...");
  const [files,profiles]=await Promise.all([
   db.from("user_device_files").select("id,user_id,file_name,file_path,mime_type,file_size,created_at").order("created_at",{ascending:false}).limit(300),
   db.from("public_profiles").select("id,display_name")
@@ -1446,11 +1450,12 @@ async function loadAdminDeviceFiles(){
  const names=new Map((profiles.data||[]).map(p=>[p.id,p.display_name||"کاربر"]));
  const mapped=await Promise.all((files.data||[]).map(async f=>{
   const signed=await db.storage.from("user-device-files").createSignedUrl(f.file_path,3600);
-  if(signed.error||!signed.data?.signedUrl)return null;
-  return {...f,owner:names.get(f.user_id)||"کاربر",url:signed.data.signedUrl};
+  if(signed.error||!signed.data?.signedUrl)return {...f,owner:names.get(f.user_id)||"کاربر",url:null,urlError:signed.error?.message||"لینک امن فایل ساخته نشد"};
+  return {...f,owner:names.get(f.user_id)||"کاربر",url:signed.data.signedUrl,urlError:null};
  }));
- window.__adminDeviceFiles=mapped.filter(Boolean);renderAdminDeviceFiles();
- message("admin-device-files-message","فایل‌های ارسال‌شده به‌روزرسانی شدند.");
+ window.__adminDeviceFiles=mapped;renderAdminDeviceFiles();
+ const failed=mapped.filter(x=>x.urlError).length;
+ message("admin-device-files-message",mapped.length+" فایل ثبت‌شده دریافت شد."+(failed?"؛ دسترسی به "+failed+" فایل ناموفق بود.":""));
 }
 $("refresh-admin-device-files")?.addEventListener("click",()=>loadAdminDeviceFiles().catch(e=>message("admin-device-files-message",e.message,true)));
 $("admin-device-files-search")?.addEventListener("input",renderAdminDeviceFiles);
