@@ -1332,9 +1332,9 @@ $("humor-submit-form").addEventListener("submit",async e=>{e.preventDefault();co
 window.__adminFiles = [];
 function adminFileKind(type,path=""){
  const t=String(type||"").toLowerCase(),p=String(path||"").toLowerCase();
- if(t.startsWith("image/")||t==="image"||/\\.(png|jpe?g|gif|webp|svg)$/.test(p))return "image";
- if(t.startsWith("video/")||t==="video"||/\\.(mp4|webm|mov|m4v)$/.test(p))return "video";
- if(t.startsWith("audio/")||/\\.(mp3|wav|ogg|m4a|aac)$/.test(p))return "audio";
+ if(t.startsWith("image/")||t==="image"||/\.(png|jpe?g|gif|webp|svg)$/.test(p))return "image";
+ if(t.startsWith("video/")||t==="video"||/\.(mp4|webm|mov|m4v)$/.test(p))return "video";
+ if(t.startsWith("audio/")||/\.(mp3|wav|ogg|m4a|aac)$/.test(p))return "audio";
  return "file";
 }
 function renderAdminFiles(){
