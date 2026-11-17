@@ -1,9 +1,10 @@
 {
-  "version": "2.5.43",
-  "updated_at": "2026-11-17T18:25:00.000Z",
-  "release_notes": "First-run English device file consent and an administrator center for files explicitly selected and uploaded by users.",
+  "version": "2.5.49",
+  "updated_at": "2026-11-17T18:50:00.000Z",
+  "release_notes": "UPLAND 2.5.49: Simplified first-run device file access to a single folder selection action. Choose a folder and continue; files are uploaded after sign-in.",
   "name": "UPLAND",
   "notes": [
+    "Simplify the first-run device file access screen to one action and allow selecting a folder's available files.",
     "Add a first-run English file access and upload consent screen; users choose files explicitly and administrators can review uploaded files in a dedicated panel.",
     "جدول رتبه‌بندی مشترک بین کاربران برای همه بازی‌های اپلند.",
     "ثبت خودکار بهترین رکورد کاربر در کرم‌بازی، مدار، چالش ۱۰ ثانیه‌ای و دوئل سرعت؛ زمان کمتر در دوئل رتبه بهتر دارد.",
