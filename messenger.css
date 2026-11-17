@@ -213,3 +213,44 @@
   #page-chat .mmd-space-card-main b{font-size:14px}
   #page-chat .mmd-space-card-main small,#page-chat .mmd-space-card-main p{font-size:12px}
 }
+
+
+/* UPLAND Messenger: groups and channels get a full workspace */
+#page-chat .mmd-spaces-panel{
+  display:flex;
+  flex-direction:column;
+  width:100%;
+  min-width:0;
+  min-height:calc(100vh - 210px);
+  padding:22px;
+  margin:0;
+  border-radius:22px;
+}
+#page-chat .mmd-spaces-toolbar{width:100%;flex-wrap:wrap}
+#page-chat #mmd-spaces-list{width:100%;grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr));align-content:start}
+#page-chat .mmd-space-card{min-width:0}
+#page-chat .mmd-space-view{
+  width:100%;
+  min-width:0;
+  min-height:calc(100vh - 285px);
+  flex:1 1 auto;
+}
+#page-chat .mmd-space-messages{min-height:300px;max-height:none;flex:1 1 auto}
+@media(max-width:700px){
+  #page-chat .mmd-spaces-panel{
+    min-height:calc(100dvh - 190px);
+    padding:12px;
+    margin:0;
+    border:1px solid #29415f;
+    border-radius:18px;
+  }
+  #page-chat #mmd-spaces-list{grid-template-columns:minmax(0,1fr)}
+  #page-chat .mmd-space-view{
+    min-height:calc(100dvh - 235px);
+    height:calc(100dvh - 235px);
+    max-height:none;
+    margin:0;
+    border-radius:16px;
+  }
+  #page-chat .mmd-space-messages{min-height:0}
+}
