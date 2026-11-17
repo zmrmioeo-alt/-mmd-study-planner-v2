@@ -1,0 +1,59 @@
+/* Desktop layout and admin file center repairs */
+@media (min-width: 851px){
+  #app-view.app-shell{
+    display:grid!important;
+    grid-template-columns:minmax(245px,310px) minmax(0,1fr)!important;
+    align-items:start;
+    width:100%;
+    min-width:0;
+  }
+  #app-view>.sidebar{
+    grid-column:1;
+    grid-row:1;
+    width:auto!important;
+    min-width:0;
+    max-width:none!important;
+    position:sticky!important;
+    top:0;
+    height:100vh!important;
+    height:100dvh!important;
+  }
+  #app-view>.main{
+    grid-column:2;
+    grid-row:1;
+    width:100%;
+    min-width:0;
+    max-width:none!important;
+    margin:0!important;
+    padding:30px clamp(18px,3vw,48px)!important;
+  }
+  #app-view .page,
+  #app-view .section-head,
+  #app-view .form-panel{min-width:0}
+  #app-view .form-row{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+.admin-files-toolbar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:end;margin:12px 0}
+.admin-files-toolbar label{min-width:0}
+.admin-files-count{padding:12px 14px;border:1px solid var(--line);border-radius:12px;color:var(--muted);white-space:nowrap;font-size:12px}
+.admin-files-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:13px;min-width:0}
+.admin-file-card{display:grid;grid-template-columns:112px minmax(0,1fr);gap:12px;min-width:0;padding:12px;border:1px solid var(--line);border-radius:15px;background:var(--panel2)}
+.admin-file-media{width:112px;min-width:0;min-height:112px;display:grid;place-items:center;overflow:hidden;border-radius:11px;background:var(--panel)}
+.admin-file-preview{display:block;width:100%;height:112px;object-fit:cover}
+.admin-file-media video{object-fit:contain}
+.admin-file-media audio{width:96%;max-width:100%}
+.admin-file-generic{display:grid;place-items:center;gap:5px;font-size:34px;color:var(--muted)}
+.admin-file-generic small{font-size:10px}
+.admin-file-info{display:grid;align-content:start;gap:5px;min-width:0}
+.admin-file-info b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
+.admin-file-info span,.admin-file-info small,.admin-file-info time{font-size:10px;color:var(--muted);overflow-wrap:anywhere}
+.admin-file-open{display:inline-flex;justify-content:center;padding:7px 9px;font-size:10px;text-decoration:none;text-align:center;white-space:nowrap}
+@media(max-width:700px){
+ .admin-files-toolbar{grid-template-columns:1fr}
+ .admin-files-count{justify-self:start}
+ .admin-files-grid{grid-template-columns:1fr}
+}
+@media(max-width:420px){
+ .admin-file-card{grid-template-columns:88px minmax(0,1fr);gap:9px;padding:9px}
+ .admin-file-media{width:88px;min-height:88px}
+ .admin-file-preview{height:88px}
+}
