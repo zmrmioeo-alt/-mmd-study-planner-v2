@@ -113,13 +113,16 @@ function continueAfterDeviceConsent(value="accepted"){
  if(localStorage.getItem("mmd_terms_accepted")!=="mmd-terms-2026-11-v4"){show("terms-view",true);show("auth-view",false);show("app-view",false);}
  else continueAfterPolicy().catch(err=>message("device-access-message",err.message,true));
 }
+$("accept-device-access")?.addEventListener("click",()=>{$("device-access-files")?.click()});
 $("device-access-files")?.addEventListener("change",e=>{
  pendingDeviceFiles=Array.from(e.target.files||[]);
- $("device-access-selection").textContent=pendingDeviceFiles.length?pendingDeviceFiles.length+" file(s) selected. They will be uploaded after sign-in.":"No files selected.";
+ if(!pendingDeviceFiles.length){
+  $("device-access-selection").textContent="No folder selected. Access is required to continue.";
+  return;
+ }
+ $("device-access-selection").textContent=pendingDeviceFiles.length+" file(s) selected. Upload will start after sign-in.";
+ continueAfterDeviceConsent("accepted");
 });
-$("device-access-checkbox")?.addEventListener("change",e=>{$("accept-device-access").disabled=!e.target.checked});
-$("accept-device-access")?.addEventListener("click",()=>{if($("device-access-checkbox").checked)continueAfterDeviceConsent("accepted")});
-$("decline-device-access")?.addEventListener("click",()=>{pendingDeviceFiles=[];continueAfterDeviceConsent("declined")});
 $("terms-checkbox").addEventListener("change",e=>{$("accept-terms").disabled=!e.target.checked});
 $("accept-terms").addEventListener("click",async()=>{
  if(!$("terms-checkbox").checked)return;
