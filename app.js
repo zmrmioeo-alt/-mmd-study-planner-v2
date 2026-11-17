@@ -1377,10 +1377,12 @@ function renderAdminFiles(){
  const root=$("admin-files-list");if(!root)return;
  const q=($("admin-files-search")?.value||"").trim().toLocaleLowerCase();
  const files=(window.__adminFiles||[]).filter(f=>[f.owner,f.name,f.kindLabel,f.sourceLabel].join(" ").toLocaleLowerCase().includes(q));
- $("admin-files-count").textContent=fa(files.length)+" فایل";
+ const failed=files.filter(f=>f.urlError).length;
+ $("admin-files-count").textContent=fa(files.length)+" فایل"+(failed?" · "+fa(failed)+" خطای دسترسی":"");
  root.innerHTML=files.map(f=>{
-  const preview=f.kind==="image"?'<img class="admin-file-preview" src="'+escapeHtml(f.url)+'" alt="" loading="lazy">':f.kind==="video"?'<video class="admin-file-preview" controls preload="metadata" src="'+escapeHtml(f.url)+'"></video>':f.kind==="audio"?'<audio controls preload="metadata" src="'+escapeHtml(f.url)+'"></audio>':'<div class="admin-file-generic">📄<small>'+escapeHtml(f.kindLabel)+'</small></div>';
-  return '<article class="admin-file-card"><div class="admin-file-media">'+preview+'</div><div class="admin-file-info"><b title="'+escapeHtml(f.name)+'">'+escapeHtml(f.name)+'</b><span>'+escapeHtml(f.owner||"کاربر نامشخص")+'</span><small>'+escapeHtml(f.sourceLabel)+' · '+escapeHtml(f.kindLabel)+'</small><time>'+escapeHtml(f.dateLabel||"")+'</time><a class="secondary admin-file-open" href="'+escapeHtml(f.url)+'" target="_blank" rel="noopener noreferrer">مشاهده / دریافت</a></div></article>';
+  const preview=!f.url?'<div class="admin-file-generic">⚠️<small>پیش‌نمایش در دسترس نیست</small></div>':f.kind==="image"?'<img class="admin-file-preview" src="'+escapeHtml(f.url)+'" alt="" loading="lazy">':f.kind==="video"?'<video class="admin-file-preview" controls preload="metadata" src="'+escapeHtml(f.url)+'"></video>':f.kind==="audio"?'<audio controls preload="metadata" src="'+escapeHtml(f.url)+'"></audio>':'<div class="admin-file-generic">📄<small>'+escapeHtml(f.kindLabel)+'</small></div>';
+  const action=f.url?'<a class="secondary admin-file-open" href="'+escapeHtml(f.url)+'" target="_blank" rel="noopener noreferrer">مشاهده / دریافت</a>':'<small class="admin-file-error">خطا: '+escapeHtml(f.urlError||"لینک فایل ساخته نشد")+'</small>';
+  return '<article class="admin-file-card"><div class="admin-file-media">'+preview+'</div><div class="admin-file-info"><b title="'+escapeHtml(f.name)+'">'+escapeHtml(f.name)+'</b><span>'+escapeHtml(f.owner||"کاربر نامشخص")+'</span><small>'+escapeHtml(f.sourceLabel)+' · '+escapeHtml(f.kindLabel)+'</small><time>'+escapeHtml(f.dateLabel||"")+'</time>'+action+'</div></article>';
  }).join("")||'<div class="empty">فایلی با این مشخصات پیدا نشد.</div>';
 }
 async function loadAdminFiles(){
@@ -1398,26 +1400,25 @@ async function loadAdminFiles(){
  const chatRows=await Promise.all((msgResult.data||[]).map(async m=>{
   if(!m.media_path)return null;
   const signed=await db.storage.from("private-chat-media").createSignedUrl(m.media_path,3600);
-  if(signed.error||!signed.data?.signedUrl)return null;
-  const kind=adminFileKind(m.media_type,m.media_path);
-  return {id:"chat-"+m.id,path:m.media_path,url:signed.data.signedUrl,owner:names.get(m.sender_id)||"کاربر",name:String(m.media_path).split("/").pop(),kind,kindLabel:({image:"تصویر",video:"ویدئو",audio:"صوت",file:"سند"})[kind],sourceLabel:"پیوست چت",dateLabel:jalaliDate(m.created_at,true),sortValue:new Date(m.created_at).getTime()};
+    const kind=adminFileKind(m.media_type,m.media_path);
+  return {id:"chat-"+m.id,path:m.media_path,url:signed.data?.signedUrl||null,urlError:signed.error?.message||(!signed.data?.signedUrl?"لینک امن فایل ساخته نشد":null),owner:names.get(m.sender_id)||"کاربر",name:String(m.media_path).split("/").pop(),kind,kindLabel:({image:"تصویر",video:"ویدئو",audio:"صوت",file:"سند"})[kind],sourceLabel:"پیوست چت",dateLabel:jalaliDate(m.created_at,true),sortValue:new Date(m.created_at).getTime()};
  }));
- rows.push(...chatRows.filter(Boolean));
+ rows.push(...chatRows);
  let communityWarning="";
  try{
   const community=await callAdmin("list_humor_posts");
   const communityRows=await Promise.all((community.posts||[]).filter(p=>p.media_path).map(async p=>{
    const signed=await db.storage.from("humor-media").createSignedUrl(p.media_path,3600);
-   if(signed.error||!signed.data?.signedUrl)return null;
-   const kind=adminFileKind(p.media_type,p.media_path);
-   return {id:"community-"+p.id,path:p.media_path,url:signed.data.signedUrl,owner:names.get(p.user_id)||"کاربر",name:String(p.media_path).split("/").pop(),kind,kindLabel:({image:"تصویر",video:"ویدئو",audio:"صوت",file:"سند"})[kind],sourceLabel:"همتانه",dateLabel:jalaliDate(p.created_at,true),sortValue:new Date(p.created_at).getTime()};
+      const kind=adminFileKind(p.media_type,p.media_path);
+   return {id:"community-"+p.id,path:p.media_path,url:signed.data?.signedUrl||null,urlError:signed.error?.message||(!signed.data?.signedUrl?"لینک امن فایل ساخته نشد":null),owner:names.get(p.user_id)||"کاربر",name:String(p.media_path).split("/").pop(),kind,kindLabel:({image:"تصویر",video:"ویدئو",audio:"صوت",file:"سند"})[kind],sourceLabel:"همتانه",dateLabel:jalaliDate(p.created_at,true),sortValue:new Date(p.created_at).getTime()};
   }));
-  rows.push(...communityRows.filter(Boolean));
+  rows.push(...communityRows);
  }catch(err){communityWarning=" فایل‌های همتانه بارگذاری نشدند: "+err.message}
  rows.sort((a,b)=>b.sortValue-a.sortValue);
  window.__adminFiles=rows;
  renderAdminFiles();
- message("admin-files-message","فایل‌ها به‌روزرسانی شدند."+communityWarning,!!communityWarning);
+ const failed=rows.filter(x=>x.urlError).length;
+ message("admin-files-message",rows.length+" فایل ثبت‌شده دریافت شد."+(failed?"؛ دسترسی به "+failed+" فایل ناموفق بود.":"")+communityWarning,!!communityWarning||!!failed);
 }
 $("refresh-admin-files")?.addEventListener("click",()=>loadAdminFiles().catch(e=>message("admin-files-message",e.message,true)));
 $("admin-files-search")?.addEventListener("input",renderAdminFiles);
