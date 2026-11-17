@@ -30,3 +30,7 @@
 .duel-result{min-height:54px;padding:12px;border-radius:13px;background:#f8fbff;color:#1d466d;text-align:center;font-weight:800;line-height:1.9}
 @media(max-width:850px){.arcade-extra-grid{grid-template-columns:1fr}.arcade-extra-card{padding:16px}}
 @media(prefers-reduced-motion:reduce){#duel-hit:not(:disabled){animation:none}}
+
+.game-leaderboard-filter{display:flex;align-items:center;gap:8px;color:var(--muted,#71839a);font-size:12px;font-weight:700}
+.game-leaderboard-select{min-height:38px;max-width:190px;padding:7px 30px 7px 10px;border:1px solid rgba(110,150,195,.28);border-radius:11px;background:var(--surface,#fff);color:var(--text,#20334b);font:inherit;font-size:12px}
+@media(max-width:520px){.game-leaderboard-head{align-items:flex-start;gap:10px;flex-wrap:wrap}.game-leaderboard-filter{width:100%;justify-content:space-between}.game-leaderboard-select{flex:1;max-width:none}}
