@@ -28,5 +28,6 @@ jobs:
           node --check service-worker.js
           node --check planner-edit.js
           node --check stickers.js
+          node --check arcade.js
       - name: Validate app assets and release metadata
         run: node scripts/validate-staging.mjs
