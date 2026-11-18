@@ -1178,10 +1178,8 @@ body.management-admin #admin-nav{display:flex!important;order:-1;visibility:visi
 
 
 /* UPLAND global visual atmosphere: applies across every page, including messenger and admin. */
-body{--visual-glow:rgba(94,234,212,.13);transition:background-color .45s ease,color .35s ease}
-body:before{content:"";position:fixed;inset:-22%;z-index:0;pointer-events:none;opacity:.5;background:radial-gradient(ellipse at 18% 18%,var(--visual-glow),transparent 35%),radial-gradient(ellipse at 82% 72%,rgba(139,92,246,.12),transparent 38%);animation:uplandGlobalDrift 24s ease-in-out infinite alternate;}
-body>*{position:relative;z-index:1}
-#app-view,#revolution-view,#auth-view,#terms-view,#startup-overlay,#notification-popup,#toast-container{position:relative;z-index:2}
+body{--visual-glow:rgba(94,234,212,.13);isolation:isolate;transition:background-color .45s ease,color .35s ease}
+body:before{content:"";position:fixed;inset:-22%;z-index:-1;pointer-events:none;opacity:.5;background:radial-gradient(ellipse at 18% 18%,var(--visual-glow),transparent 35%),radial-gradient(ellipse at 82% 72%,rgba(139,92,246,.12),transparent 38%);animation:uplandGlobalDrift 24s ease-in-out infinite alternate;}
 #app-view .page,#app-view .form-panel,#app-view .task-item,#app-view .chat-thread,#app-view .chat-window,#app-view .chat-inbox,#app-view .chat-peer-card,#app-view .chat-directory-user,#app-view .mmd-space-card,#app-view .post-card,#app-view .profile-card,#app-view .settings-block,#app-view .admin-panel,#app-view .stat-card{transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s ease,border-color .35s ease,background .35s ease;}
 #app-view .task-item:hover,#app-view .chat-thread:hover,#app-view .chat-directory-user:hover,#app-view .mmd-space-card:hover,#app-view .post-card:hover{transform:translateY(-2px)}
 #app-view .nav-link,#app-view .dock-link,#app-view button{transition:transform .22s ease,filter .22s ease,box-shadow .28s ease}
