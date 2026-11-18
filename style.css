@@ -1119,3 +1119,21 @@ body.light .chat-compose button{
 /* Ensure the authorized admin link is visible and first in the navigation */
 body.management-admin #admin-nav{display:flex!important;order:-1;visibility:visible!important;opacity:1!important;}
 
+
+.revolution-view{min-height:100vh;display:grid;place-items:center;padding:24px;background:radial-gradient(ellipse at 50% 0%,#7958ff35,transparent 48%),radial-gradient(ellipse at 90% 100%,#42d9c31c,transparent 42%),#090d18;color:#f4f6ff}
+.revolution-card{width:min(100%,620px);padding:clamp(28px,6vw,58px);text-align:center;border:1px solid #a99aff35;border-radius:30px;background:linear-gradient(145deg,#171a30ee,#101827f2);box-shadow:0 28px 90px #0008}
+.revolution-logo{font:900 17px Arial;letter-spacing:7px;color:#b7a5ff}
+.revolution-orbit{height:90px;width:90px;margin:30px auto 24px;position:relative;border:1px solid #a99aff55;border-radius:50%;animation:revolution-spin 12s linear infinite}
+.revolution-orbit:before,.revolution-orbit:after{content:"";position:absolute;inset:12px;border:1px solid #65e5d477;border-radius:50%;transform:rotate(60deg) scaleX(.55)}
+.revolution-orbit:after{transform:rotate(-60deg) scaleX(.55)}
+.revolution-orbit span{position:absolute;width:9px;height:9px;border-radius:50%;background:#b7a5ff;box-shadow:0 0 18px #b7a5ff;top:7px;left:39px}
+.revolution-orbit span:nth-child(2){top:62px;left:10px;background:#65e5d4}.revolution-orbit span:nth-child(3){top:62px;left:67px;background:#ffbd78}
+@keyframes revolution-spin{to{transform:rotate(360deg)}}
+.revolution-kicker{font:700 10px Arial;letter-spacing:3px;color:#9e91e9;margin:0 0 14px}
+.revolution-card h1{font-size:clamp(25px,5vw,39px);line-height:1.7;margin:0;color:#fff}
+.revolution-lead{font-size:17px;font-weight:800;color:#b9aaff;margin:10px 0}
+.revolution-copy{max-width:460px;margin:0 auto;color:#aab4c9;font-size:13px;line-height:2.2}
+.revolution-status{display:flex;align-items:center;justify-content:center;gap:9px;margin:28px 0 22px;color:#83e8c5;font-size:12px}
+.revolution-status i{width:8px;height:8px;border-radius:50%;background:#63e6b5;box-shadow:0 0 14px #63e6b5}
+#revolution-admin-login{padding:12px 25px;border:1px solid #8f80d977;border-radius:12px;background:#a995e51a;color:#d8d0ff;font-weight:700}
+#revolution-admin-login:hover{background:#a995e52c}
