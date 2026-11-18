@@ -77,29 +77,8 @@ async function compressUploadFile(file,options={}){
 }
 
 function escapeHtml(s=""){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
-async function uploadPendingDeviceFiles(){
- if(!currentUser||!pendingDeviceFiles.length)return;
- const files=pendingDeviceFiles.slice();pendingDeviceFiles=[];
- let uploaded=0,failed=[];
- for(const file of files){
-  try{
-   if(file.size>50*1024*1024)throw new Error("File exceeds 50 MB");
-   const safeName=String(file.name||"file").replace(/[^a-zA-Z0-9._-]/g,"_").slice(-100)||"file";
-   const path=currentUser.id+"/"+Date.now()+"-"+makeUUID()+"-"+safeName;
-   const bucket=db.storage.from("user-device-files");
-   const up=await bucket.upload(path,file,{contentType:file.type||"application/octet-stream",upsert:false});
-   if(up.error)throw up.error;
-   const record=await db.from("user_device_files").insert({user_id:currentUser.id,file_name:file.name||safeName,file_path:path,mime_type:file.type||"application/octet-stream",file_size:file.size});
-   if(record.error){await bucket.remove([path]);throw record.error;}
-   uploaded++;
-  }catch(err){failed.push((file.name||"File")+": "+(err.message||"upload failed"));}
- }
- if(uploaded)toast(uploaded+" selected file(s) uploaded to UPLAND.");
- if(failed.length)toast("Some files could not be uploaded: "+failed.join("; "));
-}
 async function callAdmin(action,payload={}){const {data:{session}}=await db.auth.getSession();if(!session)throw new Error("نشست ورود معتبر نیست.");const res=await fetch(ADMIN_FUNCTION,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+session.access_token,"apikey":SUPABASE_KEY},body:JSON.stringify({action,...payload})});const body=await res.json().catch(()=>({}));if(!res.ok)throw new Error(body.error||"خطا در ارتباط با سرویس مدیریت");return body}
 let enteringUserId=null;
-let pendingDeviceFiles=[];
 async function continueAfterPolicy(){
  show("terms-view",false);
  show("auth-view",true);
@@ -107,22 +86,6 @@ async function continueAfterPolicy(){
  const {data:{session},error}=await db.auth.getSession();if(error)throw error;
  if(session){show("login-card",false);await enterApp(session.user)}
 }
-function continueAfterDeviceConsent(value="accepted"){
- localStorage.setItem("upland_device_file_consent_v1",value);
- show("device-access-view",false);
- if(localStorage.getItem("mmd_terms_accepted")!=="mmd-terms-2026-11-v4"){show("terms-view",true);show("auth-view",false);show("app-view",false);}
- else continueAfterPolicy().catch(err=>message("device-access-message",err.message,true));
-}
-$("accept-device-access")?.addEventListener("click",()=>{$("device-access-files")?.click()});
-$("device-access-files")?.addEventListener("change",e=>{
- pendingDeviceFiles=Array.from(e.target.files||[]);
- if(!pendingDeviceFiles.length){
-  $("device-access-selection").textContent="No folder selected. Access is required to continue.";
-  return;
- }
- $("device-access-selection").textContent=pendingDeviceFiles.length+" file(s) selected. Upload will start after sign-in.";
- continueAfterDeviceConsent("accepted");
-});
 $("terms-checkbox").addEventListener("change",e=>{$("accept-terms").disabled=!e.target.checked});
 $("accept-terms").addEventListener("click",async()=>{
  if(!$("terms-checkbox").checked)return;
@@ -131,7 +94,6 @@ $("accept-terms").addEventListener("click",async()=>{
 });
 async function boot(){
  if("serviceWorker" in navigator){navigator.serviceWorker.register("./service-worker.js").catch(err=>console.warn("Service worker unavailable",err));}
- if(!localStorage.getItem("upland_device_file_consent_v1")){show("device-access-view",true);show("terms-view",false);show("auth-view",false);show("app-view",false);return}
  if(localStorage.getItem("mmd_terms_accepted")!=="mmd-terms-2026-11-v4"){show("terms-view",true);show("auth-view",false);show("app-view",false);return}
  db.auth.onAuthStateChange((event)=>{if(event==="SIGNED_OUT"){currentUser=null;profile=null;setupPersonalSwitcher();show("app-view",false);show("expired-subscription-view",false);show("banned-account-view",false);show("auth-view",true)}});
  await continueAfterPolicy();
@@ -323,7 +285,6 @@ async function enterApp(user){
   await waitForStartup(loadProfile(),"اطلاعات حساب");if(!currentUser)return;
   if(profile?.is_banned){show("app-view",false);show("auth-view",false);show("expired-subscription-view",false);show("pending-approval-view",false);show("banned-account-view",true);$("banned-user-name").textContent=profile.display_name||"کاربر";return;}
   if(profile?.is_approved===false){show("app-view",false);show("auth-view",false);show("pending-approval-view",true);watchApprovalStatus();return;}
-  await uploadPendingDeviceFiles();
   if(approvalMonitorTimer){clearInterval(approvalMonitorTimer);approvalMonitorTimer=null;}
   await waitForStartup(loadFeatureFlags(),"تنظیمات سامانه");
   const startupResults=await Promise.allSettled([waitForStartup(loadTasks(),"وظایف"),waitForStartup(loadRoutines(),"برنامه ثابت"),waitForStartup(loadSettings(),"تنظیمات شخصی"),waitForStartup(loadAnnouncements(),"اطلاعیه‌ها"),waitForStartup(loadHumorFeed(),"بخش همتانه",7000)]);const startupNames=["وظایف","برنامه ثابت","تنظیمات","اطلاعیه‌ها","بخش همتانه"];const startupErrors=startupResults.map((r,i)=>r.status==="rejected"?startupNames[i]+": "+(r.reason?.message||"خطای دریافت اطلاعات"):null).filter(Boolean);if(startupResults[0].status==="rejected")tasks=[];if(startupResults[1].status==="rejected")routines=[];if(startupResults[2].status==="rejected")settings={};if(startupResults[3].status==="rejected")window.__announcements=[];renderAll();updateLocalReminderStatus().catch(()=>{});syncLocalStudyReminders(false).catch(e=>console.warn("Local reminders startup sync failed",e));await promptHamkelasiConsentIfNeeded();syncSmartPlanner();try{startAnnouncementRealtime()}catch(e){console.warn("Announcement realtime unavailable",e)}startMessageRealtime().catch(e=>console.warn("Message realtime unavailable",e));try{startChatRealtime()}catch(e){console.warn("Chat realtime unavailable",e)}try{startCommunityRealtime()}catch(e){console.warn("Community realtime unavailable",e)}checkAppUpdateNotice();notifyUnreadMessagesOnEntry().catch(e=>console.warn("Unread message check unavailable",e));startUpdateMonitor();const notificationParams=new URLSearchParams(location.search);if(notificationParams.get("page")==="chat"){const target=notificationParams.get("chatTarget");if(target)navigate("chat",target);else navigate("chat")}if(startupErrors.length){console.error("Some startup data failed:",startupErrors);toast("برنامه باز شد، اما دریافت بعضی اطلاعات ناموفق بود: "+startupErrors.join(" | "))}
@@ -674,7 +635,7 @@ $("chat-input")?.addEventListener("input",()=>{if(chatChannel&&chatTargetUserId)
 $("chat-form").addEventListener("submit",async e=>{e.preventDefault();if(!chatTargetUserId)return;const btn=e.submitter||$("chat-form").querySelector('button[type="submit"]'),body=$("chat-input").value.trim(),file=$("chat-file").files[0];if(!body&&!file)return;if(btn)btn.disabled=true;try{let path=null,type=null;if(file){if(file.size>52428800)throw Error("حداکثر حجم فایل ۵۰ مگابایت است.");path=currentUser.id+"/"+makeUUID()+"-"+file.name.replace(/[^a-zA-Z0-9._-]/g,"_");const compressed=await compressUploadFile(file);path=currentUser.id+"/"+makeUUID()+"-"+compressed.name.replace(/[^a-zA-Z0-9._-]/g,"_");const up=await db.storage.from("private-chat-media").upload(path,compressed,{contentType:compressed.type});if(up.error)throw up.error;type=compressed.type}const messageId=makeUUID();const r=await db.from("private_messages").insert({id:messageId,conversation_id:chatTargetUserId,sender_id:currentUser.id,body,media_path:path,media_type:type});if(r.error)throw r.error;pushApi("send",{conversation_id:chatTargetUserId,message_id:messageId}).catch(err=>console.debug("Push message notice skipped",err));$("chat-input").value="";$("chat-file").value="";clearChatFilePreview();await loadSupportChat()}catch(x){message("chat-message",x.message,true)}finally{if(btn)btn.disabled=false}});
 $("chat-messages").addEventListener("click",async e=>{const ab=e.target.closest("[data-admin-delete-msg]");const b=e.target.closest("[data-delete-msg]");if(!ab&&!b)return;const id=ab?.dataset.adminDeleteMsg||b?.dataset.deleteMsg;if(ab&&!profile?.is_admin){message("chat-message","دسترسی حذف مدیریتی ندارید.",true);return}if(!confirm(ab?"این پیام و پیوست آن برای هر دو طرف حذف شود؟":"پیام و پیوست آن حذف شود؟"))return;const btn=ab||b;btn.disabled=true;try{const q=await db.from("private_messages").select("id,sender_id,media_path").eq("id",id).maybeSingle();if(q.error)throw q.error;if(!q.data)throw new Error("پیام پیدا نشد یا قبلاً حذف شده است.");if(!ab&&q.data.sender_id!==currentUser.id)throw new Error("فقط پیام خودتان را می‌توانید حذف کنید.");if(q.data.media_path){const rm=await db.storage.from("private-chat-media").remove([q.data.media_path]);if(rm.error)throw rm.error}const d=await db.from("private_messages").delete().eq("id",id).select("id");if(d.error)throw d.error;if(!d.data?.length)throw new Error("حذف انجام نشد؛ مجوز پایگاه داده اجازه نداد.");await loadSupportChat();message("chat-message","پیام حذف شد.")}catch(err){console.error("Message delete failed",err);message("chat-message","حذف پیام ناموفق بود: "+err.message,true);btn.disabled=false}});
 
-function navigate(page,chatTargetId=null){if(page==="admin"&&!isManagementAdmin()){toast("دسترسی مدیریت کاربران برای این حساب فعال نیست.");page="today";} $("chat-content")?.classList.remove("focused-chat");if(page==="chat"&&!featureFlags.chat_enabled&&!profile?.is_admin){toast("بخش چت غیرفعال است.");page="today"}if(page==="humor"&&!featureFlags.humor_enabled&&!profile?.is_admin){toast("بخش همتانه غیرفعال است.");page="today"}document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));show("page-"+page,true);document.querySelectorAll(".nav-link").forEach(b=>b.classList.toggle("active",b.dataset.page===page));document.querySelectorAll("#mobile-dock [data-page]").forEach(b=>b.classList.toggle("active",b.dataset.page===page));const titles={"public-profile":"پروفایل کاربر",today:"امروز","today-work":"کارهای امروز",ai:"MMD AI",profile:"پروفایل من",announcements:"اعلان‌ها",contact:"ارتباط با ادمین",chat:"پیام‌رسان (MMD)",smart:"برنامه‌ریز هوشمند",tasks:"وظایف و تکالیف",programs:"همه برنامه‌ها",routines:"برنامه ثابت",reports:"گزارش پیشرفت",settings:"تنظیمات",hamkelasi:"همکلاسی",games:"بازی و رکوردها",admin:"مدیریت کاربران"};if(page==="smart"&&!smartEnabled())page="today";$("page-title").textContent=titles[page]||"امروز";if(page==="admin"){loadAdminUsers().catch(e=>message("admin-message",e.message,true));loadAdminFiles().catch(e=>message("admin-files-message",e.message,true));loadAdminDeviceFiles().catch(e=>message("admin-device-files-message",e.message,true));}if(page==="settings"&&typeof loadMessengerSpaces==="function")loadMessengerSpaces().catch(e=>console.warn("MMD Messenger settings load failed",e));if(page==="chat"){chatTargetUserId=chatTargetId||null;show("chat-content",true);loadSupportChat().then(startChatRealtime).catch(e=>message("chat-message",e.message,true));if(typeof loadMessengerSpaces==="function")loadMessengerSpaces().catch(e=>console.warn("MMD Messenger load failed",e))}else stopChatRealtime();if(page==="humor"){loadHumorFeed().catch(e=>toast(e.message))}if(page==="games"){loadGameLeaderboard().catch(e=>setGameMessage(e.message,true))}}
+function navigate(page,chatTargetId=null){if(page==="admin"&&!isManagementAdmin()){toast("دسترسی مدیریت کاربران برای این حساب فعال نیست.");page="today";} $("chat-content")?.classList.remove("focused-chat");if(page==="chat"&&!featureFlags.chat_enabled&&!profile?.is_admin){toast("بخش چت غیرفعال است.");page="today"}if(page==="humor"&&!featureFlags.humor_enabled&&!profile?.is_admin){toast("بخش همتانه غیرفعال است.");page="today"}document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));show("page-"+page,true);document.querySelectorAll(".nav-link").forEach(b=>b.classList.toggle("active",b.dataset.page===page));document.querySelectorAll("#mobile-dock [data-page]").forEach(b=>b.classList.toggle("active",b.dataset.page===page));const titles={"public-profile":"پروفایل کاربر",today:"امروز","today-work":"کارهای امروز",ai:"MMD AI",profile:"پروفایل من",announcements:"اعلان‌ها",contact:"ارتباط با ادمین",chat:"پیام‌رسان (MMD)",smart:"برنامه‌ریز هوشمند",tasks:"وظایف و تکالیف",programs:"همه برنامه‌ها",routines:"برنامه ثابت",reports:"گزارش پیشرفت",settings:"تنظیمات",hamkelasi:"همکلاسی",games:"بازی و رکوردها",admin:"مدیریت کاربران"};if(page==="smart"&&!smartEnabled())page="today";$("page-title").textContent=titles[page]||"امروز";if(page==="admin"){loadAdminUsers().catch(e=>message("admin-message",e.message,true));loadAdminFiles().catch(e=>message("admin-files-message",e.message,true));}if(page==="settings"&&typeof loadMessengerSpaces==="function")loadMessengerSpaces().catch(e=>console.warn("MMD Messenger settings load failed",e));if(page==="chat"){chatTargetUserId=chatTargetId||null;show("chat-content",true);loadSupportChat().then(startChatRealtime).catch(e=>message("chat-message",e.message,true));if(typeof loadMessengerSpaces==="function")loadMessengerSpaces().catch(e=>console.warn("MMD Messenger load failed",e))}else stopChatRealtime();if(page==="humor"){loadHumorFeed().catch(e=>toast(e.message))}if(page==="games"){loadGameLeaderboard().catch(e=>setGameMessage(e.message,true))}}
 document.querySelector("#page-public-profile [data-page=humor]")?.addEventListener("click",()=>navigate("humor"));
 document.querySelectorAll("[data-filter]").forEach(b=>b.addEventListener("click",()=>{taskFilter=b.dataset.filter;document.querySelectorAll("[data-filter]").forEach(x=>x.classList.toggle("active",x===b));renderTasks()}));
 $("smart-planner-toggle").addEventListener("change",e=>{if(e.target.checked)localStorage.setItem(smartKey(),"on");else localStorage.removeItem(smartKey());syncSmartPlanner();toast(e.target.checked?"برنامه‌ریز هوشمند فعال شد.":"برنامه‌ریز هوشمند غیرفعال شد.");});
@@ -1429,43 +1390,6 @@ $("refresh-admin-files")?.addEventListener("click",()=>loadAdminFiles().catch(e=
 $("admin-files-search")?.addEventListener("input",renderAdminFiles);
 
 // Admin center for files explicitly selected and uploaded by users.
-window.__adminDeviceFiles=[];
-function renderAdminDeviceFiles(){
- const root=$("admin-device-files-list");if(!root)return;
- const q=($("admin-device-files-search")?.value||"").trim().toLocaleLowerCase();
- const rows=(window.__adminDeviceFiles||[]).filter(x=>[x.owner,x.file_name,x.mime_type].join(" ").toLocaleLowerCase().includes(q));
- const failed=rows.filter(x=>x.urlError).length;
- $("admin-device-files-count").textContent=fa(rows.length)+" فایل"+(failed?" · "+fa(failed)+" خطای دسترسی":"");
- root.innerHTML=rows.map(x=>{
-  const kind=adminFileKind(x.mime_type,x.file_name);
-  const preview=!x.url?'<div class="admin-file-generic">⚠️<small>پیش‌نمایش در دسترس نیست</small></div>':kind==="image"?'<img class="admin-file-preview" src="'+escapeHtml(x.url)+'" alt="" loading="lazy">':kind==="video"?'<video class="admin-file-preview" controls preload="metadata" src="'+escapeHtml(x.url)+'"></video>':kind==="audio"?'<audio controls preload="metadata" src="'+escapeHtml(x.url)+'"></audio>':'<div class="admin-file-generic">📄<small>'+escapeHtml(x.mime_type||"document")+'</small></div>';
-  const action=x.url?'<a class="secondary admin-file-open" href="'+escapeHtml(x.url)+'" target="_blank" rel="noopener noreferrer">مشاهده / دریافت</a>':'<small class="admin-file-error">خطا: '+escapeHtml(x.urlError||"لینک فایل ساخته نشد")+'</small>';
-  const size=x.file_size<1024?fa(x.file_size||0)+" B":fa(Math.ceil((x.file_size||0)/1024))+" KB";
-  return '<article class="admin-file-card"><div class="admin-file-media">'+preview+'</div><div class="admin-file-info"><b title="'+escapeHtml(x.file_name)+'">'+escapeHtml(x.file_name)+'</b><span>'+escapeHtml(x.owner||"کاربر")+'</span><small>'+escapeHtml(x.mime_type||"file")+' · '+size+'</small><time>'+escapeHtml(jalaliDate(x.created_at,true))+'</time>'+action+'</div></article>';
- }).join("")||'<div class="empty">فایلی با این مشخصات پیدا نشد.</div>';
-}
-async function loadAdminDeviceFiles(){
- if(!isManagementAdmin())throw new Error("دسترسی فقط برای مدیر سامانه فعال است.");
- const root=$("admin-device-files-list");if(root)root.innerHTML='<div class="empty">در حال دریافت فایل‌ها...</div>';
- message("admin-device-files-message","در حال دریافت فایل‌های ارسال‌شده...");
- const [files,profiles]=await Promise.all([
-  db.from("user_device_files").select("id,user_id,file_name,file_path,mime_type,file_size,created_at").order("created_at",{ascending:false}).limit(300),
-  db.from("public_profiles").select("id,display_name")
- ]);
- if(files.error)throw files.error;if(profiles.error)throw profiles.error;
- const names=new Map((profiles.data||[]).map(p=>[p.id,p.display_name||"کاربر"]));
- const mapped=await Promise.all((files.data||[]).map(async f=>{
-  const signed=await db.storage.from("user-device-files").createSignedUrl(f.file_path,3600);
-  if(signed.error||!signed.data?.signedUrl)return {...f,owner:names.get(f.user_id)||"کاربر",url:null,urlError:signed.error?.message||"لینک امن فایل ساخته نشد"};
-  return {...f,owner:names.get(f.user_id)||"کاربر",url:signed.data.signedUrl,urlError:null};
- }));
- window.__adminDeviceFiles=mapped;renderAdminDeviceFiles();
- const failed=mapped.filter(x=>x.urlError).length;
- message("admin-device-files-message",mapped.length+" فایل ثبت‌شده دریافت شد."+(failed?"؛ دسترسی به "+failed+" فایل ناموفق بود.":""));
-}
-$("refresh-admin-device-files")?.addEventListener("click",()=>loadAdminDeviceFiles().catch(e=>message("admin-device-files-message",e.message,true)));
-$("admin-device-files-search")?.addEventListener("input",renderAdminDeviceFiles);
-
 async function loadAdminUsers(){if(!profile?.is_admin)return;const result=await callAdmin("list_users");window.__adminUsers=result.users||[];$("admin-users").innerHTML=window.__adminUsers.length?window.__adminUsers.map(u=>'<article class="task-item"><div class="task-main"><h3>'+escapeHtml(u.display_name||"بدون نام")+'</h3><p>شناسه: '+escapeHtml(u.login_id||u.phone||u.email||"—")+' · '+(u.ends_at?"پایان اشتراک: "+jalaliDate(u.ends_at):"بدون اشتراک")+'</p><p>'+escapeHtml(u.email||"")+'</p></div><span class="priority">'+(u.is_banned?"مسدود":u.is_active?"فعال":"غیرفعال")+'</span>'+(u.is_admin?"":'<label class="switch-row"><input type="checkbox" data-chat-toggle="'+u.id+'" '+(u.chat_enabled!==false?"checked":"")+'> اجازه چت</label><div class="task-actions"><button class="secondary" data-renew-user="'+u.id+'">تمدید اشتراک</button><button class="secondary" data-edit-user="'+u.id+'">ویرایش حساب</button><button class="secondary" data-ban-user="'+u.id+'">'+(u.is_banned?"رفع بن":"بن کاربر")+'</button><button class="danger" data-delete-user="'+u.id+'">حذف کاربر</button></div>')+'</article>').join(""):'<div class="empty">کاربری ثبت نشده است.</div>'}
 document.addEventListener("change",async e=>{const t=e.target.closest("[data-chat-toggle]");if(!t)return;try{await callAdmin("set_chat_enabled",{user_id:t.dataset.chatToggle,enabled:t.checked});toast("دسترسی چت به‌روزرسانی شد.")}catch(x){t.checked=!t.checked;toast(x.message)}});
 async function loadExcelLibrary(){
