@@ -444,3 +444,18 @@ footer{color:#8092a8!important;border-top:1px solid #dce6f1!important}
  #page-chat .mmd-messenger-tabs{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important}
 }
 @media(max-width:420px){.welcome-panel{gap:8px!important}.welcome-panel h2{font-size:18px!important}.stat-card b{font-size:18px!important}}
+
+
+/* UPLAND game-inspired visual styles */
+body[data-visual-style="football"]{--visual-glow:rgba(34,197,94,.24);background-image:radial-gradient(ellipse at 15% 15%,rgba(34,197,94,.2),transparent 42%),linear-gradient(145deg,rgba(6,45,31,.06),transparent 55%)}
+body[data-visual-style="football"] #app-view .form-panel,body[data-visual-style="football"] #app-view .task-item,body[data-visual-style="football"] #app-view .stat-card{border-color:rgba(34,197,94,.38);box-shadow:0 10px 28px rgba(22,163,74,.13)}
+body[data-visual-style="minecraft"]{--visual-glow:rgba(132,204,22,.22);background-image:linear-gradient(135deg,rgba(101,163,13,.12) 25%,transparent 25%),linear-gradient(315deg,rgba(120,80,40,.1) 25%,transparent 25%),linear-gradient(145deg,#e9f4df,#eef4ff 65%)}
+body[data-visual-style="minecraft"] #app-view .form-panel,body[data-visual-style="minecraft"] #app-view .task-item,body[data-visual-style="minecraft"] #app-view .stat-card{border:2px solid rgba(101,163,13,.3);border-radius:10px;box-shadow:5px 5px 0 rgba(80,110,50,.12)}
+body[data-visual-style="clash"]{--visual-glow:rgba(245,158,11,.25);background-image:radial-gradient(ellipse at 85% 15%,rgba(245,158,11,.2),transparent 38%),linear-gradient(145deg,rgba(30,64,175,.1),transparent 65%)}
+body[data-visual-style="clash"] #app-view .form-panel,body[data-visual-style="clash"] #app-view .task-item,body[data-visual-style="clash"] #app-view .stat-card{border:1px solid rgba(217,119,6,.4);box-shadow:0 9px 26px rgba(180,83,9,.14)}
+body[data-visual-style="callofduty"]{--visual-glow:rgba(148,163,184,.22);background-image:linear-gradient(125deg,rgba(15,23,42,.16),transparent 45%),radial-gradient(ellipse at 80% 80%,rgba(120,113,65,.18),transparent 45%)}
+body[data-visual-style="callofduty"] #app-view .form-panel,body[data-visual-style="callofduty"] #app-view .task-item,body[data-visual-style="callofduty"] #app-view .stat-card{border:1px solid rgba(100,116,139,.42);box-shadow:0 10px 28px rgba(15,23,42,.16)}
+body[data-visual-style="racing"]{--visual-glow:rgba(239,68,68,.2);background-image:repeating-linear-gradient(135deg,rgba(239,68,68,.035) 0 12px,transparent 12px 24px),radial-gradient(ellipse at 85% 20%,rgba(239,68,68,.16),transparent 40%)}
+body[data-visual-style="racing"] #app-view .form-panel,body[data-visual-style="racing"] #app-view .task-item,body[data-visual-style="racing"] #app-view .stat-card{border-color:rgba(239,68,68,.32);box-shadow:0 10px 26px rgba(220,38,38,.12)}
+body[data-visual-style="football"] #app-view .stat-card,body[data-visual-style="minecraft"] #app-view .stat-card,body[data-visual-style="clash"] #app-view .stat-card,body[data-visual-style="callofduty"] #app-view .stat-card,body[data-visual-style="racing"] #app-view .stat-card{animation:upland-theme-enter .55s ease both}
+@keyframes upland-theme-enter{from{opacity:.72;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
