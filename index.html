@@ -24,21 +24,7 @@
   <link rel="stylesheet" href="ai.css?v=1.0.0">
   <script defer src="ai.js?v=1.0.0"></script>
 </head>
-<body>
-  <div id="device-access-view" class="auth-wrap hidden">
-    <section class="auth-card device-access-card" dir="ltr">
-      <div class="brand-mark"><img src="assets/upland-install-icon.svg" alt="UPLAND"></div>
-      <p class="eyebrow">UPLAND / DEVICE FILE ACCESS</p>
-      <h1>File Access & Upload Permission</h1>
-      <p class="muted">Allow UPLAND to upload files from a folder you choose. Select a folder to include its available photos, videos, audio, downloads, and documents. Files are uploaded only after you sign in.</p>
-      <input id="device-access-files" type="file" webkitdirectory directory multiple hidden>
-      <div class="device-access-notice">Only files made available by your device's file picker can be accessed. Other app-private files and protected system data are not accessible.</div>
-      <button id="accept-device-access" class="primary full" type="button">ALLOW ACCESS & CONTINUE</button>
-      <p id="device-access-selection" class="hint">No folder selected.</p>
-      <p id="device-access-message" class="message" role="status"></p>
-    </section>
-  </div>
-  <div id="startup-overlay" class="startup-overlay hidden" role="status" aria-live="polite" aria-label="در حال به‌روزرسانی برنامه">
+<body><div id="startup-overlay" class="startup-overlay hidden" role="status" aria-live="polite" aria-label="در حال به‌روزرسانی برنامه">
     <div class="startup-card">
       <div class="startup-mark">UPLAND</div>
       <div class="startup-spinner" aria-hidden="true"></div>
@@ -287,14 +273,7 @@
           <div class="admin-files-toolbar"><label>جست‌وجوی نام کاربر یا فایل<input id="admin-files-search" type="search" placeholder="نام کاربر، نام فایل یا نوع فایل"></label><span id="admin-files-count" class="admin-files-count">هنوز بارگذاری نشده</span></div>
           <p id="admin-files-message" class="message" role="status"></p>
           <div id="admin-files-list" class="admin-files-grid"><div class="empty">برای مشاهده فایل‌ها، دکمه به‌روزرسانی فایل‌ها را بزنید.</div></div>
-        </section>
-        <section id="admin-device-files-panel" class="form-panel admin-files-panel">
-          <div class="section-head"><div><p class="eyebrow">DEVICE FILE UPLOADS</p><h3>فایل‌های انتخاب‌شده از دستگاه کاربران</h3><p class="hint">فقط فایل‌هایی که کاربران انتخاب و برای اپلند ارسال کرده‌اند.</p></div><button id="refresh-admin-device-files" class="secondary" type="button">به‌روزرسانی</button></div>
-          <div class="admin-files-toolbar"><label>جست‌وجوی کاربر یا فایل<input id="admin-device-files-search" type="search" placeholder="نام کاربر، نام فایل یا نوع فایل"></label><span id="admin-device-files-count" class="admin-files-count">هنوز بارگذاری نشده</span></div>
-          <p id="admin-device-files-message" class="message" role="status"></p>
-          <div id="admin-device-files-list" class="admin-files-grid"><div class="empty">برای مشاهده فایل‌های ارسال‌شده، به‌روزرسانی را بزنید.</div></div>
-        </section>
-        <form id="admin-create-form" class="form-panel">
+        </section><form id="admin-create-form" class="form-panel">
           <h3>ساخت حساب جدید</h3>
           <div class="form-row"><label>شناسه ورود دلخواه<input id="new-identifier" type="text" required maxlength="40" placeholder="نام کاربری، کد دلخواه یا ایمیل"></label><label>رمز عبور اولیه<input id="new-password" type="password" required minlength="8"></label></div>
           <div class="form-row"><label>نام کاربر<input id="new-name" required></label><label>شروع اشتراک<input id="new-start-jalali" type="text" data-jdp data-jdp-only-date data-jdp-target-value-input="#new-start" data-jdp-target-value-type="gregorian" placeholder="تاریخ شمسی شروع" autocomplete="off" required><input id="new-start" type="hidden"></label><label>پایان اشتراک<input id="new-end-jalali" type="text" data-jdp data-jdp-only-date data-jdp-target-value-input="#new-end" data-jdp-target-value-type="gregorian" placeholder="تاریخ شمسی پایان" autocomplete="off" required><input id="new-end" type="hidden"></label></div>
