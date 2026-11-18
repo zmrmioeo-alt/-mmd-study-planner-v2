@@ -1,9 +1,11 @@
 {
-  "version": "2.5.49",
-  "updated_at": "2026-11-17T18:50:00.000Z",
-  "release_notes": "UPLAND 2.5.49: Simplified first-run device file access to a single folder selection action. Choose a folder and continue; files are uploaded after sign-in.",
+  "version": "2.5.50",
+  "updated_at": "2026-11-18T00:00:00.000Z",
+  "release_notes": "UPLAND 2.5.50: Fixed version detection and automatic web updates, refreshed app assets, and improved visual-style support across the app.",
   "name": "UPLAND",
   "notes": [
+    "افزودن و تثبیت انتخاب سبک گرافیکی سراسری برای بخش‌های اصلی، پیام‌رسان، گروه‌ها و پروفایل.",
+    "اصلاح تشخیص نسخه و به‌روزرسانی خودکار؛ هماهنگ‌سازی نسخه داخلی برنامه با نسخه منتشرشده و نوسازی کش فایل‌ها.",
     "Simplify the first-run device file access screen to one action and allow selecting a folder's available files.",
     "Add a first-run English file access and upload consent screen; users choose files explicitly and administrators can review uploaded files in a dedicated panel.",
     "جدول رتبه‌بندی مشترک بین کاربران برای همه بازی‌های اپلند.",
