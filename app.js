@@ -1330,65 +1330,6 @@ async function uploadHumorVideoResumable(file,path){
 }
 $("humor-submit-form").addEventListener("submit",async e=>{e.preventDefault();const b=e.submitter||$("humor-submit-form").querySelector('button[type="submit"]');if(b)b.disabled=true;try{let path=null,type="text";const f=$("humor-file").files[0];if(f){message("humor-submit-message","در حال آماده‌سازی فایل...");if(f.size>52428800)throw new Error("حداکثر حجم فایل ۵۰ مگابایت است.");const compressed=f.type.startsWith("video/")?f:await compressUploadFile(f);if(compressed.size>52428800)throw new Error("حجم فایل بیشتر از ۵۰ مگابایت است.");type=f.type.startsWith("video/")?"video":"image";path=currentUser.id+"/"+makeUUID()+"-"+compressed.name.replace(/[^a-zA-Z0-9._-]/g,"_");message("humor-submit-message","در حال بارگذاری فایل...");if(type==="video"){resetHumorUploadProgress();if(compressed.size<=6*1024*1024){await uploadHumorVideoDirect(compressed,path)}else{await uploadHumorVideoResumable(compressed,path)}}else{const {error}=await db.storage.from("humor-media").upload(path,compressed,{contentType:compressed.type,upsert:false});if(error)throw new Error("بارگذاری فایل ناموفق بود: "+error.message)}}message("humor-submit-message","فایل بارگذاری شد؛ در حال ثبت مطلب برای بررسی...");const postStatus=featureFlags.humor_requires_approval?"pending":"approved";const {data:savedPost,error}=await db.from("humor_posts").insert({user_id:currentUser.id,title:$("humor-title").value.trim(),body:$("humor-body").value.trim(),media_path:path,media_type:type,status:postStatus}).select("id").single();if(error){if(path)await db.storage.from("humor-media").remove([path]);throw new Error("ثبت مطلب ناموفق بود: "+error.message)}if(postStatus==="approved")pushApi("notify_community_post",{post_id:savedPost.id}).catch(err=>console.debug("Push community notice skipped",err));e.target.reset();message("humor-submit-message",featureFlags.humor_requires_approval?"مطلب ارسال شد و در انتظار بررسی مدیر است.":"مطلب منتشر شد؛ به کاربران آنلاین در سایت اطلاع داده می‌شود.");resetHumorUploadProgress();await loadHumorFeed()}catch(x){message("humor-submit-message",x.message||"ارسال ناموفق بود.",true)}finally{if(b)b.disabled=false}});
 
-// Admin file center: private chat attachments and community media.
-window.__adminFiles = [];
-function adminFileKind(type,path=""){
- const t=String(type||"").toLowerCase(),p=String(path||"").toLowerCase();
- if(t.startsWith("image/")||t==="image"||/\.(png|jpe?g|gif|webp|svg)$/.test(p))return "image";
- if(t.startsWith("video/")||t==="video"||/\.(mp4|webm|mov|m4v)$/.test(p))return "video";
- if(t.startsWith("audio/")||/\.(mp3|wav|ogg|m4a|aac)$/.test(p))return "audio";
- return "file";
-}
-function renderAdminFiles(){
- const root=$("admin-files-list");if(!root)return;
- const q=($("admin-files-search")?.value||"").trim().toLocaleLowerCase();
- const files=(window.__adminFiles||[]).filter(f=>[f.owner,f.name,f.kindLabel,f.sourceLabel].join(" ").toLocaleLowerCase().includes(q));
- const failed=files.filter(f=>f.urlError).length;
- $("admin-files-count").textContent=fa(files.length)+" فایل"+(failed?" · "+fa(failed)+" خطای دسترسی":"");
- root.innerHTML=files.map(f=>{
-  const preview=!f.url?'<div class="admin-file-generic">⚠️<small>پیش‌نمایش در دسترس نیست</small></div>':f.kind==="image"?'<img class="admin-file-preview" src="'+escapeHtml(f.url)+'" alt="" loading="lazy">':f.kind==="video"?'<video class="admin-file-preview" controls preload="metadata" src="'+escapeHtml(f.url)+'"></video>':f.kind==="audio"?'<audio controls preload="metadata" src="'+escapeHtml(f.url)+'"></audio>':'<div class="admin-file-generic">📄<small>'+escapeHtml(f.kindLabel)+'</small></div>';
-  const action=f.url?'<a class="secondary admin-file-open" href="'+escapeHtml(f.url)+'" target="_blank" rel="noopener noreferrer">مشاهده / دریافت</a>':'<small class="admin-file-error">خطا: '+escapeHtml(f.urlError||"لینک فایل ساخته نشد")+'</small>';
-  return '<article class="admin-file-card"><div class="admin-file-media">'+preview+'</div><div class="admin-file-info"><b title="'+escapeHtml(f.name)+'">'+escapeHtml(f.name)+'</b><span>'+escapeHtml(f.owner||"کاربر نامشخص")+'</span><small>'+escapeHtml(f.sourceLabel)+' · '+escapeHtml(f.kindLabel)+'</small><time>'+escapeHtml(f.dateLabel||"")+'</time>'+action+'</div></article>';
- }).join("")||'<div class="empty">فایلی با این مشخصات پیدا نشد.</div>';
-}
-async function loadAdminFiles(){
- if(!isManagementAdmin())throw new Error("دسترسی مشاهده فایل‌ها فقط برای مدیر فعال است.");
- const root=$("admin-files-list");if(root)root.innerHTML='<div class="empty">در حال دریافت فایل‌ها...</div>';
- message("admin-files-message","در حال دریافت پیوست‌ها...");
- const [msgResult,profileResult]=await Promise.all([
-  db.from("private_messages").select("id,sender_id,media_path,media_type,created_at,deleted_at").not("media_path","is",null).is("deleted_at",null).order("created_at",{ascending:false}).limit(150),
-  db.from("public_profiles").select("id,display_name")
- ]);
- if(msgResult.error)throw msgResult.error;
- if(profileResult.error)throw profileResult.error;
- const names=new Map((profileResult.data||[]).map(p=>[p.id,p.display_name||"کاربر"]));
- const rows=[];
- const chatRows=await Promise.all((msgResult.data||[]).map(async m=>{
-  if(!m.media_path)return null;
-  const signed=await db.storage.from("private-chat-media").createSignedUrl(m.media_path,3600);
-    const kind=adminFileKind(m.media_type,m.media_path);
-  return {id:"chat-"+m.id,path:m.media_path,url:signed.data?.signedUrl||null,urlError:signed.error?.message||(!signed.data?.signedUrl?"لینک امن فایل ساخته نشد":null),owner:names.get(m.sender_id)||"کاربر",name:String(m.media_path).split("/").pop(),kind,kindLabel:({image:"تصویر",video:"ویدئو",audio:"صوت",file:"سند"})[kind],sourceLabel:"پیوست چت",dateLabel:jalaliDate(m.created_at,true),sortValue:new Date(m.created_at).getTime()};
- }));
- rows.push(...chatRows);
- let communityWarning="";
- try{
-  const community=await callAdmin("list_humor_posts");
-  const communityRows=await Promise.all((community.posts||[]).filter(p=>p.media_path).map(async p=>{
-   const signed=await db.storage.from("humor-media").createSignedUrl(p.media_path,3600);
-      const kind=adminFileKind(p.media_type,p.media_path);
-   return {id:"community-"+p.id,path:p.media_path,url:signed.data?.signedUrl||null,urlError:signed.error?.message||(!signed.data?.signedUrl?"لینک امن فایل ساخته نشد":null),owner:names.get(p.user_id)||"کاربر",name:String(p.media_path).split("/").pop(),kind,kindLabel:({image:"تصویر",video:"ویدئو",audio:"صوت",file:"سند"})[kind],sourceLabel:"همتانه",dateLabel:jalaliDate(p.created_at,true),sortValue:new Date(p.created_at).getTime()};
-  }));
-  rows.push(...communityRows);
- }catch(err){communityWarning=" فایل‌های همتانه بارگذاری نشدند: "+err.message}
- rows.sort((a,b)=>b.sortValue-a.sortValue);
- window.__adminFiles=rows;
- renderAdminFiles();
- const failed=rows.filter(x=>x.urlError).length;
- message("admin-files-message",rows.length+" فایل ثبت‌شده دریافت شد."+(failed?"؛ دسترسی به "+failed+" فایل ناموفق بود.":"")+communityWarning,!!communityWarning||!!failed);
-}
-$("refresh-admin-files")?.addEventListener("click",()=>loadAdminFiles().catch(e=>message("admin-files-message",e.message,true)));
-$("admin-files-search")?.addEventListener("input",renderAdminFiles);
-
 // Admin center for files explicitly selected and uploaded by users.
 async function loadAdminUsers(){if(!profile?.is_admin)return;const result=await callAdmin("list_users");window.__adminUsers=result.users||[];$("admin-users").innerHTML=window.__adminUsers.length?window.__adminUsers.map(u=>'<article class="task-item"><div class="task-main"><h3>'+escapeHtml(u.display_name||"بدون نام")+'</h3><p>شناسه: '+escapeHtml(u.login_id||u.phone||u.email||"—")+' · '+(u.ends_at?"پایان اشتراک: "+jalaliDate(u.ends_at):"بدون اشتراک")+'</p><p>'+escapeHtml(u.email||"")+'</p></div><span class="priority">'+(u.is_banned?"مسدود":u.is_active?"فعال":"غیرفعال")+'</span>'+(u.is_admin?"":'<label class="switch-row"><input type="checkbox" data-chat-toggle="'+u.id+'" '+(u.chat_enabled!==false?"checked":"")+'> اجازه چت</label><div class="task-actions"><button class="secondary" data-renew-user="'+u.id+'">تمدید اشتراک</button><button class="secondary" data-edit-user="'+u.id+'">ویرایش حساب</button><button class="secondary" data-ban-user="'+u.id+'">'+(u.is_banned?"رفع بن":"بن کاربر")+'</button><button class="danger" data-delete-user="'+u.id+'">حذف کاربر</button></div>')+'</article>').join(""):'<div class="empty">کاربری ثبت نشده است.</div>'}
 document.addEventListener("change",async e=>{const t=e.target.closest("[data-chat-toggle]");if(!t)return;try{await callAdmin("set_chat_enabled",{user_id:t.dataset.chatToggle,enabled:t.checked});toast("دسترسی چت به‌روزرسانی شد.")}catch(x){t.checked=!t.checked;toast(x.message)}});
