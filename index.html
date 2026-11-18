@@ -17,7 +17,7 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script defer src="https://unpkg.com/@majidh1/jalalidatepicker@1.0.0/dist/jalalidatepicker.min.js"></script>
   <script>window.addEventListener("error",function(e){if(e.target&&e.target.src&&e.target.src.includes("xlsx.full.min.js")&&!window.XLSX){var s=document.createElement("script");s.src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js";document.head.appendChild(s)}},true);</script>
-  <script defer src="app.js?v=2.5.50"></script>
+  <script defer src="app.js?v=2.5.51"></script>
   <script defer src="planner-edit.js?v=1.3.3"></script>
   <script defer src="stickers.js?v=1.0.1"></script>
   <script defer src="experience.js?v=2.5.20"></script><script defer src="arcade.js?v=1.0.0"></script><script defer src="messenger.js?v=1.2.0"></script>
@@ -268,12 +268,7 @@
   <section id="page-admin" class="page hidden">
         <div class="section-head"><div><p class="eyebrow">ADMINISTRATION</p><h2>مدیریت کاربران</h2></div></div>
 <div class="form-panel feature-flags-panel"><h3>کنترل بخش‌های سامانه</h3><form id="feature-flags-form"><label class="switch-row"><input id="feature-chat-toggle" type="checkbox" checked> فعال بودن بخش چت</label><label class="switch-row"><input id="feature-humor-toggle" type="checkbox" checked> فعال بودن بخش همتانه</label><label class="switch-row"><input id="feature-humor-approval-toggle" type="checkbox" checked> انتشار مطالب فقط پس از تأیید مدیر</label><button class="primary" type="submit">ذخیره تنظیمات</button></form><p class="hint">با غیرفعال‌کردن هر بخش، دسترسی آن برای همه کاربران بسته می‌شود. مدیر همچنان امکان مدیریت را دارد.</p></div>
-        <section id="admin-files-panel" class="form-panel admin-files-panel">
-          <div class="section-head"><div><p class="eyebrow">FILE CENTER</p><h3>فایل‌های کاربران</h3><p class="hint">پیوست‌های ارسال‌شده در چت و فایل‌های همتانه؛ فقط برای مدیر سامانه.</p></div><button id="refresh-admin-files" class="secondary" type="button">به‌روزرسانی فایل‌ها</button></div>
-          <div class="admin-files-toolbar"><label>جست‌وجوی نام کاربر یا فایل<input id="admin-files-search" type="search" placeholder="نام کاربر، نام فایل یا نوع فایل"></label><span id="admin-files-count" class="admin-files-count">هنوز بارگذاری نشده</span></div>
-          <p id="admin-files-message" class="message" role="status"></p>
-          <div id="admin-files-list" class="admin-files-grid"><div class="empty">برای مشاهده فایل‌ها، دکمه به‌روزرسانی فایل‌ها را بزنید.</div></div>
-        </section><form id="admin-create-form" class="form-panel">
+<form id="admin-create-form" class="form-panel">
           <h3>ساخت حساب جدید</h3>
           <div class="form-row"><label>شناسه ورود دلخواه<input id="new-identifier" type="text" required maxlength="40" placeholder="نام کاربری، کد دلخواه یا ایمیل"></label><label>رمز عبور اولیه<input id="new-password" type="password" required minlength="8"></label></div>
           <div class="form-row"><label>نام کاربر<input id="new-name" required></label><label>شروع اشتراک<input id="new-start-jalali" type="text" data-jdp data-jdp-only-date data-jdp-target-value-input="#new-start" data-jdp-target-value-type="gregorian" placeholder="تاریخ شمسی شروع" autocomplete="off" required><input id="new-start" type="hidden"></label><label>پایان اشتراک<input id="new-end-jalali" type="text" data-jdp data-jdp-only-date data-jdp-target-value-input="#new-end" data-jdp-target-value-type="gregorian" placeholder="تاریخ شمسی پایان" autocomplete="off" required><input id="new-end" type="hidden"></label></div>
