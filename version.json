@@ -1,9 +1,10 @@
 {
-  "version": "2.5.51",
-  "updated_at": "2026-11-18T20:02:00+03:30",
-  "release_notes": "UPLAND 2.5.51: Restored normal login and app access for all users; the galaxy revolution placeholder no longer blocks the app.",
+  "version": "2.5.52",
+  "updated_at": "2026-11-18T20:30:00+03:30",
+  "release_notes": "UPLAND 2.5.52: Added football, Minecraft, Clash of Clans, Call of Duty and racing visual styles with matching animated card effects.",
   "name": "UPLAND",
   "notes": [
+    "افزودن سبک‌های ظاهری فوتبالی، ماینکرفت، کلش آف کلنز، کالاف دیوتی و مسابقه‌ای به تنظیمات؛ هر سبک ظاهر و جلوه حرکتی مخصوص خود را دارد.",
     "رفع نمایش اجباری صفحه انقلاب که دسترسی کاربران عادی به ورود، تنظیمات و پروفایل را مسدود می‌کرد؛ بازگرداندن ورود عادی پس از پذیرش قوانین و پس از خروج از حساب.",
     "افزودن و تثبیت انتخاب سبک گرافیکی سراسری برای بخش‌های اصلی، پیام‌رسان، گروه‌ها و پروفایل.",
     "اصلاح تشخیص نسخه و به‌روزرسانی خودکار؛ هماهنگ‌سازی نسخه داخلی برنامه با نسخه منتشرشده و نوسازی کش فایل‌ها.",
