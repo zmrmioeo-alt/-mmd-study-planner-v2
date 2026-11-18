@@ -81,11 +81,14 @@ async function callAdmin(action,payload={}){const {data:{session}}=await db.auth
 let enteringUserId=null;
 async function continueAfterPolicy(){
  show("terms-view",false);
- show("auth-view",true);
- show("login-card",true);
+ show("auth-view",false);
+ show("revolution-view",true);
  const {data:{session},error}=await db.auth.getSession();if(error)throw error;
- if(session){show("login-card",false);await enterApp(session.user)}
+ if(session){await enterApp(session.user)}
 }
+$("revolution-admin-login")?.addEventListener("click",()=>{
+ show("revolution-view",false);show("auth-view",true);show("login-card",true);show("signup-card",false);
+});
 $("terms-checkbox").addEventListener("change",e=>{$("accept-terms").disabled=!e.target.checked});
 $("accept-terms").addEventListener("click",async()=>{
  if(!$("terms-checkbox").checked)return;
@@ -95,7 +98,7 @@ $("accept-terms").addEventListener("click",async()=>{
 async function boot(){
  if("serviceWorker" in navigator){navigator.serviceWorker.register("./service-worker.js").catch(err=>console.warn("Service worker unavailable",err));}
  if(localStorage.getItem("mmd_terms_accepted")!=="mmd-terms-2026-11-v4"){show("terms-view",true);show("auth-view",false);show("app-view",false);return}
- db.auth.onAuthStateChange((event)=>{if(event==="SIGNED_OUT"){currentUser=null;profile=null;setupPersonalSwitcher();show("app-view",false);show("expired-subscription-view",false);show("banned-account-view",false);show("auth-view",true)}});
+ db.auth.onAuthStateChange((event)=>{if(event==="SIGNED_OUT"){currentUser=null;profile=null;setupPersonalSwitcher();show("app-view",false);show("expired-subscription-view",false);show("banned-account-view",false);show("auth-view",false);show("revolution-view",true)}});
  await continueAfterPolicy();
 }
 async function syntheticEmail(value){const bytes=new TextEncoder().encode(value.trim().toLowerCase());const digest=await crypto.subtle.digest("SHA-256",bytes);const hex=Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,"0")).join("").slice(0,32);return "mmd-"+hex+"@users.mmdplanner.com"}
@@ -281,10 +284,14 @@ async function enterApp(user){
   show("startup-overlay",true);setStartupStatus("اطلاعات حساب شما");
  if(personalSlotFor(user.id))await saveCurrentPersonalSession();
  setupPersonalSwitcher();
- show("auth-view",false);show("expired-subscription-view",false);show("app-view",true);$("today-date").textContent=dateLabel();loadInAppNotifications();syncPushStatus().catch(()=>{});
+ show("auth-view",false);show("revolution-view",false);show("expired-subscription-view",false);show("app-view",true);$("today-date").textContent=dateLabel();loadInAppNotifications();syncPushStatus().catch(()=>{});
   await waitForStartup(loadProfile(),"اطلاعات حساب");if(!currentUser)return;
   if(profile?.is_banned){show("app-view",false);show("auth-view",false);show("expired-subscription-view",false);show("pending-approval-view",false);show("banned-account-view",true);$("banned-user-name").textContent=profile.display_name||"کاربر";return;}
   if(profile?.is_approved===false){show("app-view",false);show("auth-view",false);show("pending-approval-view",true);watchApprovalStatus();return;}
+  if(!isManagementAdmin()){
+   show("app-view",false);show("auth-view",false);show("revolution-view",true);show("startup-overlay",false);
+   return;
+  }
   if(approvalMonitorTimer){clearInterval(approvalMonitorTimer);approvalMonitorTimer=null;}
   await waitForStartup(loadFeatureFlags(),"تنظیمات سامانه");
   const startupResults=await Promise.allSettled([waitForStartup(loadTasks(),"وظایف"),waitForStartup(loadRoutines(),"برنامه ثابت"),waitForStartup(loadSettings(),"تنظیمات شخصی"),waitForStartup(loadAnnouncements(),"اطلاعیه‌ها"),waitForStartup(loadHumorFeed(),"بخش همتانه",7000)]);const startupNames=["وظایف","برنامه ثابت","تنظیمات","اطلاعیه‌ها","بخش همتانه"];const startupErrors=startupResults.map((r,i)=>r.status==="rejected"?startupNames[i]+": "+(r.reason?.message||"خطای دریافت اطلاعات"):null).filter(Boolean);if(startupResults[0].status==="rejected")tasks=[];if(startupResults[1].status==="rejected")routines=[];if(startupResults[2].status==="rejected")settings={};if(startupResults[3].status==="rejected")window.__announcements=[];renderAll();updateLocalReminderStatus().catch(()=>{});syncLocalStudyReminders(false).catch(e=>console.warn("Local reminders startup sync failed",e));await promptHamkelasiConsentIfNeeded();syncSmartPlanner();try{startAnnouncementRealtime()}catch(e){console.warn("Announcement realtime unavailable",e)}startMessageRealtime().catch(e=>console.warn("Message realtime unavailable",e));try{startChatRealtime()}catch(e){console.warn("Chat realtime unavailable",e)}try{startCommunityRealtime()}catch(e){console.warn("Community realtime unavailable",e)}checkAppUpdateNotice();notifyUnreadMessagesOnEntry().catch(e=>console.warn("Unread message check unavailable",e));startUpdateMonitor();const notificationParams=new URLSearchParams(location.search);if(notificationParams.get("page")==="chat"){const target=notificationParams.get("chatTarget");if(target)navigate("chat",target);else navigate("chat")}if(startupErrors.length){console.error("Some startup data failed:",startupErrors);toast("برنامه باز شد، اما دریافت بعضی اطلاعات ناموفق بود: "+startupErrors.join(" | "))}
