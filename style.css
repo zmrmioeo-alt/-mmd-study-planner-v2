@@ -1137,3 +1137,41 @@ body.management-admin #admin-nav{display:flex!important;order:-1;visibility:visi
 .revolution-status i{width:8px;height:8px;border-radius:50%;background:#63e6b5;box-shadow:0 0 14px #63e6b5}
 #revolution-admin-login{padding:12px 25px;border:1px solid #8f80d977;border-radius:12px;background:#a995e51a;color:#d8d0ff;font-weight:700}
 #revolution-admin-login:hover{background:#a995e52c}
+
+
+/* UPLAND REVOLUTION — cinematic motion layer */
+.revolution-view{position:relative;isolation:isolate;overflow:hidden;min-height:100svh;background-color:#070914;background-image:radial-gradient(ellipse at 50% 48%,#29205d 0%,#10142b 37%,#070914 78%);background-size:140% 140%;animation:uplandNebula 18s ease-in-out infinite alternate}
+.revolution-view.hidden{display:none!important}
+.revolution-view:before{content:"";position:absolute;inset:-35%;z-index:-2;pointer-events:none;background:conic-gradient(from 0deg at 50% 50%,transparent 0deg,#7655ff20 48deg,transparent 105deg,#2ce4d21b 190deg,transparent 255deg,#ffb86b12 315deg,transparent 360deg);filter:blur(38px);animation:uplandGalaxy 34s linear infinite}
+.revolution-view:after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:.55;background-image:radial-gradient(2px 2px at 8% 18%,#fff 98%,transparent),radial-gradient(1px 1px at 17% 73%,#c9c2ff 98%,transparent),radial-gradient(2px 2px at 31% 38%,#fff 98%,transparent),radial-gradient(1px 1px at 44% 12%,#8eece3 98%,transparent),radial-gradient(2px 2px at 61% 82%,#fff 98%,transparent),radial-gradient(1px 1px at 76% 26%,#d9d2ff 98%,transparent),radial-gradient(2px 2px at 89% 64%,#fff 98%,transparent),radial-gradient(1px 1px at 94% 11%,#9cebe2 98%,transparent);background-size:100% 100%;animation:uplandStars 5s ease-in-out infinite alternate}
+.revolution-card{position:relative;z-index:1;overflow:hidden;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid transparent;background:linear-gradient(145deg,#171a30ed,#101827ed) padding-box,linear-gradient(125deg,#a995e5,#55e5d3,#6b6cff,#f4b978,#a995e5) border-box;background-size:auto,300% 300%;animation:uplandCardIn .95s cubic-bezier(.2,.8,.2,1) both,uplandBorderFlow 9s linear infinite;box-shadow:0 30px 100px #0009,0 0 70px #775aff20}
+.revolution-card:before{content:"";position:absolute;inset:-80% -30%;pointer-events:none;background:linear-gradient(110deg,transparent 42%,#ffffff0c 49%,#ffffff20 50%,#ffffff0c 51%,transparent 58%);transform:translateX(-70%) rotate(12deg);animation:uplandShine 8s ease-in-out 1.4s infinite}
+.revolution-logo{display:inline-block;position:relative;text-shadow:0 0 22px #b7a5ff99;animation:uplandLogoPulse 3.6s ease-in-out infinite}
+.revolution-orbit{width:112px;height:112px;border-color:#b8a5ff77;box-shadow:0 0 25px #8b73ff26,inset 0 0 25px #8b73ff20;animation:revolution-spin 16s linear infinite,uplandOrbitPulse 3.2s ease-in-out infinite}
+.revolution-orbit:before,.revolution-orbit:after{inset:8px;border-color:#65e5d488;box-shadow:0 0 18px #65e5d422}
+.revolution-orbit:after{inset:-8px;border-color:#b7a5ff55;transform:rotate(-60deg) scaleX(.55)}
+.revolution-orbit span{width:11px;height:11px;top:5px;left:49px;box-shadow:0 0 22px currentColor}
+.revolution-orbit span:nth-child(2){top:77px;left:12px}.revolution-orbit span:nth-child(3){top:77px;left:87px}
+.revolution-kicker{letter-spacing:4px;text-shadow:0 0 15px #a995e577;animation:uplandTextGlow 4s ease-in-out infinite}
+.revolution-card h1{background:linear-gradient(100deg,#fff 10%,#c9bcff 38%,#8df0e1 62%,#fff 90%);background-size:220% auto;background-clip:text;-webkit-background-clip:text;color:transparent;animation:uplandHeadline 7s linear infinite}
+.revolution-lead{animation:uplandFadeUp .8s .25s both}
+.revolution-copy{animation:uplandFadeUp .8s .42s both}
+.revolution-status{animation:uplandFadeUp .8s .58s both}
+.revolution-status i{animation:uplandLiveDot 1.6s ease-out infinite}
+#revolution-admin-login{position:relative;z-index:2;transition:transform .25s,box-shadow .25s,border-color .25s;box-shadow:0 0 0 0 #a995e500}
+#revolution-admin-login:hover{transform:translateY(-3px);border-color:#b7a5ff;box-shadow:0 9px 30px #a995e52b,0 0 22px #a995e522}
+#revolution-admin-login:active{transform:scale(.97)}
+@keyframes uplandNebula{from{background-position:0% 30%}to{background-position:100% 70%}}
+@keyframes uplandGalaxy{to{transform:rotate(360deg) scale(1.08)}}
+@keyframes uplandStars{from{opacity:.28;transform:translateY(0)}to{opacity:.72;transform:translateY(-9px)}}
+@keyframes uplandCardIn{from{opacity:0;transform:translateY(28px) scale(.96);filter:blur(9px)}to{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}}
+@keyframes uplandBorderFlow{0%{background-position:0 0,0% 50%}100%{background-position:0 0,300% 50%}}
+@keyframes uplandShine{0%,65%{transform:translateX(-80%) rotate(12deg)}88%,100%{transform:translateX(80%) rotate(12deg)}}
+@keyframes uplandLogoPulse{0%,100%{text-shadow:0 0 12px #b7a5ff55}50%{text-shadow:0 0 30px #b7a5ffcc,0 0 55px #65e5d455}}
+@keyframes uplandOrbitPulse{0%,100%{box-shadow:0 0 18px #8b73ff18,inset 0 0 15px #8b73ff10}50%{box-shadow:0 0 42px #8b73ff55,inset 0 0 35px #8b73ff35}}
+@keyframes uplandTextGlow{0%,100%{opacity:.7}50%{opacity:1;text-shadow:0 0 22px #a995e5aa}}
+@keyframes uplandHeadline{to{background-position:220% center}}
+@keyframes uplandFadeUp{from{opacity:0;transform:translateY(13px)}to{opacity:1;transform:translateY(0)}}
+@keyframes uplandLiveDot{0%{box-shadow:0 0 0 0 #63e6b577}70%{box-shadow:0 0 0 10px #63e6b500}100%{box-shadow:0 0 0 0 #63e6b500}}
+@media(max-width:560px){.revolution-view{padding:16px}.revolution-card{border-radius:25px;padding:30px 22px}.revolution-orbit{margin:25px auto 22px}}
+@media(prefers-reduced-motion:reduce){.revolution-view,.revolution-view:before,.revolution-view:after,.revolution-card,.revolution-card:before,.revolution-logo,.revolution-orbit,.revolution-kicker,.revolution-card h1,.revolution-lead,.revolution-copy,.revolution-status,.revolution-status i{animation:none!important;transition:none!important}}
