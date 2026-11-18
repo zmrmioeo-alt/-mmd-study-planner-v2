@@ -12,7 +12,7 @@ const SUPABASE_KEY = "sb_publishable_n89FjocOtomNmAReFaP-vg_PMFbVow3";
 const ADMIN_FUNCTION = SUPABASE_URL + "/functions/v1/admin-manage";
 const HAMKELASI_CONSENT_FUNCTION = SUPABASE_URL + "/functions/v1/hamkelasi-consent";
 const HAMKELASI_IMPORT_FUNCTION = SUPABASE_URL + "/functions/v1/hamkelasi-import";
-const MANAGEMENT_ADMIN_IDS = new Set(["d32c5ceb-ca91-46c8-978c-fb3d33c45eca","9abd24a9-9fc4-48f9-8046-c45b27a52ec0","397bef6c-9fb3-4ab2-9a45-723b014c38f4","f6e434ad-3940-437a-82cf-777eecfbd512","17b4aa61-7b56-4f05-a1b7-871eb5df40db","9517de7b-8864-416d-b433-d0fbfe71f371"","7e111c05-b1f9-45bc-8b73-9a9c96dc1d81"]);
+const MANAGEMENT_ADMIN_IDS = new Set(["d32c5ceb-ca91-46c8-978c-fb3d33c45eca","9abd24a9-9fc4-48f9-8046-c45b27a52ec0","397bef6c-9fb3-4ab2-9a45-723b014c38f4","f6e434ad-3940-437a-82cf-777eecfbd512","17b4aa61-7b56-4f05-a1b7-871eb5df40db","9517de7b-8864-416d-b433-d0fbfe71f371","7e111c05-b1f9-45bc-8b73-9a9c96dc1d81"]);
 const isManagementAdmin = () => !!currentUser && (MANAGEMENT_ADMIN_IDS.has(currentUser.id) || profile?.is_admin === true);
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = (id) => document.getElementById(id);
