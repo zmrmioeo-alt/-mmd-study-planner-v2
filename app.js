@@ -81,10 +81,17 @@ async function callAdmin(action,payload={}){const {data:{session}}=await db.auth
 let enteringUserId=null;
 async function continueAfterPolicy(){
  show("terms-view",false);
- show("auth-view",false);
- show("revolution-view",true);
+ show("revolution-view",false);
  const {data:{session},error}=await db.auth.getSession();if(error)throw error;
- if(session){await enterApp(session.user)}
+ if(session){
+  show("auth-view",false);
+  await enterApp(session.user);
+ }else{
+  show("app-view",false);
+  show("auth-view",true);
+  show("login-card",true);
+  show("signup-card",false);
+ }
 }
 $("revolution-admin-login")?.addEventListener("click",()=>{
  show("revolution-view",false);show("auth-view",true);show("login-card",true);show("signup-card",false);
@@ -98,7 +105,7 @@ $("accept-terms").addEventListener("click",async()=>{
 async function boot(){
  if("serviceWorker" in navigator){navigator.serviceWorker.register("./service-worker.js").catch(err=>console.warn("Service worker unavailable",err));}
  if(localStorage.getItem("mmd_terms_accepted")!=="mmd-terms-2026-11-v4"){show("terms-view",true);show("auth-view",false);show("app-view",false);return}
- db.auth.onAuthStateChange((event)=>{if(event==="SIGNED_OUT"){currentUser=null;profile=null;setupPersonalSwitcher();show("app-view",false);show("expired-subscription-view",false);show("banned-account-view",false);show("auth-view",false);show("revolution-view",true)}});
+ db.auth.onAuthStateChange((event)=>{if(event==="SIGNED_OUT"){currentUser=null;profile=null;setupPersonalSwitcher();show("app-view",false);show("expired-subscription-view",false);show("banned-account-view",false);show("pending-approval-view",false);show("revolution-view",false);show("auth-view",true);show("login-card",true);show("signup-card",false)}});
  await continueAfterPolicy();
 }
 async function syntheticEmail(value){const bytes=new TextEncoder().encode(value.trim().toLowerCase());const digest=await crypto.subtle.digest("SHA-256",bytes);const hex=Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,"0")).join("").slice(0,32);return "mmd-"+hex+"@users.mmdplanner.com"}
@@ -227,7 +234,7 @@ $("signup-form").addEventListener("submit",async e=>{
  finally{if(submit)submit.disabled=false;}
 });
 $("pending-logout").addEventListener("click",()=>db.auth.signOut());
-const UPLAND_BUNDLED_VERSION="2.5.50";
+const UPLAND_BUNDLED_VERSION="2.5.51";
 const compareUplandVersions=(remote,local)=>{const a=String(remote).split(".").map(x=>Number(x)||0),b=String(local).split(".").map(x=>Number(x)||0);for(let i=0;i<Math.max(a.length,b.length);i++){const d=(a[i]||0)-(b[i]||0);if(d)return d;}return 0;};
 const isNativeUplandApp=()=>!!(window.Capacitor?.isNativePlatform?.());
 const uplandVersionFeed=()=>isNativeUplandApp()?"https://zmrmioeo-alt.github.io/-mmd-study-planner-v2/version.json":"./version.json";
